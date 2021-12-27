@@ -1,4 +1,6 @@
 #include "OpenGLWindow.hpp"
+#include "shader.hpp"
+#include "mesh.hpp"
 
 //std
 #include <cstdlib>
@@ -58,12 +60,18 @@ void OpenGLWindow::run()
 {
     if(!window) { setup(); }
 
+    Shader shader{};
+    Mesh mesh{};
+
     //render loop
     while(!glfwWindowShouldClose(window)) {
 
         // render
 	    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+        shader.use();
+        mesh.draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

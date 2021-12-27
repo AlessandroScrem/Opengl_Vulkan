@@ -1,6 +1,8 @@
 
 set(HEADERS
     OpenGLWindow.hpp
+    shader.hpp
+    mesh.hpp
 )
 
 set(SOURCES
