@@ -1,7 +1,11 @@
 #pragma once
-#include "OpenGLWindow.hpp"
 
+#include "Window.hpp"
 
+// std
+#include <iostream>
+#include <stdexcept>
+#include <cstdlib>
 
 
 

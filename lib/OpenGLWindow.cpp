@@ -18,13 +18,23 @@ const std::string WINDOW_TITLE   = "OpenGL";
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 800;
 
-void OpenGLWindow::setup() 
+OpenGLWindow::~OpenGLWindow() 
 {
-      // Initialise GLFW
+    std::cout << "OpenGLWindow  destructor\n";
+}
+
+
+void OpenGLWindow::cleanup() 
+{   
+    // Close OpenGL window and terminate GLFW
+	glfwTerminate();
+}
+void OpenGLWindow::initWindow() 
+{
+    // Initialise GLFW
 	if( !glfwInit() )
 	{
-        std::cout << "failed to initialize glfw!" << std::endl;
-		return;
+        throw std::runtime_error("failed to initialize glfw!");
 	}
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
@@ -36,8 +46,12 @@ void OpenGLWindow::setup()
         std::cout << "failed to open GLFW window, they are not  OpenGL 3.3 compatible!" << std::endl;
         glfwTerminate();
         return;
-    }
+    }   
+}
 
+void OpenGLWindow::initOpengl() 
+{
+ 
     glfwMakeContextCurrent(window);
     // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     // glfwSetCursorPosCallback(window, mouse_callback);
@@ -47,8 +61,7 @@ void OpenGLWindow::setup()
     glfwMakeContextCurrent(window); // Initialize GLEW
     glewExperimental=true; // Needed in core profile
     if (glewInit() != GLEW_OK) {
-        std::cout << "Failed to initialize GLEW" << std::endl;
-        return;
+        throw std::runtime_error("Failed to initialize GLEW");
     }
     
     // configure global opengl state
@@ -56,13 +69,11 @@ void OpenGLWindow::setup()
     glEnable(GL_DEPTH_TEST);
 }
 
-void OpenGLWindow::run() 
+void OpenGLWindow::mainLoop() 
 {
-    if(!window) { setup(); }
-
     Shader shader{};
     Mesh mesh{};
-
+    
     //render loop
     while(!glfwWindowShouldClose(window)) {
 
@@ -79,13 +90,17 @@ void OpenGLWindow::run()
     }
 }
 
+
+void OpenGLWindow::run() 
+{   
+    initWindow();
+    initOpengl();
+    mainLoop();
+    cleanup();
+}
+
 void OpenGLWindow::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
 {
     std::cout << "button " << button << " clicked!\n";
 }
 
-OpenGLWindow::~OpenGLWindow() 
-{
-    // Close OpenGL window and terminate GLFW
-	glfwTerminate();
-}

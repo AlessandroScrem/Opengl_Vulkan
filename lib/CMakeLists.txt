@@ -1,12 +1,16 @@
 
 set(HEADERS
+    Window.hpp
     OpenGLWindow.hpp
     shader.hpp
     mesh.hpp
+    VulkanWindow.hpp
 )
 
 set(SOURCES
+    Window.cpp
     OpenGLWindow.cpp
+    VulkanWindow.cpp
 )
 
 add_library(mylib ${SOURCES} ${HEADERS})
@@ -14,7 +18,8 @@ add_library(mylib ${SOURCES} ${HEADERS})
 target_link_libraries(mylib
     PRIVATE 
         glfw::glfw
-        GLEW::GLEW 
+        GLEW::GLEW
+        Vulkan::Vulkan
     PUBLIC 
         glm::glm
     )

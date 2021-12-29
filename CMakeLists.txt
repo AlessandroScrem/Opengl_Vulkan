@@ -9,6 +9,7 @@ enable_testing()
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(Vulkan REQUIRED) 
 
 add_subdirectory(lib)
 add_subdirectory(src)
