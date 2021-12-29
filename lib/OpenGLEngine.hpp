@@ -1,23 +1,21 @@
 #pragma once
 
+#include "Engine.hpp"
 #include "Window.hpp"
 
-struct GLFWwindow;
-
-class OpenGLWindow : public Window
+class OpenGLEngine : public Engine
 {    
 public:
-    OpenGLWindow(){    std::cout << "OpenGLWindow  constructor\n";}
-    ~OpenGLWindow();
+    OpenGLEngine(){    std::cout << "OpenGLEngine  constructor\n";}
+    ~OpenGLEngine();
 
     void run() override;
 
 private:
-    void initWindow();
     void initOpengl();
     void mainLoop();
     void cleanup();
     
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-    GLFWwindow* window = nullptr;
+    Window window{EngineType::Opengl};
 };

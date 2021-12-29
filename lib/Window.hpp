@@ -1,24 +1,35 @@
 #pragma once
 
-//std
-#include <memory>
-#include <iostream>
+#include "mytypes.hpp"
 
-enum class WindowType
-{
-    Opengl,
-    Vulkan
-};
+// lib
+
+//std
+#include <string>
+
+
+struct GLFWwindow;
 
 class Window
-{    
+{
 public:
-    Window(){ std::cout << "Window  constructor\n";}
-    virtual ~Window(){std::cout << "Window  destructor\n";}
-       
-    virtual void run() = 0;
+    Window(EngineType type);
+    ~Window();
 
-   static std::unique_ptr<Window> create(WindowType type);
+    Window(const Window &) = delete;
+    Window &operator=(const Window &) = delete;
+
+    bool shouldClose();
+    void swapBuffers();
+    GLFWwindow* getWindowPtr() { return window; }
+
 private:
-};
+    void initWindow();
+    
+    const int width{800};
+    const int height{600};
+    std::string windowName = {"Hello Window"};
+    const EngineType  engineType;
 
+    GLFWwindow* window = nullptr;
+};

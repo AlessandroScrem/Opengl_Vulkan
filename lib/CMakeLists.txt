@@ -1,16 +1,19 @@
 
 set(HEADERS
-    Window.hpp
-    OpenGLWindow.hpp
+    mytypes.hpp
+    Engine.hpp
+    OpenGLEngine.hpp
     shader.hpp
     mesh.hpp
-    VulkanWindow.hpp
+    VulkanEngine.hpp
+    Window.hpp
 )
 
 set(SOURCES
+    Engine.cpp
+    OpenGLEngine.cpp
+    VulkanEngine.cpp
     Window.cpp
-    OpenGLWindow.cpp
-    VulkanWindow.cpp
 )
 
 add_library(mylib ${SOURCES} ${HEADERS})

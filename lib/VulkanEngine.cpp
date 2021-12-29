@@ -1,4 +1,4 @@
-#include "VulkanWindow.hpp"
+#include "VulkanEngine.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -8,50 +8,37 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-VulkanWindow::~VulkanWindow() 
+VulkanEngine::~VulkanEngine() 
 {
-    std::cout << "VulkanWindow  destructor\n";
+    std::cout << "VulkanEngine  destructor\n";
 }
 
-void VulkanWindow::cleanup() 
+void VulkanEngine::cleanup() 
 {
     vkDestroyInstance(instance, nullptr);
-    glfwDestroyWindow(window);
-    glfwTerminate();    
 }
 
-void VulkanWindow::initWindow()
-{
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan window", nullptr, nullptr);
-}
-
-void VulkanWindow::initVulkan() 
+void VulkanEngine::initVulkan() 
 {
     createInstance();  
 }
 
-void VulkanWindow::mainLoop() 
+void VulkanEngine::mainLoop() 
 {
-    while(!glfwWindowShouldClose(window)) {
+    while(!window.shouldClose() ) {
         glfwPollEvents();
     }   
 }
 
 
-void VulkanWindow::run() 
+void VulkanEngine::run() 
 {   
-    initWindow();
     initVulkan();
     mainLoop();
     cleanup();  
 }
 
-void VulkanWindow::createInstance()
+void VulkanEngine::createInstance()
 {
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;

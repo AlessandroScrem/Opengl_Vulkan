@@ -1,25 +1,25 @@
 #pragma once
+#include "Engine.hpp"
 #include "Window.hpp"
 
-struct GLFWwindow;
+
 #define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
 VK_DEFINE_HANDLE(VkInstance)
 
-class VulkanWindow : public Window
+class VulkanEngine : public Engine
 {
 public:
-    VulkanWindow(){    std::cout << "VulkanWindow  constructor\n";}
-    ~VulkanWindow();
+    VulkanEngine(){    std::cout << "VulkanEngine  constructor\n";}
+    ~VulkanEngine();
 
     void run();
 private:
-    void initWindow();
     void initVulkan();
     void createInstance();
     void mainLoop();
     void cleanup();
 
-    GLFWwindow* window = nullptr;
+    Window window{EngineType::Vulkan};
     VkInstance instance;   
 };
 
