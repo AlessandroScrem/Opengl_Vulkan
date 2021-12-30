@@ -38,6 +38,7 @@ public:
 private:
     void createInstance();
     void pickPhysicalDevice();
+    void createLogicalDevice();
 
     std::vector<const char*> getRequiredExtensions();
 
@@ -54,9 +55,13 @@ private:
         void* pUserData);
 
     VkInstance instance;
+    VkDevice device;
+    VkQueue graphicsQueue;
+
     VkDebugUtilsMessengerEXT debugMessenger; 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     Window &window;
+    
  
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation"};
 };
