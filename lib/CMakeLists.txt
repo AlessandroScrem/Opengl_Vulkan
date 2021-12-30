@@ -10,6 +10,8 @@ set(HEADERS
 )
 
 set(SOURCES
+    makeOpengl.cpp
+    makeVulkan.cpp
     Engine.cpp
     OpenGLEngine.cpp
     VulkanEngine.cpp

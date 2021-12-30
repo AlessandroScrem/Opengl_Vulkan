@@ -18,5 +18,7 @@ public:
 
    static std::unique_ptr<Engine> create(EngineType type);
 private:
+    static std::unique_ptr<Engine> makeVulkan();
+    static std::unique_ptr<Engine> makeOpengl();
 };
 

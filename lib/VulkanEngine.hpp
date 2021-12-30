@@ -2,7 +2,6 @@
 #include "Engine.hpp"
 #include "Window.hpp"
 
-
 #define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
 VK_DEFINE_HANDLE(VkInstance)
 
@@ -16,11 +15,12 @@ public:
 private:
     void initVulkan();
     void createInstance();
+    void setupDebugMessenger();
     void mainLoop();
     void cleanup();
 
     Window window{EngineType::Vulkan};
-    VkInstance instance;   
+    VkInstance instance;
 };
 
 
