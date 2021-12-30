@@ -7,6 +7,7 @@ set(HEADERS
     mesh.hpp
     VulkanEngine.hpp
     Window.hpp
+    VulkanDevice.hpp
 )
 
 set(SOURCES
@@ -16,6 +17,7 @@ set(SOURCES
     OpenGLEngine.cpp
     VulkanEngine.cpp
     Window.cpp
+    VulkanDevice.cpp
 )
 
 add_library(mylib ${SOURCES} ${HEADERS})

@@ -1,9 +1,8 @@
 #pragma once
 #include "Engine.hpp"
 #include "Window.hpp"
+#include "VulkanDevice.hpp"
 
-#define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
-VK_DEFINE_HANDLE(VkInstance)
 
 class VulkanEngine : public Engine
 {
@@ -13,14 +12,10 @@ public:
 
     void run();
 private:
-    void initVulkan();
-    void createInstance();
-    void setupDebugMessenger();
     void mainLoop();
-    void cleanup();
 
     Window window{EngineType::Vulkan};
-    VkInstance instance;
+    VulkanDevice vkdevice{window};
 };
 
 
