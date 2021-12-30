@@ -7,6 +7,16 @@
 
 //std
 #include <vector>
+#include <optional>
+
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily; 
+    
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};  
 
 class VulkanDevice
 {    
@@ -27,12 +37,17 @@ public:
     VulkanDevice &operator=(VulkanDevice &&) = delete;
 private:
     void createInstance();
+    void pickPhysicalDevice();
 
-    bool checkValidationLayerSupport();
     std::vector<const char*> getRequiredExtensions();
+
+    bool isDeviceSuitable(VkPhysicalDevice device);
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+    //validation layer helper functions
+    bool checkValidationLayerSupport();
     void setupDebugMessenger();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -40,6 +55,7 @@ private:
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger; 
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     Window &window;
  
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation"};
