@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine.hpp"
-#include "Window.hpp"
+#include "common/Window.hpp"
 
 class OpenGLEngine : public Engine
 {    

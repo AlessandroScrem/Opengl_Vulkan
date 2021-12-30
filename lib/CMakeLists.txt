@@ -1,26 +1,31 @@
 
-set(HEADERS
-    mytypes.hpp
+set(VK_SRC
+    vk/VulkanEngine.hpp
+    vk/makeVulkan.cpp
+    vk/VulkanEngine.cpp
+    vk/VulkanDevice.hpp
+    vk/VulkanDevice.cpp
+)
+    
+set(OGL_SRC
+    ogl/OpenGLEngine.hpp
+    ogl/makeOpengl.cpp
+    ogl/OpenGLEngine.cpp
+)
+    
+set(COMMON_SRC
+    common/Window.hpp
+    common/Window.cpp
+    common/shader.hpp
+    common/mesh.hpp
+)
+set(PUB_SRC
     Engine.hpp
-    OpenGLEngine.hpp
-    shader.hpp
-    mesh.hpp
-    VulkanEngine.hpp
-    Window.hpp
-    VulkanDevice.hpp
-)
-
-set(SOURCES
-    makeOpengl.cpp
-    makeVulkan.cpp
     Engine.cpp
-    OpenGLEngine.cpp
-    VulkanEngine.cpp
-    Window.cpp
-    VulkanDevice.cpp
+    mytypes.hpp
 )
 
-add_library(mylib ${SOURCES} ${HEADERS})
+add_library(mylib  ${COMMON_SRC} ${PUB_SRC} ${OGL_SRC} ${VK_SRC})
 
 target_link_libraries(mylib
     PRIVATE 

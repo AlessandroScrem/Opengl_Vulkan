@@ -1,5 +1,5 @@
 #pragma once
-#include "Window.hpp"
+#include "common/Window.hpp"
 
 //lib
 #define GLFW_INCLUDE_VULKAN

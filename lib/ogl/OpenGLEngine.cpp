@@ -1,6 +1,6 @@
 #include "OpenGLEngine.hpp"
-#include "shader.hpp"
-#include "mesh.hpp"
+#include "common/shader.hpp"
+#include "common/mesh.hpp"
 
 //std
 #include <cstdlib>
