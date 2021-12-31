@@ -62,3 +62,10 @@ void Window::swapBuffers()
 { 
     glfwSwapBuffers(window); 
 }
+
+std::pair<int, int> Window::GetWindowExtents() 
+{
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    return { width, height };
+}

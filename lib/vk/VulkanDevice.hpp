@@ -1,6 +1,7 @@
 #pragma once
 #include "common/Window.hpp"
 
+
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,23 +10,7 @@
 #include <vector>
 #include <optional>
 
-/*
-vulkan constuction order:
 
-        createInstance();
-        setupDebugMessenger();
-        createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
-
-vulkan destruction order:
-        
-        vkDestroyDevice(device, nullptr);
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-
-*/
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -41,6 +26,7 @@ struct SwapChainSupportDetails {
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
 
 class VulkanDevice
 {    
@@ -59,6 +45,15 @@ public:
     void operator=(const VulkanDevice &) = delete;
     VulkanDevice(VulkanDevice &&) = delete;
     VulkanDevice &operator=(VulkanDevice &&) = delete;
+
+    // used by VulkanSwapchain
+    SwapChainSupportDetails getSwapChainSupport(){ return querySwapChainSupport(physicalDevice);}
+    QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
+    VkSurfaceKHR getSurface(){ return surface;}
+    VkDevice getDevice() { return logicalDevice; }
+
+    
+
 private:
     void createInstance();
     void setupDebugMessenger();
@@ -70,10 +65,10 @@ private:
 
     bool isDeviceSuitable(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
     bool checkValidationLayerSupport();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
     //validation layer helper functions
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

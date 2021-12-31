@@ -22,6 +22,7 @@ public:
     bool shouldClose();
     void swapBuffers();
     GLFWwindow* getWindowPtr() { return window; }
+    std::pair<int, int> GetWindowExtents();
 
 private:
     void initWindow();
