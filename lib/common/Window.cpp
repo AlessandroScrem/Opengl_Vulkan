@@ -13,10 +13,14 @@
 
 Window::Window(EngineType type) : engineType{type}
 {
+    std::cout << "Window  constructor\n";
+
     initWindow();
 }
 
 Window::~Window() {
+    std::cout << "Window  destructor\n";
+
     glfwDestroyWindow(window);
     glfwTerminate();
 }
