@@ -19,7 +19,7 @@ private:
     Window window{EngineType::Vulkan};
     VulkanDevice vkdevice{window};
     VulkanSwapchain swapchain{vkdevice, window};
-    VulkanPipeline pipeline{vkdevice};
+    VulkanPipeline pipeline{vkdevice, swapchain};
 };
 
 

@@ -3,10 +3,10 @@
  ##  Constuction order:
 
 
-- Window()
+- Window
   - glfwCreateWindow()
 
-- VulkanDevice()
+- VulkanDevice
   - createInstance();
   - setupDebugMessenger();
   - createSurface();
@@ -21,18 +21,20 @@
 
  ## Destruction order:
 
+- VulakanPipeline
+  - vkDestroyPipelineLayout()
 
-- VulkanSwapchian()
+- VulkanSwapchian
   - vkDestroyImageView()
   - vkDestroySwapchainKHR()
 
-- VulkanDevice()        
+- VulkanDevice       
   - vkDestroyDevice();
   - DestroyDebugUtilsMessengerEXT();
   - vkDestroySurfaceKHR();
   - vkDestroyInstance();
 
-- Window()
+- Window
   - glfwCreateWindow()
 
 

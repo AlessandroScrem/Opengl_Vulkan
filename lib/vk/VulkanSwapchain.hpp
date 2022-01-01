@@ -17,6 +17,8 @@ public:
     VulkanSwapchain(const VulkanSwapchain &) = delete;
     void operator=(const VulkanSwapchain &) = delete;
 
+    VkExtent2D getExtent(){ return swapChainExtent;}
+
 
 private:
     void createSwapchain();

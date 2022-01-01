@@ -1,18 +1,22 @@
 #pragma once
 
 #include "VulkanDevice.hpp"
+#include "VulkanSwapchain.hpp"
 
 
 class VulkanPipeline
 {
 public:
-    VulkanPipeline(VulkanDevice &device);
+    VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian);
     ~VulkanPipeline();
 
     void createPipeline();
 private: 
 
     VulkanDevice &device;
+    VulkanSwapchain &swapchian;
+
+    VkPipelineLayout pipelineLayout;
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
