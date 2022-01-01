@@ -16,6 +16,7 @@
 - VulkanSwapchain
   - createSwapChain();
   - createImageViews();
+  - createRenderPass();
 
 - VulkanPipeline
 
@@ -27,6 +28,7 @@
 - VulkanSwapchian
   - vkDestroyImageView()
   - vkDestroySwapchainKHR()
+  - vkDestroyRenderPass()
 
 - VulkanDevice       
   - vkDestroyDevice();
