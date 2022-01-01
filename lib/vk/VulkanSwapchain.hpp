@@ -1,6 +1,5 @@
 #pragma once
 #include "VulkanDevice.hpp"
-//#include "..\common\Window.hpp"
 #include <vulkan/vulkan.hpp>
 
 //std
@@ -18,9 +17,11 @@ public:
     VulkanSwapchain(const VulkanSwapchain &) = delete;
     void operator=(const VulkanSwapchain &) = delete;
 
-    void createSwapchain();
 
 private:
+    void createSwapchain();
+    void createImageViews();
+
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -29,6 +30,11 @@ private:
     VulkanDevice &device;
 
     VkSwapchainKHR swapChain;
+    VkExtent2D swapChainExtent;
+
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> swapChainImageViews;
+    VkFormat swapChainImageFormat;
 };
 
 

@@ -4,41 +4,6 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 
-/*
-***************************
- vulkan constuction order:
-***************************
-
-    Window()
-        glfwCreateWindow()
-
-    VulkanDevice()
-        createInstance();
-        setupDebugMessenger();
-        createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
-
-    VulkanSwapchain
-        createSwapChain();
-
-***************************
- vulkan destruction order:
-***************************
-
-    VulkanSwapchian()
-        vkDestroySwapchainKHR()
-
-    VulkanDevice()        
-        vkDestroyDevice(device, nullptr);
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-
-    Window()
-        glfwCreateWindow()
-
-*/
 
 class VulkanEngine : public Engine
 {
