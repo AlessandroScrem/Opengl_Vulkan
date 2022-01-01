@@ -17,6 +17,8 @@
   - createSwapChain();
   - createImageViews();
 
+- VulkanPipeline
+
  ## Destruction order:
 
 

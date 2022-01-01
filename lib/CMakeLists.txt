@@ -7,6 +7,8 @@ set(VK_SRC
     vk/VulkanDevice.cpp
     vk/VulkanSwapchain.hpp
     vk/VulkanSwapchain.cpp
+    vk/VulkanPipeline.hpp
+    vk/VulkanPipeline.cpp
 )
     
 set(OGL_SRC

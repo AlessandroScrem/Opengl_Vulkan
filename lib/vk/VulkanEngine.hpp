@@ -3,6 +3,7 @@
 #include "common/Window.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanPipeline.hpp"
 
 
 class VulkanEngine : public Engine
@@ -18,6 +19,7 @@ private:
     Window window{EngineType::Vulkan};
     VulkanDevice vkdevice{window};
     VulkanSwapchain swapchain{vkdevice, window};
+    VulkanPipeline pipeline{vkdevice};
 };
 
 
