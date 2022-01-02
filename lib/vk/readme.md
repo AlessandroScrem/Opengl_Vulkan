@@ -19,11 +19,15 @@
   - createRenderPass();
 
 - VulkanPipeline
+  - createPipeline()
+    - pipeLineLayout
+    - graphicsPipeline
 
  ## Destruction order:
 
 - VulakanPipeline
-  - vkDestroyPipelineLayout()
+  - vkDestroyPipeline(graphicsPipeline)
+  - vkDestroyPipelineLayout(pipeLineLayout)
 
 - VulkanSwapchian
   - vkDestroyImageView()

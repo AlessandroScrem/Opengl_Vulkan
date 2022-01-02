@@ -17,6 +17,7 @@ private:
     VulkanSwapchain &swapchian;
 
     VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
 

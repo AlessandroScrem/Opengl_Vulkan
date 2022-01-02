@@ -18,6 +18,8 @@ public:
     void operator=(const VulkanSwapchain &) = delete;
 
     VkExtent2D getExtent(){ return swapChainExtent;}
+    VkRenderPass getRenderpass() { return renderPass; }
+
 
 
 private:

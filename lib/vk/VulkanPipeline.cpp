@@ -31,7 +31,8 @@ VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian)
 VulkanPipeline::~VulkanPipeline()
 {
     std::cout << "VulkanPipeline  destructor\n";
-    
+
+    vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);
 }
 
@@ -139,6 +140,8 @@ void VulkanPipeline::createPipeline()
     colorBlending.blendConstants[1] = 0.0f;
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
+    // end 
+    // Fixed functions
 
     // Pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -149,6 +152,26 @@ void VulkanPipeline::createPipeline()
 
     if (vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
+    }
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pColorBlendState = &colorBlending;
+
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.renderPass = swapchian.getRenderpass();
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+    if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics pipeline!");
     }
     
     vkDestroyShaderModule(device.getDevice(), fragShaderModule, nullptr);
