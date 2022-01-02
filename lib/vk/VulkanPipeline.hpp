@@ -11,15 +11,16 @@ public:
     ~VulkanPipeline();
 
     void createPipeline();
+
 private: 
+
+    VkShaderModule createShaderModule(const std::vector<char>& code);
 
     VulkanDevice &device;
     VulkanSwapchain &swapchian;
 
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
-
-    VkShaderModule createShaderModule(const std::vector<char>& code);
 
     const std::string vertshader{"shaders/vert.spv"};
     const std::string fragshader{"shaders/frag.spv"};

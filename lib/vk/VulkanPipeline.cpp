@@ -177,3 +177,4 @@ void VulkanPipeline::createPipeline()
     vkDestroyShaderModule(device.getDevice(), fragShaderModule, nullptr);
     vkDestroyShaderModule(device.getDevice(), vertShaderModule, nullptr);
 }
+

@@ -14,11 +14,16 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
     createSwapchain();
     createImageViews();
     createRenderPass();
+    createFramebuffers();
 }
 
 
 VulkanSwapchain::~VulkanSwapchain()
-{   
+{  
+    for (auto framebuffer : swapChainFramebuffers) {
+        vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
+    }
+
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device.getDevice(), imageView, nullptr);
     }
@@ -236,4 +241,26 @@ void VulkanSwapchain::createRenderPass()
         throw std::runtime_error("failed to create render pass!");
     }
 
+}
+
+void VulkanSwapchain::createFramebuffers() 
+{   
+    swapChainFramebuffers.resize(swapChainImageViews.size());
+
+    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+        VkImageView attachments[] = { swapChainImageViews[i] };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = swapChainExtent.width;
+        framebufferInfo.height = swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
 }

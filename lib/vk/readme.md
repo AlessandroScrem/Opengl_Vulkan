@@ -17,6 +17,7 @@
   - createSwapChain();
   - createImageViews();
   - createRenderPass();
+  - createFramebuffers();
 
 - VulkanPipeline
   - createPipeline()
@@ -30,6 +31,7 @@
   - vkDestroyPipelineLayout(pipeLineLayout)
 
 - VulkanSwapchian
+  - vkDestroyFramebuffer()
   - vkDestroyImageView()
   - vkDestroySwapchainKHR()
   - vkDestroyRenderPass()
