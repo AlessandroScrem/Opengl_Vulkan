@@ -2,10 +2,6 @@
 #include "VulkanDevice.hpp"
 #include <vulkan/vulkan.hpp>
 
-//std
-#include <iostream>
-#include <vector>
-
 
 class VulkanSwapchain
 {
@@ -17,9 +13,13 @@ public:
     VulkanSwapchain(const VulkanSwapchain &) = delete;
     void operator=(const VulkanSwapchain &) = delete;
 
-    // used by VulkanPipeline
+    // used by VulkanPipeline , VulkanCommandBuffer
     VkExtent2D getExtent(){ return swapChainExtent;}
     VkRenderPass getRenderpass() { return renderPass; }
+
+    // used by VulkanCommandBuffer
+    int getFramebuffersSize() { return swapChainFramebuffers.size(); }
+    VkFramebuffer getFramebuffer(int index) { return swapChainFramebuffers[index];}
 
 private:
     void createSwapchain();

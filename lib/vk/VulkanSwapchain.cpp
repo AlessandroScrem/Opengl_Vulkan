@@ -1,7 +1,6 @@
 #include "VulkanSwapchain.hpp"
 
 // std
-#include <iostream>
 #include <cstdint> // Necessary for UINT32_MAX
 #include <algorithm> // Necessary for std::min/std::max
 

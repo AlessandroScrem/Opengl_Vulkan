@@ -24,7 +24,13 @@
     - pipeLineLayout
     - graphicsPipeline
 
+- VulkanCommanBuffer
+  - createCommandPool()
+
  ## Destruction order:
+
+- VulkanCommanBuffer
+  - vkDestroyCommandPool()
 
 - VulakanPipeline
   - vkDestroyPipeline(graphicsPipeline)

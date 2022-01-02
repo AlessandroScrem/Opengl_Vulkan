@@ -12,6 +12,10 @@ public:
 
     void createPipeline();
 
+    // used by VulkanCommandBuffer
+    VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
+    
+
 private: 
 
     VkShaderModule createShaderModule(const std::vector<char>& code);

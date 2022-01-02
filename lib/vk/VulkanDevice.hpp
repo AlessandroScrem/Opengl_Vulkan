@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 //std
+#include <iostream>
 #include <vector>
 #include <optional>
 
@@ -46,7 +47,7 @@ public:
     VulkanDevice(VulkanDevice &&) = delete;
     VulkanDevice &operator=(VulkanDevice &&) = delete;
 
-    // used by VulkanSwapchain
+    // used by VulkanSwapchain , VulkanCommandBuffer
     SwapChainSupportDetails getSwapChainSupport(){ return querySwapChainSupport(physicalDevice);}
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}

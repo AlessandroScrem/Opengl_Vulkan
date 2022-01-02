@@ -1,7 +1,6 @@
 #include "VulkanPipeline.hpp"
 
 //std
-#include <iostream>
 #include <fstream>
 
 static std::vector<char> readFile(const std::string& filename) {
