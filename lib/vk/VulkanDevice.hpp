@@ -53,6 +53,9 @@ public:
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
 
+    // used by VulkanVertexBuffer
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    
     // used by VulkanEngine
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
@@ -65,6 +68,7 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+    
 
     std::vector<const char*> getRequiredExtensions();
 

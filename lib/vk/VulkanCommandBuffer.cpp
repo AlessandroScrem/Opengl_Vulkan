@@ -1,10 +1,11 @@
 #include "VulkanCommandBuffer.hpp"
 
 
-VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice &device, VulkanSwapchain &swapchian, VulkanPipeline &pipeline) 
+VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice &device, VulkanSwapchain &swapchian, VulkanPipeline &pipeline, VulkanVertexBuffer &vertexbuffer) 
     : device{device}
     , swapchain{swapchian} 
     , pipeline{pipeline}
+    , vertexbuffer{vertexbuffer}
 {
     std::cout << "VulkanCommandBuffer  constructor\n";
 
@@ -55,6 +56,7 @@ void VulkanCommandBuffer::createCommandPool()
 // swapchain.getFramebuffer
 // swapchain.getExtent
 // pipeline.getGraphicsPipeline
+// vertexbuffer.getVertexBuffer()
 void VulkanCommandBuffer::createCommandBuffers() 
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());
@@ -90,6 +92,12 @@ void VulkanCommandBuffer::createCommandBuffers()
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
+            
+            //TODO modify call to vertexbuffer and offset
+            VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
             vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
 

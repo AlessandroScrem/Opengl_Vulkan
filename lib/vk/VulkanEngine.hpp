@@ -4,6 +4,7 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanPipeline.hpp"
+#include "VulkanVertexBuffer.hpp"
 #include "VulkanCommandBuffer.hpp"
 
 
@@ -23,10 +24,12 @@ private:
     void recreateSwapChain();
 
     Window window{EngineType::Vulkan};
+    
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
     VulkanPipeline pipeline{device, swapchain};
-    VulkanCommandBuffer commandBuffer{device, swapchain, pipeline};
+    VulkanVertexBuffer vertexBuffer{device};
+    VulkanCommandBuffer commandBuffer{device, swapchain, pipeline, vertexBuffer};
 
     //  GPU-GPU synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;

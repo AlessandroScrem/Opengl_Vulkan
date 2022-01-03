@@ -24,6 +24,9 @@
     - pipeLineLayout
     - graphicsPipeline
 
+- VulkanVertexBuffer
+  - createVertexBuffer();
+
 - VulkanCommanBuffer
   - createCommandPool()
 
@@ -37,6 +40,9 @@
   
 - VulkanCommanBuffer
   - vkDestroyCommandPool()
+
+- VulkanVertexBuffer
+  - vkDestroyBuffer();
 
 - VulakanPipeline
   - vkDestroyPipeline(graphicsPipeline)

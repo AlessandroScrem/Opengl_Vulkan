@@ -9,6 +9,8 @@ set(VK_SRC
     vk/VulkanSwapchain.cpp
     vk/VulkanPipeline.hpp
     vk/VulkanPipeline.cpp
+    vk/VulkanVertexBuffer.hpp
+    vk/VulkanVertexBuffer.cpp
     vk/VulkanCommandBuffer.hpp
     vk/VulkanCommandBuffer.cpp
 )
