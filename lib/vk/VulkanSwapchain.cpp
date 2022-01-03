@@ -10,15 +10,26 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
     , window{window}
 { 
     std::cout << "VulkanSwapchain  constructor\n";
+    createAllSwapchian();
+}
+
+
+VulkanSwapchain::~VulkanSwapchain()
+{  
+    std::cout << "VulkanSwapchain  destructor\n"; 
+    cleanupSwapChain();
+}  
+
+void VulkanSwapchain::createAllSwapchian()
+{
     createSwapchain();
     createImageViews();
     createRenderPass();
     createFramebuffers();
 }
 
-
-VulkanSwapchain::~VulkanSwapchain()
-{  
+void VulkanSwapchain::cleanupSwapChain() 
+{
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
     }
@@ -27,11 +38,11 @@ VulkanSwapchain::~VulkanSwapchain()
         vkDestroyImageView(device.getDevice(), imageView, nullptr);
     }
 
-    std::cout << "VulkanSwapchain  destructor\n"; 
     vkDestroySwapchainKHR(device.getDevice(), swapChain, nullptr);
 
     vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
 }
+
 
 void VulkanSwapchain::createSwapchain()
  {
@@ -157,7 +168,7 @@ VkPresentModeKHR VulkanSwapchain::chooseSwapPresentMode(const std::vector<VkPres
 // 3) Swap extent (resolution of images in swap chain)
 VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) 
 {    
-    if (capabilities.currentExtent.width != UINT32_MAX) {
+    if (capabilities.currentExtent.width != UINT32_MAX && !window.framebufferResized()) {
         return capabilities.currentExtent;
     } else {
 
@@ -275,3 +286,4 @@ void VulkanSwapchain::createFramebuffers()
         }
     }
 }
+

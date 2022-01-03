@@ -19,6 +19,11 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
     vkDestroyCommandPool(device.getDevice(), commandPool, nullptr);
 }
 
+void VulkanCommandBuffer::cleanupCommandBuffers() 
+{
+    vkFreeCommandBuffers(device.getDevice(), commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());    
+}
+
 // Necessita:
 // device.findPhysicalQueueFamilies
 void VulkanCommandBuffer::createCommandPool() 

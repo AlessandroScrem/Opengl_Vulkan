@@ -31,8 +31,13 @@ VulkanPipeline::~VulkanPipeline()
 {
     std::cout << "VulkanPipeline  destructor\n";
 
+    cleanupPipeline();
+}
+
+void VulkanPipeline::cleanupPipeline()
+{
     vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);    
 }
 
 VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code) {
@@ -48,7 +53,9 @@ VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code)
 
     return shaderModule;
 }
-
+// Necessita
+// swapchian.getExtent()
+// swapchian.getRenderpass()
 void VulkanPipeline::createPipeline() 
 {
     auto vertShaderCode = readFile(vertshader);

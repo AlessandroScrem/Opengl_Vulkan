@@ -10,12 +10,14 @@ public:
     VulkanCommandBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanPipeline &pipeline);
     ~VulkanCommandBuffer();
 
-    // TODO: da verificare funzionamento...
     const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
+
+    // used by VulkanEngine
+    void cleanupCommandBuffers();
+    void createCommandBuffers();
 
 private:
     void createCommandPool();
-    void createCommandBuffers();
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;

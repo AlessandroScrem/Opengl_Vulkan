@@ -20,17 +20,29 @@ public:
     Window &operator=(const Window &) = delete;
 
     bool shouldClose();
-    void swapBuffers();
-    GLFWwindow* getWindowPtr() { return window; }
+    bool framebufferResized() {return is_framebufferResized; }
+    bool waitforSize() { return is_iconified || is_zerosize ; }
+
     std::pair<int, int> GetWindowExtents();
+    void swapBuffers();
+
+    GLFWwindow* getWindowPtr() { return window; }
+
 
 private:
     void initWindow();
-    
-    const int width{800};
-    const int height{600};
+
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+    static void window_iconify_callback(GLFWwindow* window, int iconified);
+
+    int width{800};
+    int height{600};
     std::string windowName = {"Hello Window"};
     const EngineType  engineType;
+
+    bool is_framebufferResized = false;
+    bool is_iconified = false;
+    bool is_zerosize = false;
 
     GLFWwindow* window = nullptr;
 };

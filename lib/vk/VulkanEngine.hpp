@@ -20,6 +20,8 @@ private:
 
     void createSyncObjects();
 
+    void recreateSwapChain();
+
     Window window{EngineType::Vulkan};
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};

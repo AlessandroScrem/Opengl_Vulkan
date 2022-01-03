@@ -24,12 +24,15 @@ public:
     // used by VulkanEngine
     VkSwapchainKHR getSwapchain() { return swapChain; }
     size_t getSwapchianImageSize() { return swapChainImages.size(); }
+    void cleanupSwapChain();
+    void createAllSwapchian();
 
 private:
     void createSwapchain();
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
+
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

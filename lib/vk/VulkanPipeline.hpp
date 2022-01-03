@@ -10,10 +10,13 @@ public:
     VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian);
     ~VulkanPipeline();
 
-    void createPipeline();
 
     // used by VulkanCommandBuffer
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
+    
+    // used by VulkanEngine
+    void cleanupPipeline();
+    void createPipeline();
     
 
 private: 

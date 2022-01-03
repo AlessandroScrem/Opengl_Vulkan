@@ -42,11 +42,18 @@ void VulkanEngine::drawFrame()
     // Acquiring an image from the swap chain
     //
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device.getDevice() , 
+    VkResult  result = vkAcquireNextImageKHR(device.getDevice() , 
         swapchain.getSwapchain(), UINT64_MAX, 
         imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, 
         &imageIndex
     );
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
@@ -89,8 +96,13 @@ void VulkanEngine::drawFrame()
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
-
-    vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
+    
+    result = vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.framebufferResized()){
+        recreateSwapChain();
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
@@ -122,6 +134,42 @@ void VulkanEngine::createSyncObjects()
         }
     
     }
+}
+
+
+// TODO
+//  
+// The disadvantage of this approach is that we need to stop all rendering before creating the new swap chain.
+// 
+// It is possible to create a new swap chain while drawing commands 
+// on an image from the old swap chain are still in-flight. 
+// You need to pass the previous swap chain to the oldSwapChain field 
+// in the VkSwapchainCreateInfoKHR struct and destroy the old swap chain as soon as you’ve finished using it.
+
+// Necessita:
+// window.iconified()
+// commandBuffer.cleanupCommandBuffers();
+// pipeline.cleanupPipeline();
+// swapchain.cleanupSwapChain();
+//
+// swapchain.createAllSwapchian();
+// pipeline.createPipeline();
+// commandBuffer.createCommandBuffers();
+void VulkanEngine::recreateSwapChain() 
+{  
+     while (window.waitforSize()) {
+        glfwWaitEvents();
+    }
+    vkDeviceWaitIdle(device.getDevice());
+
+    commandBuffer.cleanupCommandBuffers();
+    pipeline.cleanupPipeline();
+    swapchain.cleanupSwapChain();
+
+    swapchain.createAllSwapchian();
+    pipeline.createPipeline();
+    commandBuffer.createCommandBuffers();
+
 }
 
 

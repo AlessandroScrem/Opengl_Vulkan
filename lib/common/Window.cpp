@@ -43,14 +43,17 @@ void Window::initWindow()
     if(engineType == EngineType::Vulkan)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     }
 
     window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
     if( window == NULL ){
         std::cout << "failed to open GLFW window, they are not  OpenGL 3.3 compatible!" << std::endl;
         glfwTerminate();
-    }   
+    } 
+
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);  
+    glfwSetWindowIconifyCallback(window, window_iconify_callback);
 }
 
 bool Window::shouldClose()
@@ -65,7 +68,31 @@ void Window::swapBuffers()
 
 std::pair<int, int> Window::GetWindowExtents() 
 {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
+    // FIXME  flag will be reset here 
+    if(is_framebufferResized) {is_framebufferResized = false;}
     return { width, height };
+}
+
+void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) 
+{
+    // TODO change variable name or move outside to app class
+    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    app->is_framebufferResized = true;
+    app->width = width;
+    app->height = height;
+
+    app->is_zerosize = false;
+    if(width == 0 || height == 0){
+        app->is_zerosize = true;
+    }
+
+    std::cout << "window resized \n";   
+}
+
+void Window::window_iconify_callback(GLFWwindow* window, int iconified) 
+{
+    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    app->is_iconified = iconified == 1 ? true : false; 
 }
