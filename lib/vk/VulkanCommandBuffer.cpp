@@ -36,6 +36,7 @@ void VulkanCommandBuffer::createCommandPool()
 }
 
 // Basic drawing commands
+
 // Parameters, aside from the command buffer:
 //
 // vertexCount: Even though we don’t have a vertex buffer, we technically still have 3 vertices to draw.

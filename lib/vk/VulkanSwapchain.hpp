@@ -18,8 +18,12 @@ public:
     VkRenderPass getRenderpass() { return renderPass; }
 
     // used by VulkanCommandBuffer
-    int getFramebuffersSize() { return swapChainFramebuffers.size(); }
-    VkFramebuffer getFramebuffer(int index) { return swapChainFramebuffers[index];}
+    size_t getFramebuffersSize() { return swapChainFramebuffers.size(); }
+    VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
+
+    // used by VulkanEngine
+    VkSwapchainKHR getSwapchain() { return swapChain; }
+    size_t getSwapchianImageSize() { return swapChainImages.size(); }
 
 private:
     void createSwapchain();

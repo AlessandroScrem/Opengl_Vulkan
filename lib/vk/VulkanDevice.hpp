@@ -53,6 +53,10 @@ public:
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
 
+    // used by VulkanEngine
+    VkQueue getGraphicsQueue() {return graphicsQueue; }
+    VkQueue getPresentQueue() {return presentQueue; }
+
     
 
 private:

@@ -27,8 +27,14 @@
 - VulkanCommanBuffer
   - createCommandPool()
 
+- VulkanEngine()
+  - createSemaphores()
+
  ## Destruction order:
 
+- VulkanEngine
+  - vkDestroySemaphores()
+  
 - VulkanCommanBuffer
   - vkDestroyCommandPool()
 

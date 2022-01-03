@@ -18,11 +18,24 @@ public:
 private:
     void drawFrame();
 
+    void createSyncObjects();
+
     Window window{EngineType::Vulkan};
-    VulkanDevice vkdevice{window};
-    VulkanSwapchain swapchain{vkdevice, window};
-    VulkanPipeline pipeline{vkdevice, swapchain};
-    VulkanCommandBuffer commandBuffer{vkdevice, swapchain, pipeline};
+    VulkanDevice device{window};
+    VulkanSwapchain swapchain{device, window};
+    VulkanPipeline pipeline{device, swapchain};
+    VulkanCommandBuffer commandBuffer{device, swapchain, pipeline};
+
+    //  GPU-GPU synchronization
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+
+    //  CPU-GPU synchronization
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
+
+    size_t currentFrame = 0;
+    const int MAX_FRAMES_IN_FLIGHT = 2;
 };
 
 
