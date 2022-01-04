@@ -54,7 +54,8 @@ public:
     VkDevice getDevice() { return logicalDevice; }
 
     // used by VulkanVertexBuffer
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
+                VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     
     // used by VulkanEngine
     VkQueue getGraphicsQueue() {return graphicsQueue; }
@@ -69,6 +70,7 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     std::vector<const char*> getRequiredExtensions();
 

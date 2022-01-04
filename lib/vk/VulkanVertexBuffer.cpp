@@ -35,36 +35,20 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 // device.findMemoryType
 void VulkanVertexBuffer::createVertexBuffer() 
 {
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    device.createBuffer(bufferSize, 
+                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                        vertexBuffer, 
+                        vertexBufferMemory
+    );
 
-    if (vkCreateBuffer(device.getDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create vertex buffer!");
-    }
-
-    // Memory allocation
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device.getDevice(), vertexBuffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = device.findMemoryType(memRequirements.memoryTypeBits, 
-                                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-                                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(device.getDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-    }
-
-    vkBindBufferMemory(device.getDevice(), vertexBuffer, vertexBufferMemory, 0);
-
-    // Filling the vertex buffer
+    // For filling the vertices data to the memory
+    // we need a pointer to the buffer which the memory is associated to
+    // at the end we unmap a previously mapped memory object 
     void* data;
-    vkMapMemory(device.getDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, vertices.data(), (size_t) bufferInfo.size);
+    vkMapMemory(device.getDevice(), vertexBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, vertices.data(), (size_t) bufferSize);
     vkUnmapMemory(device.getDevice(), vertexBufferMemory);
 }

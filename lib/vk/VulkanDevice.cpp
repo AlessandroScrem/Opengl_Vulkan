@@ -343,8 +343,20 @@ VulkanDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeveri
 }
 
 // Helper function ?
+/**
+ * @brief Find i there is a suitable momory type in the device
+ * 
+ * @param typeFilter : bit field of the memory types that are suitable for the buffer
+ * @param properties : bitmask type of special features of the memory we are looking for
+ * @return uint32_t  : return found memoryTypeIndex, otherwise we throw an exception. 
+ */
 uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
 {
+    // The VkPhysicalDeviceMemoryProperties structure has two arrays memoryTypes and memoryHeaps. 
+    // Memory heaps are distinct memory resources like dedicated VRAM and swap space in RAM for when VRAM runs out.
+    // The different types of memory exist within these heaps. 
+    // Right now we’ll only concern ourselves with the type of memory and not the heap it comes from, 
+    //   but you can imagine that this can affect performance.
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
     
@@ -355,4 +367,55 @@ uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
     }
 
     throw std::runtime_error("failed to find suitable memory type!");
+}
+
+// Helper function ?
+/**
+ * @brief Create Buffer Memory from Device
+ * 
+ * @param size : is the size in bytes of the buffer to be created.
+ * @param usage: is a bitmask of VkBufferUsageFlagBits specifying allowed usages of the buffer. 
+ * @param properties : (VkMemoryPropertyFlags) is a bitmask type for setting a mask of zero or more
+ * @param buffer        : the buffer we need to create 
+ * @param bufferMemory  : the momory we need to associated with the buffer 
+ */
+void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
+                VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(logicalDevice, buffer, &memRequirements);
+    // The VkMemoryRequirements struct has three fields:
+
+    // size:           The size of the required amount of memory in bytes, may differ from bufferInfo.size.
+    // alignment:      The offset in bytes where the buffer begins in the allocated region of memory, 
+    //                     depends on bufferInfo.usage and bufferInfo.flags.
+    // memoryTypeBits: Bit field of the memory types that are suitable for the buffer.
+
+    // Memory allocation
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+    }
+
+    //  Associate Device memory with the buffer
+    // The first three parameters are self-explanatory and 
+    // the fourth parameter is the offset within the region of memory. 
+    // Since this memory is allocated specifically for this the vertex buffer, the offset is simply 0. 
+    // If the offset is non-zero, then it is required to be divisible by memRequirements.alignment.
+    vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
+    
 }
