@@ -7,18 +7,27 @@
 VulkanEngine::VulkanEngine()
 {    
     std::cout << "VulkanEngine  constructor\n";
+
+    createCommandBuffers();
+    std::cout << "VulkanEngine  createCommandBuffers\n";
+
     createSyncObjects();
+    std::cout << "VulkanEngine  createSyncObjects\n";
 }
 
 VulkanEngine::~VulkanEngine() 
 {
     std::cout << "VulkanEngine  destructor\n";
 
+    cleanupCommandBuffers();
+    std::cout << "VulkanEngine  cleanupCommandBuffers\n";
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
     }
+    std::cout << "VulkanEngine  destroySyncObjects\n";
 }
 
 void VulkanEngine::run() 
@@ -32,7 +41,6 @@ void VulkanEngine::run()
 
 // Necessita:
 // swapchain.getSwapchain
-// commandBuffer.getCommandBuffer
 // device getGraphicsQueue
 // device.getPresentQueue()
 void VulkanEngine::drawFrame() 
@@ -74,7 +82,7 @@ void VulkanEngine::drawFrame()
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &(commandBuffer.getCommandBuffer(imageIndex));
+    submitInfo.pCommandBuffers = &(getCommandBuffer(imageIndex));
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -162,16 +170,124 @@ void VulkanEngine::recreateSwapChain()
     }
     vkDeviceWaitIdle(device.getDevice());
 
-    commandBuffer.cleanupCommandBuffers();
+    cleanupCommandBuffers();
     pipeline.cleanupPipeline();
     swapchain.cleanupSwapChain();
 
     swapchain.createAllSwapchian();
     pipeline.createPipeline();
-    commandBuffer.createCommandBuffers();
+    createCommandBuffers();
 
 }
 
 
 
+// Basic drawing commands
+
+// Parameters, aside from the command buffer:
+//
+// vertexCount: Even though we don’t have a vertex buffer, we technically still have 3 vertices to draw.
+// instanceCount: Used for instanced rendering, use 1 if you’re not doing that.
+// firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
+// firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
+// 
+// Necessita:
+// swapchain.getFramebuffersSize
+// swapchain.getRenderpass
+// swapchain.getFramebuffer
+// swapchain.getExtent
+// pipeline.getGraphicsPipeline
+// vertexbuffer.getVertexBuffer()
+void VulkanEngine::createCommandBuffers() 
+{
+    commandBuffers.resize(swapchain.getFramebuffersSize());
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = device.getCommadPool();
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+
+    if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
+
+    for (size_t i = 0; i < commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+            VkRenderPassBeginInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = swapchain.getRenderpass();
+            renderPassInfo.framebuffer = swapchain.getFramebuffer(i);
+            renderPassInfo.renderArea.offset = {0, 0};
+            renderPassInfo.renderArea.extent = swapchain.getExtent(); 
+
+            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            renderPassInfo.clearValueCount = 1;
+            renderPassInfo.pClearValues = &clearColor;
+
+            vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
+                
+                //TODO modify call to vertexbuffer and offset
+                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+                vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+            vkCmdEndRenderPass(commandBuffers[i]);
+
+        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
+    }
+
+}
+void VulkanEngine::cleanupCommandBuffers()
+{
+    vkFreeCommandBuffers(device.getDevice(), 
+                        device.getCommadPool(), 
+                        static_cast<uint32_t>(commandBuffers.size()), 
+                        commandBuffers.data());    
+}
+
+/*  // Helper funcion
+void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) 
+{
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0; // Optional
+        copyRegion.dstOffset = 0; // Optional
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+ */
 

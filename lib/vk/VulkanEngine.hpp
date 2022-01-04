@@ -5,8 +5,6 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
-#include "VulkanCommandBuffer.hpp"
-
 
 class VulkanEngine : public Engine
 {
@@ -16,12 +14,17 @@ public:
 
     void run() override;
 
+
 private:
     void drawFrame();
 
     void createSyncObjects();
 
+    const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
+
     void recreateSwapChain();
+    void createCommandBuffers();
+    void cleanupCommandBuffers();
     
 
     Window window{EngineType::Vulkan};
@@ -30,9 +33,8 @@ private:
     VulkanSwapchain swapchain{device, window};
     VulkanPipeline pipeline{device, swapchain};
     VulkanVertexBuffer vertexBuffer{device};
-    VulkanCommandBuffer commandBuffer{device, swapchain, pipeline, vertexBuffer};
 
-    
+    std::vector<VkCommandBuffer> commandBuffers;
 
     //  GPU-GPU synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;

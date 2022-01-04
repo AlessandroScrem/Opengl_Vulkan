@@ -28,22 +28,18 @@
 - VulkanVertexBuffer
   - createVertexBuffer();
 
-- VulkanCommanBuffer
-  - createCommandBuffer()
-
 - VulkanEngine()
+  - createCommandBuffer()
   - createSemaphores()
 
  ## Destruction order:
 
 - VulkanEngine
+  - vkDestroyBuffer();
+  - vkFreeCommandBuffers()
   - vkDestroySemaphores()
   
-- VulkanCommanBuffer
-  - vkFreeCommandBuffers()
-
 - VulkanVertexBuffer
-  - vkDestroyBuffer();
 
 - VulakanPipeline
   - vkDestroyPipeline(graphicsPipeline)

@@ -11,8 +11,6 @@ set(VK_SRC
     vk/VulkanPipeline.cpp
     vk/VulkanVertexBuffer.hpp
     vk/VulkanVertexBuffer.cpp
-    vk/VulkanCommandBuffer.hpp
-    vk/VulkanCommandBuffer.cpp
 )
     
 set(OGL_SRC
