@@ -43,19 +43,30 @@ public:
     VulkanVertexBuffer(VulkanDevice &device);
     ~VulkanVertexBuffer();
 
-    void createVertexBuffer();
     VkBuffer getVertexBuffer() { return vertexBuffer; }
+    VkBuffer getIndexBuffer() { return indexBuffer; }
+    size_t getIndexSize() { return indices.size(); }
 
 private:
+    void createVertexBuffer();
+    void createIndexBuffer();
+
     VulkanDevice &device;
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
     
     const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-    };
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    }; 
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0
+    }; 
 };
 

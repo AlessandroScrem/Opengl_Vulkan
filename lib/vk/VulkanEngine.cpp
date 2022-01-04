@@ -236,10 +236,13 @@ void VulkanEngine::createCommandBuffers()
                 
                 //TODO modify call to vertexbuffer and offset
                 VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
+                VkBuffer indevBuffer = vertexBuffer.getIndexBuffer();
+                size_t indexsize = vertexBuffer.getIndexSize();
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffers[i], indevBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-                vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+                vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
             vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
