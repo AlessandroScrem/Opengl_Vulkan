@@ -33,39 +33,20 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
     The transfer of data to the GPU is an operation that happens in the background and the specification 
     simply tells us that it is guaranteed to be complete as of the next call to vkQueueSubmit.
 */
-
 // Necessita
 // device.findMemoryType
+// device.copyBuffer
 void VulkanVertexBuffer::createVertexBuffer() 
-{
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-    device.createBuffer(bufferSize,
-                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        vertexBuffer, 
-                        vertexBufferMemory
-    );
-
-    // For filling the vertices data to the memory
-    // we need a pointer to the buffer which the memory is associated to
-    // at the end we unmap a previously mapped memory object 
-    void* data;
-    vkMapMemory(device.getDevice(), vertexBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t) bufferSize);
-    vkUnmapMemory(device.getDevice(), vertexBufferMemory);
-
-}
-
-
-
-/* void VulkanVertexBuffer::createVertexBuffer() 
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
+    // Using a staging buffer
+    // We’re now going to change createVertexBuffer to only use a host visible buffer 
+    // as temporary buffer and use a device local one as actual vertex buffer.
+    // Vertex data will be loaded from high performance memory
     device.createBuffer(bufferSize, 
                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
@@ -91,8 +72,7 @@ void VulkanVertexBuffer::createVertexBuffer()
                         vertexBufferMemory
     );
 
-    copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+    device.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
     vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
 }
- */

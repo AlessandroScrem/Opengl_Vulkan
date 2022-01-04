@@ -20,12 +20,11 @@ private:
 
     void createSyncObjects();
 
-    const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
+    // const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
 
     void recreateSwapChain();
     void createCommandBuffers();
     void cleanupCommandBuffers();
-    
 
     Window window{EngineType::Vulkan};
     
