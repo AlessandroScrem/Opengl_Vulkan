@@ -18,14 +18,13 @@ public:
     void createCommandBuffers();
 
 private:
-    void createCommandPool();
+
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
     VulkanPipeline &pipeline;
     VulkanVertexBuffer &vertexbuffer;
-
-    VkCommandPool commandPool;
+ 
     std::vector<VkCommandBuffer> commandBuffers;
 
 };

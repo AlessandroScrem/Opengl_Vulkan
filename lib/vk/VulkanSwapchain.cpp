@@ -11,6 +11,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
 { 
     std::cout << "VulkanSwapchain  constructor\n";
     createAllSwapchian();
+    std::cout << "VulkanSwapchain  createAllSwapchian\n";
 }
 
 
@@ -18,14 +19,19 @@ VulkanSwapchain::~VulkanSwapchain()
 {  
     std::cout << "VulkanSwapchain  destructor\n"; 
     cleanupSwapChain();
+    std::cout << "VulkanSwapchain  cleanupSwapChain\n";
 }  
 
 void VulkanSwapchain::createAllSwapchian()
 {
     createSwapchain();
+    std::cout << "VulkanSwapchain  createSwapchain\n";
     createImageViews();
+    std::cout << "VulkanSwapchain  createImageViews\n";
     createRenderPass();
+    std::cout << "VulkanSwapchain  createRenderPass\n";
     createFramebuffers();
+    std::cout << "VulkanSwapchain  createFramebuffers\n";
 }
 
 void VulkanSwapchain::cleanupSwapChain() 
@@ -33,14 +39,21 @@ void VulkanSwapchain::cleanupSwapChain()
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
     }
+    std::cout << "VulkanSwapchain  vkDestroyFramebuffer\n";
+
 
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device.getDevice(), imageView, nullptr);
     }
+    std::cout << "VulkanSwapchain  vkDestroyImageView\n";
 
-    vkDestroySwapchainKHR(device.getDevice(), swapChain, nullptr);
 
     vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
+    std::cout << "VulkanSwapchain  vkDestroyRenderPass\n";
+
+    vkDestroySwapchainKHR(device.getDevice(), swapChain, nullptr);
+    std::cout << "VulkanSwapchain  vkDestroySwapchainKHR\n";
+
 }
 
 

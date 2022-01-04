@@ -12,6 +12,7 @@
   - createSurface();
   - pickPhysicalDevice();
   - createLogicalDevice();
+  - createCommandPool()
 
 - VulkanSwapchain
   - createSwapChain();
@@ -28,7 +29,7 @@
   - createVertexBuffer();
 
 - VulkanCommanBuffer
-  - createCommandPool()
+  - createCommandBuffer()
 
 - VulkanEngine()
   - createSemaphores()
@@ -39,7 +40,7 @@
   - vkDestroySemaphores()
   
 - VulkanCommanBuffer
-  - vkDestroyCommandPool()
+  - vkFreeCommandBuffers()
 
 - VulkanVertexBuffer
   - vkDestroyBuffer();
@@ -51,10 +52,11 @@
 - VulkanSwapchian
   - vkDestroyFramebuffer()
   - vkDestroyImageView()
-  - vkDestroySwapchainKHR()
   - vkDestroyRenderPass()
+  - vkDestroySwapchainKHR()
 
 - VulkanDevice       
+  - vkDestroyCommandPool()
   - vkDestroyDevice();
   - DestroyDebugUtilsMessengerEXT();
   - vkDestroySurfaceKHR();

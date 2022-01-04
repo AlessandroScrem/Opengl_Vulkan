@@ -53,6 +53,8 @@ public:
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
 
+    VkCommandPool getCommadPool() { return commandPool; }
+
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -69,6 +71,8 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+
+    void createCommandPool();
     
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -95,6 +99,8 @@ private:
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice logicalDevice;
+
+    VkCommandPool commandPool;
     
     VkQueue graphicsQueue;
     VkQueue presentQueue;

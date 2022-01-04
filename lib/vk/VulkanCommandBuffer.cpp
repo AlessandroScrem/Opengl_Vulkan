@@ -8,37 +8,18 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice &device, VulkanSwapchain &
     , vertexbuffer{vertexbuffer}
 {
     std::cout << "VulkanCommandBuffer  constructor\n";
-
-    createCommandPool();
     createCommandBuffers();
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer() 
 {
     std::cout << "VulkanCommandBuffer  destructor\n";
-
-    vkDestroyCommandPool(device.getDevice(), commandPool, nullptr);
+    cleanupCommandBuffers();
 }
 
-void VulkanCommandBuffer::cleanupCommandBuffers() 
+void VulkanCommandBuffer::cleanupCommandBuffers()
 {
-    vkFreeCommandBuffers(device.getDevice(), commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());    
-}
-
-// Necessita:
-// device.findPhysicalQueueFamilies
-void VulkanCommandBuffer::createCommandPool() 
-{
-    QueueFamilyIndices queueFamilyIndices = device.findPhysicalQueueFamilies();
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-    poolInfo.flags = 0; // Optional  
-
-    if (vkCreateCommandPool(device.getDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
-    }
+    vkFreeCommandBuffers(device.getDevice(), device.getCommadPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());    
 }
 
 // Basic drawing commands
@@ -63,7 +44,7 @@ void VulkanCommandBuffer::createCommandBuffers()
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = device.getCommadPool();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
@@ -79,27 +60,27 @@ void VulkanCommandBuffer::createCommandBuffers()
             throw std::runtime_error("failed to begin recording command buffer!");
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = swapchain.getRenderpass();
-        renderPassInfo.framebuffer = swapchain.getFramebuffer(i);
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = swapchain.getExtent(); 
+            VkRenderPassBeginInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = swapchain.getRenderpass();
+            renderPassInfo.framebuffer = swapchain.getFramebuffer(i);
+            renderPassInfo.renderArea.offset = {0, 0};
+            renderPassInfo.renderArea.extent = swapchain.getExtent(); 
 
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            renderPassInfo.clearValueCount = 1;
+            renderPassInfo.pClearValues = &clearColor;
 
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
-            
-            //TODO modify call to vertexbuffer and offset
-            VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
+                
+                //TODO modify call to vertexbuffer and offset
+                VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-            vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
-        vkCmdEndRenderPass(commandBuffers[i]);
+                vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+            vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");

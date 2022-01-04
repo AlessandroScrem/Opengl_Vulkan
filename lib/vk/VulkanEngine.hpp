@@ -22,6 +22,7 @@ private:
     void createSyncObjects();
 
     void recreateSwapChain();
+    
 
     Window window{EngineType::Vulkan};
     
@@ -30,6 +31,8 @@ private:
     VulkanPipeline pipeline{device, swapchain};
     VulkanVertexBuffer vertexBuffer{device};
     VulkanCommandBuffer commandBuffer{device, swapchain, pipeline, vertexBuffer};
+
+    
 
     //  GPU-GPU synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;

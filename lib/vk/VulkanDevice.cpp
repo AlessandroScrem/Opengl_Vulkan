@@ -31,20 +31,30 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
     std::cout << "pickPhysicalDevice ok\n";
     createLogicalDevice();
     std::cout << "createLogicalDevice ok\n";
+
+    createCommandPool();
+    std::cout << "createCommandPool ok\n";
 }
 
 VulkanDevice::~VulkanDevice() 
 {
     std::cout << "VulkanDevice  destructor\n";
 
-    vkDestroyDevice(logicalDevice, nullptr);
+    vkDestroyCommandPool(logicalDevice, commandPool, nullptr); 
+    std::cout << "VulkanDevice  vkDestroyCommandPool\n";
 
+    vkDestroyDevice(logicalDevice, nullptr);
+    std::cout << "VulkanDevice  vkDestroyDevice\n";
+ 
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        std::cout << "VulkanDevice  DestroyDebugUtilsMessengerEXT\n";
     }
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
+    std::cout << "VulkanDevice  vkDestroySurfaceKHR\n";
     vkDestroyInstance(instance, nullptr);
+    std::cout << "VulkanDevice  vkDestroyInstance\n";
 }
 
 void VulkanDevice::createInstance() 
@@ -419,3 +429,21 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
     
 }
+
+
+
+void VulkanDevice::createCommandPool() 
+{
+    QueueFamilyIndices queueFamilyIndices = findPhysicalQueueFamilies();
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.flags = 0; // Optional  
+
+    if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create command pool!");
+    }
+}
+
+
