@@ -13,13 +13,13 @@
 
 Window::Window(EngineType type) : engineType{type}
 {
-    std::cout << "Window  constructor\n";
+    SPDLOG_TRACE("constructor");
 
     initWindow();
 }
 
 Window::~Window() {
-    std::cout << "Window  destructor\n";
+    SPDLOG_TRACE("destructor");
 
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -47,7 +47,7 @@ void Window::initWindow()
 
     window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
     if( window == NULL ){
-        std::cout << "failed to open GLFW window, they are not  OpenGL 3.3 compatible!" << std::endl;
+        spdlog::critical( "failed to open GLFW window, they are not  OpenGL 3.3 compatible!");
         glfwTerminate();
     } 
 
@@ -87,7 +87,7 @@ void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height
         app->is_zerosize = true;
     }
 
-    std::cout << "window resized \n";   
+    spdlog::info("window resized");   
 }
 
 void Window::window_iconify_callback(GLFWwindow* window, int iconified) 

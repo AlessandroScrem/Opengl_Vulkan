@@ -32,20 +32,22 @@ static std::vector<char> readFile(const std::string& filename) {
 
 VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian) : device{device}, swapchian{swapchian}
 {
-    std::cout << "VulkanPipeline  constructor\n";
+    SPDLOG_TRACE("constructor");
     createPipeline();
 }
 
 VulkanPipeline::~VulkanPipeline()
 {
-    std::cout << "VulkanPipeline  destructor\n";
+    SPDLOG_TRACE("destructor");
 
     cleanupPipeline();
 }
 
 void VulkanPipeline::cleanupPipeline()
 {
+    SPDLOG_TRACE("vkDestroyPipeline");
     vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
+    SPDLOG_TRACE("vkDestroyPipelineLayout");
     vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);    
 }
 

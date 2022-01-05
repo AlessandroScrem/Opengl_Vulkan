@@ -47,6 +47,10 @@ target_link_options(mylib INTERFACE "/ignore:4099")
 target_include_directories(mylib
      PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR} 
+        ../spdlog-1.x/include 
+
  )
+
+
 
 

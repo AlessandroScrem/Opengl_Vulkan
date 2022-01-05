@@ -6,7 +6,7 @@
 class OpenGLEngine : public Engine
 {    
 public:
-    OpenGLEngine(){    std::cout << "OpenGLEngine  constructor\n";}
+    OpenGLEngine(){    SPDLOG_TRACE("constructor"); }
     ~OpenGLEngine();
 
     void run() override;

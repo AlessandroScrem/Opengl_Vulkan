@@ -4,30 +4,34 @@
 #include <iostream>
 #include <vector>
 
+// lib
+
+   
+
 VulkanEngine::VulkanEngine()
-{    
-    std::cout << "VulkanEngine  constructor\n";
+{  
+    SPDLOG_TRACE("constructor");
 
     createCommandBuffers();
-    std::cout << "VulkanEngine  createCommandBuffers\n";
+    SPDLOG_TRACE("createCommandBuffers");
 
     createSyncObjects();
-    std::cout << "VulkanEngine  createSyncObjects\n";
+    SPDLOG_TRACE("createSyncObjects");
 }
 
 VulkanEngine::~VulkanEngine() 
 {
-    std::cout << "VulkanEngine  destructor\n";
+    SPDLOG_TRACE("destructor");
 
     cleanupCommandBuffers();
-    std::cout << "VulkanEngine  cleanupCommandBuffers\n";
+    SPDLOG_TRACE("cleanupCommandBuffers");
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
     }
-    std::cout << "VulkanEngine  destroySyncObjects\n";
+    SPDLOG_TRACE("destroySyncObjects");
 }
 
 void VulkanEngine::run() 
@@ -156,13 +160,10 @@ void VulkanEngine::createSyncObjects()
 
 // Necessita:
 // window.iconified()
-// commandBuffer.cleanupCommandBuffers();
 // pipeline.cleanupPipeline();
-// swapchain.cleanupSwapChain();
-//
-// swapchain.createAllSwapchian();
 // pipeline.createPipeline();
-// commandBuffer.createCommandBuffers();
+// swapchain.cleanupSwapChain();
+// swapchain.createAllSwapchian();
 void VulkanEngine::recreateSwapChain() 
 {  
      while (window.waitforSize()) {

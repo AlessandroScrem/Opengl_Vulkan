@@ -20,7 +20,7 @@ const unsigned int SCR_HEIGHT = 800;
 
 OpenGLEngine::~OpenGLEngine() 
 {
-    std::cout << "OpenGLEngine  destructor\n";
+    SPDLOG_TRACE("destructor");
     run();
 }
 
@@ -82,6 +82,6 @@ void OpenGLEngine::mainLoop()
 
 void OpenGLEngine::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
 {
-    std::cout << "button " << button << " clicked!\n";
+    spdlog::info("button {} clicked!",  button );
 }
 

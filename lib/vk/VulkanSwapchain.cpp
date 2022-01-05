@@ -9,29 +9,29 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
     : device{device}
     , window{window}
 { 
-    std::cout << "VulkanSwapchain  constructor\n";
+    SPDLOG_TRACE("constructor");
     createAllSwapchian();
-    std::cout << "VulkanSwapchain  createAllSwapchian\n";
+    SPDLOG_TRACE("createAllSwapchian");
 }
 
 
 VulkanSwapchain::~VulkanSwapchain()
 {  
-    std::cout << "VulkanSwapchain  destructor\n"; 
+    SPDLOG_TRACE("destructor"); 
     cleanupSwapChain();
-    std::cout << "VulkanSwapchain  cleanupSwapChain\n";
+    SPDLOG_TRACE("cleanupSwapChain");
 }  
 
 void VulkanSwapchain::createAllSwapchian()
 {
     createSwapchain();
-    std::cout << "VulkanSwapchain  createSwapchain\n";
+    SPDLOG_TRACE("createSwapchain");
     createImageViews();
-    std::cout << "VulkanSwapchain  createImageViews\n";
+    SPDLOG_TRACE("createImageViews");
     createRenderPass();
-    std::cout << "VulkanSwapchain  createRenderPass\n";
+    SPDLOG_TRACE("createRenderPass");
     createFramebuffers();
-    std::cout << "VulkanSwapchain  createFramebuffers\n";
+    SPDLOG_TRACE("createFramebuffers");
 }
 
 void VulkanSwapchain::cleanupSwapChain() 
@@ -39,20 +39,20 @@ void VulkanSwapchain::cleanupSwapChain()
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
     }
-    std::cout << "VulkanSwapchain  vkDestroyFramebuffer\n";
+    SPDLOG_TRACE("vkDestroyFramebuffer");
 
 
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device.getDevice(), imageView, nullptr);
     }
-    std::cout << "VulkanSwapchain  vkDestroyImageView\n";
+    SPDLOG_TRACE("vkDestroyImageView");
 
 
     vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
-    std::cout << "VulkanSwapchain  vkDestroyRenderPass\n";
+    SPDLOG_TRACE("vkDestroyRenderPass");
 
     vkDestroySwapchainKHR(device.getDevice(), swapChain, nullptr);
-    std::cout << "VulkanSwapchain  vkDestroySwapchainKHR\n";
+    SPDLOG_TRACE("vkDestroySwapchainKHR");
 
 }
 

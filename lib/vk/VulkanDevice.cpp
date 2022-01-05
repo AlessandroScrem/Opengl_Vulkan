@@ -21,42 +21,42 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 VulkanDevice::VulkanDevice(Window &window) : window{window}
 {
-    std::cout << "VulkanDevice  constructor\n";
+    SPDLOG_TRACE("constructor");
 
     createInstance();
-    std::cout << "VulkanDevice  createInstance ok\n";
+    SPDLOG_TRACE("createInstance");
     setupDebugMessenger();
-    std::cout << "VulkanDevice  setupDebugMessenger ok\n";
+    SPDLOG_TRACE("setupDebugMessenger");
     createSurface();
-    std::cout << "VulkanDevice  createSurface ok\n";
+    SPDLOG_TRACE("createSurface");
     pickPhysicalDevice();
-    std::cout << "VulkanDevice  pickPhysicalDevice ok\n";
+    SPDLOG_TRACE("pickPhysicalDevice");
     createLogicalDevice();
-    std::cout << "VulkanDevice  createLogicalDevice ok\n";
+    SPDLOG_TRACE("createLogicalDevice");
 
     createCommandPool();
-    std::cout << "VulkanDevice  createCommandPool ok\n";
+    SPDLOG_TRACE("createCommandPool");
 }
 
 VulkanDevice::~VulkanDevice() 
 {
-    std::cout << "VulkanDevice  destructor\n";
+    SPDLOG_TRACE("destructor");
 
     vkDestroyCommandPool(logicalDevice, commandPool, nullptr); 
-    std::cout << "VulkanDevice  vkDestroyCommandPool\n";
+    SPDLOG_TRACE("vkDestroyCommandPool");
 
     vkDestroyDevice(logicalDevice, nullptr);
-    std::cout << "VulkanDevice  vkDestroyDevice\n";
+    SPDLOG_TRACE("vkDestroyDevice");
  
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        std::cout << "VulkanDevice  DestroyDebugUtilsMessengerEXT\n";
+        SPDLOG_TRACE("DestroyDebugUtilsMessengerEXT");
     }
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
-    std::cout << "VulkanDevice  vkDestroySurfaceKHR\n";
+    SPDLOG_TRACE("vkDestroySurfaceKHR");
     vkDestroyInstance(instance, nullptr);
-    std::cout << "VulkanDevice  vkDestroyInstance\n";
+    SPDLOG_TRACE("vkDestroyInstance");
 }
 
 void VulkanDevice::createInstance() 

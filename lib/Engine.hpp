@@ -8,11 +8,13 @@
 
 
 
+
 class Engine
 {    
 public:
-    Engine(){ std::cout << "Engine  constructor\n";}
-    virtual ~Engine(){std::cout << "Engine  destructor\n";}
+    Engine(){ SPDLOG_TRACE("constructor");     
+    }
+    virtual ~Engine(){SPDLOG_TRACE("destructor");}
        
     virtual void run() = 0;
 

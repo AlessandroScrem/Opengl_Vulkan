@@ -4,24 +4,24 @@
 VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device) 
     : device{device}
 { 
-    std::cout << "VulkanVertexBuffer  constructor\n"; 
+    SPDLOG_TRACE("constructor");
     createIndexBuffer();   
-    std::cout << "VulkanVertexBuffer  createIndexBuffer\n"; 
+    SPDLOG_TRACE("createIndexBuffer");
     createVertexBuffer();   
-    std::cout << "VulkanVertexBuffer  createVertexBuffer\n"; 
+    SPDLOG_TRACE("createVertexBuffer");
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() 
 {   
-    std::cout << "VulkanVertexBuffer  destructor\n";
+    SPDLOG_TRACE("destructor");
     vkDestroyBuffer(device.getDevice(), indexBuffer, nullptr);
-    std::cout << "VulkanVertexBuffer  Index vkDestroyBuffer\n";
+    SPDLOG_TRACE("Index vkDestroyBuffer");
     vkFreeMemory(device.getDevice(), indexBufferMemory, nullptr);
-    std::cout << "VulkanVertexBuffer  Index vkFreeMemory\n";
+    SPDLOG_TRACE("Index vkFreeMemory");
     vkDestroyBuffer(device.getDevice(), vertexBuffer, nullptr);
-    std::cout << "VulkanVertexBuffer  Vertex vkDestroyBuffer\n";
+    SPDLOG_TRACE("Vertex vkDestroyBuffer");
     vkFreeMemory(device.getDevice(), vertexBufferMemory, nullptr);  
-    std::cout << "VulkanVertexBuffer  Vertex vkFreeMemory\n";
+    SPDLOG_TRACE("Vertex vkFreeMemory");
 } 
 
 /*
