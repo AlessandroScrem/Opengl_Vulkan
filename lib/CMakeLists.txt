@@ -36,10 +36,11 @@ add_library(mylib  ${COMMON_SRC} ${PUB_SRC} ${OGL_SRC} ${VK_SRC})
 target_link_libraries(mylib
     PRIVATE 
         glfw::glfw
-        GLEW::GLEW
+        glew::glew
         Vulkan::Vulkan
     PUBLIC 
         glm::glm
+        spdlog::spdlog
     )
 
 target_link_options(mylib INTERFACE "/ignore:4099")
@@ -47,7 +48,7 @@ target_link_options(mylib INTERFACE "/ignore:4099")
 target_include_directories(mylib
      PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR} 
-        ../spdlog-1.x/include 
+        #../spdlog-1.x/include 
 
  )
 
