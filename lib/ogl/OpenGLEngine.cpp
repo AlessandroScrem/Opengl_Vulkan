@@ -21,7 +21,7 @@ const unsigned int SCR_HEIGHT = 800;
 OpenGLEngine::~OpenGLEngine() 
 {
     SPDLOG_TRACE("destructor");
-    run();
+
 }
 
 void OpenGLEngine::run() 
