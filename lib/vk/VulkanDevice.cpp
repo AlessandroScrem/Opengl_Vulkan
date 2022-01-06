@@ -1,6 +1,7 @@
 #include "VulkanDevice.hpp"
 
 //std
+#include <iostream>
 #include <set>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {

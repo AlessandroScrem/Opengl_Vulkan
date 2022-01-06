@@ -1,4 +1,6 @@
 #include "VulkanVertexBuffer.hpp"
+#include "VulkanDevice.hpp"
+#include "VulkanSwapchain.hpp"
 
 // lib
 #include <glm/gtc/matrix_transform.hpp>

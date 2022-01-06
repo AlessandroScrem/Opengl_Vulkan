@@ -7,7 +7,6 @@
 #include <GLFW/glfw3.h>
 
 //std
-#include <iostream>
 #include <vector>
 #include <optional>
 

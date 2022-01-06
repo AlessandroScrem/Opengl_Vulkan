@@ -1,6 +1,7 @@
 #pragma once
 #include "VulkanDevice.hpp"
-#include "VulkanSwapchain.hpp"
+// #include "VulkanDevice.hpp"
+// #include "VulkanSwapchain.hpp"
 
 // lib
 #include <glm/glm.hpp>
@@ -51,6 +52,9 @@ static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions
         return attributeDescriptions;
     }
 };
+
+class VulkanDevice;
+class VulkanSwapchain;
 
 class VulkanVertexBuffer
 {

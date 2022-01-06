@@ -1,10 +1,6 @@
 #include "VulkanPipeline.hpp"
-
-// only used for Vertex struct
+#include "VulkanSwapchain.hpp"
 #include "VulkanVertexBuffer.hpp"
-
-// lib
-#include "glm/glm.hpp"
 
 //std
 #include <fstream>
