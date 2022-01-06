@@ -1,11 +1,19 @@
 #pragma once
 #include "VulkanDevice.hpp"
+#include "VulkanSwapchain.hpp"
 
 // lib
 #include <glm/glm.hpp>
 
 // std
 #include <array>
+
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 
 struct Vertex {
     glm::vec2 pos;
@@ -35,28 +43,48 @@ static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions
     }
 };
 
-
-
 class VulkanVertexBuffer
 {
 public:
-    VulkanVertexBuffer(VulkanDevice &device);
+    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain);
     ~VulkanVertexBuffer();
 
     VkBuffer getVertexBuffer() { return vertexBuffer; }
     VkBuffer getIndexBuffer() { return indexBuffer; }
     size_t getIndexSize() { return indices.size(); }
 
+    void updateUniformBuffer(uint32_t currentImage);
+    const VkDescriptorSetLayout &  getDescriptorSetLayout() const { return descriptorSetLayout; }
+    const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
+
+    // recreated and cleaned from VulkanEngine.recreateswapchain()
+    void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
+    void cleanupDescriptorPool();
+    void cleanupUniformBuffers();
+
 private:
     void createVertexBuffer();
     void createIndexBuffer();
 
+    void createDescriptorSetLayout();
+
+
     VulkanDevice &device;
+    VulkanSwapchain &swapchain;
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
     
     const std::vector<Vertex> vertices = {
         {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},

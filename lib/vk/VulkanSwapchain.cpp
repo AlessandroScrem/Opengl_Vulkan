@@ -10,8 +10,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
     , window{window}
 { 
     SPDLOG_TRACE("constructor");
+
     createAllSwapchian();
-    SPDLOG_TRACE("createAllSwapchian");
 }
 
 
@@ -24,14 +24,11 @@ VulkanSwapchain::~VulkanSwapchain()
 
 void VulkanSwapchain::createAllSwapchian()
 {
+    SPDLOG_TRACE("createAllSwapchian");
     createSwapchain();
-    SPDLOG_TRACE("createSwapchain");
     createImageViews();
-    SPDLOG_TRACE("createImageViews");
     createRenderPass();
-    SPDLOG_TRACE("createRenderPass");
     createFramebuffers();
-    SPDLOG_TRACE("createFramebuffers");
 }
 
 void VulkanSwapchain::cleanupSwapChain() 
@@ -59,6 +56,8 @@ void VulkanSwapchain::cleanupSwapChain()
 
 void VulkanSwapchain::createSwapchain()
  {
+    SPDLOG_TRACE("createSwapchain");
+
     // We’ll now find the right settings for the best possible swap chain. 
     // There are three types of settings to determine:
 
@@ -204,6 +203,8 @@ VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
 
 void VulkanSwapchain::createImageViews() 
 {
+    SPDLOG_TRACE("createImageViews");
+
     swapChainImageViews.resize(swapChainImages.size());
 
     for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -231,6 +232,8 @@ void VulkanSwapchain::createImageViews()
 
 void VulkanSwapchain::createRenderPass() 
 {
+    SPDLOG_TRACE("createRenderPass");
+
     // Attachment description
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
@@ -280,6 +283,8 @@ void VulkanSwapchain::createRenderPass()
 
 void VulkanSwapchain::createFramebuffers() 
 {   
+    SPDLOG_TRACE("createFramebuffers");
+
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++) {

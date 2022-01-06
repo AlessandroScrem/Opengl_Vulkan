@@ -20,13 +20,18 @@
   - createRenderPass();
   - createFramebuffers();
 
+- VulkanVertexBuffer
+  - createVertexBuffer();
+  - createIndexBuffer();
+  - createDescpriptorSetLayout()
+  - createUniformBuffers()
+  - createDescriptorPool()
+  - createDescriptorSets()
+
 - VulkanPipeline
   - createPipeline()
     - pipeLineLayout
     - graphicsPipeline
-
-- VulkanVertexBuffer
-  - createVertexBuffer();
 
 - VulkanEngine()
   - createCommandBuffer()
@@ -39,17 +44,25 @@
   - vkFreeCommandBuffers()
   - vkDestroySemaphores()
   
-- VulkanVertexBuffer
-
 - VulakanPipeline
   - vkDestroyPipeline(graphicsPipeline)
   - vkDestroyPipelineLayout(pipeLineLayout)
+
+- VulkanVertexBuffer
+  - Index destroyBuffer()
+  - Index FreeMemory();
+  - Vertex destroyBuffer()
+  - Vertex FreeMemory();
+  - cleanupUniformBuffers()
+  - cleanupDescriptorPool()
+  - destroyDescpriptorSetLayout()
 
 - VulkanSwapchian
   - vkDestroyFramebuffer()
   - vkDestroyImageView()
   - vkDestroyRenderPass()
   - vkDestroySwapchainKHR()
+  - cleanupSwapChain()
 
 - VulkanDevice       
   - vkDestroyCommandPool()

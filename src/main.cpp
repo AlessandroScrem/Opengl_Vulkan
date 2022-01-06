@@ -13,7 +13,7 @@
 
 int main(int argc, char const *argv[])
 {
-    spdlog::set_level(spdlog::level::info);
+    spdlog::set_level(spdlog::level::trace);
 
     try {
         //auto app = Engine::create(EngineType::Opengl);

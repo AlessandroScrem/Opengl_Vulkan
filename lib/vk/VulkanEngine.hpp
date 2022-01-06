@@ -30,8 +30,8 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    VulkanPipeline pipeline{device, swapchain};
-    VulkanVertexBuffer vertexBuffer{device};
+    VulkanVertexBuffer vertexbuffer{device, swapchain};
+    VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 
     std::vector<VkCommandBuffer> commandBuffers;
 

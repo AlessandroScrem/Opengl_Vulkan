@@ -1,19 +1,26 @@
 #include "VulkanVertexBuffer.hpp"
 
+// lib
+#include <glm/gtc/matrix_transform.hpp>
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device) 
+
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain) 
     : device{device}
+    ,swapchain{swapchain}
 { 
     SPDLOG_TRACE("constructor");
     createIndexBuffer();   
-    SPDLOG_TRACE("createIndexBuffer");
     createVertexBuffer();   
-    SPDLOG_TRACE("createVertexBuffer");
+    createDescriptorSetLayout();
+    createUniformBuffers();
+    createDescriptorPool();
+    createDescriptorSets();
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() 
 {   
     SPDLOG_TRACE("destructor");
+
     vkDestroyBuffer(device.getDevice(), indexBuffer, nullptr);
     SPDLOG_TRACE("Index vkDestroyBuffer");
     vkFreeMemory(device.getDevice(), indexBufferMemory, nullptr);
@@ -22,7 +29,34 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
     SPDLOG_TRACE("Vertex vkDestroyBuffer");
     vkFreeMemory(device.getDevice(), vertexBufferMemory, nullptr);  
     SPDLOG_TRACE("Vertex vkFreeMemory");
+
+    cleanupUniformBuffers();
+    cleanupDescriptorPool();
+
+    vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
+    SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
 } 
+
+// Necessita
+// swapchain.getSwapchianImageSize()
+void VulkanVertexBuffer::cleanupUniformBuffers() 
+{   
+    SPDLOG_TRACE("cleanupUniformBuffers");
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+    for (size_t i = 0; i < swapchainImages ; i++) {
+        vkDestroyBuffer(device.getDevice(), uniformBuffers[i], nullptr);
+        vkFreeMemory(device.getDevice(), uniformBuffersMemory[i], nullptr);
+    }
+}
+
+void VulkanVertexBuffer::cleanupDescriptorPool()
+{
+    SPDLOG_TRACE("cleanupDescriptorPool");
+
+    vkDestroyDescriptorPool(device.getDevice(), descriptorPool, nullptr);
+}
+
 
 /*
     Unfortunately the driver may not immediately copy the data into the buffer memory, for example because of caching. 
@@ -44,6 +78,8 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 // device.copyBuffer
 void VulkanVertexBuffer::createVertexBuffer() 
 {
+    SPDLOG_TRACE("createVertexBuffer");
+
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
@@ -85,6 +121,8 @@ void VulkanVertexBuffer::createVertexBuffer()
 
 void VulkanVertexBuffer::createIndexBuffer() 
 {
+    SPDLOG_TRACE("createIndexBuffer");
+
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     VkBuffer stagingBuffer;
@@ -111,3 +149,130 @@ void VulkanVertexBuffer::createIndexBuffer()
     vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
 }
+
+// creare prima di createGraphicsPipeline();
+void VulkanVertexBuffer::createDescriptorSetLayout()
+{
+    SPDLOG_TRACE("createDescriptorSetLayout");
+
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void VulkanVertexBuffer::createDescriptorPool() 
+{
+    SPDLOG_TRACE("createDescriptorPool");
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(swapchainImages); 
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(swapchainImages);
+
+    if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+
+}
+
+// Necessita
+// swapchain.getSwapchianImageSize()
+void VulkanVertexBuffer::createUniformBuffers() 
+{
+    SPDLOG_TRACE("createUniformBuffers");
+
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+    uniformBuffers.resize(swapchainImages);
+    uniformBuffersMemory.resize(swapchainImages);
+
+    for (size_t i = 0; i < swapchainImages; i++) {
+        device.createBuffer(bufferSize, 
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            uniformBuffers[i], 
+            uniformBuffersMemory[i]);
+        }
+}
+// You don’t need to explicitly clean up descriptor sets, 
+//  because they will be automatically freed when the descriptor pool is destroyed
+void VulkanVertexBuffer::createDescriptorSets() 
+{
+    SPDLOG_TRACE("createDescriptorSets");
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+
+    std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImages);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(swapchainImages);
+    if (vkAllocateDescriptorSets(device.getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    // populate every descriptor:
+    for (size_t i = 0; i < swapchainImages; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(device.getDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
+
+}
+
+void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage) 
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    auto extent = swapchain.getExtent();
+    ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / (float) extent.height, 0.1f, 10.0f);
+    ubo.proj[1][1] *= -1;
+
+    void* data;
+    vkMapMemory(device.getDevice(), uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
+        memcpy(data, &ubo, sizeof(ubo));
+    vkUnmapMemory(device.getDevice(), uniformBuffersMemory[currentImage]);
+}
+

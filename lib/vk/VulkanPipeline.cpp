@@ -30,7 +30,10 @@ static std::vector<char> readFile(const std::string& filename) {
 
 
 
-VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian) : device{device}, swapchian{swapchian}
+VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanVertexBuffer &vertexbuffer) 
+    : device{device}
+    , swapchain{swapchain}
+    , vertexbuffer{vertexbuffer}
 {
     SPDLOG_TRACE("constructor");
     createPipeline();
@@ -65,8 +68,8 @@ VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code)
     return shaderModule;
 }
 // Necessita
-// swapchian.getExtent()
-// swapchian.getRenderpass()
+// swapchain.getExtent()
+// swapchain.getRenderpass()
 void VulkanPipeline::createPipeline() 
 {
     auto vertShaderCode = readFile(vertshader);
@@ -114,7 +117,7 @@ void VulkanPipeline::createPipeline()
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewports and scissors 
-    VkExtent2D swapChainExtent = swapchian.getExtent();
+    VkExtent2D swapChainExtent = swapchain.getExtent();
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -142,7 +145,7 @@ void VulkanPipeline::createPipeline()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     // Multisampling
@@ -173,9 +176,8 @@ void VulkanPipeline::createPipeline()
     // Pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &vertexbuffer.getDescriptorSetLayout();
 
     if (vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
@@ -193,7 +195,7 @@ void VulkanPipeline::createPipeline()
     pipelineInfo.pColorBlendState = &colorBlending;
 
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = swapchian.getRenderpass();
+    pipelineInfo.renderPass = swapchain.getRenderpass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 

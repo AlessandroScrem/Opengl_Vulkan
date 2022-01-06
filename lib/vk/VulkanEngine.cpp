@@ -74,6 +74,8 @@ void VulkanEngine::drawFrame()
 
     // Mark the image as now being in use by this frame
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
+    vertexbuffer.updateUniformBuffer(imageIndex);
  
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -171,11 +173,18 @@ void VulkanEngine::recreateSwapChain()
     }
     vkDeviceWaitIdle(device.getDevice());
 
+// destroy
     cleanupCommandBuffers();
     pipeline.cleanupPipeline();
+    vertexbuffer.cleanupUniformBuffers();
+    vertexbuffer.cleanupDescriptorPool();
     swapchain.cleanupSwapChain();
 
+// create
     swapchain.createAllSwapchian();
+    vertexbuffer.createUniformBuffers();
+    vertexbuffer.createDescriptorPool();
+    vertexbuffer.createDescriptorSets();
     pipeline.createPipeline();
     createCommandBuffers();
 
@@ -199,6 +208,7 @@ void VulkanEngine::recreateSwapChain()
 // swapchain.getExtent
 // pipeline.getGraphicsPipeline
 // vertexbuffer.getVertexBuffer()
+// vertexbuffer.getIndexBuffer()
 void VulkanEngine::createCommandBuffers() 
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());
@@ -236,12 +246,18 @@ void VulkanEngine::createCommandBuffers()
                 vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
                 
                 //TODO modify call to vertexbuffer and offset
-                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
-                VkBuffer indevBuffer = vertexBuffer.getIndexBuffer();
-                size_t indexsize = vertexBuffer.getIndexSize();
+                VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+                VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
+                size_t indexsize = vertexbuffer.getIndexSize();
                 VkDeviceSize offsets[] = {0};
+                VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(i);
+                VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffers[i], indevBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+                
+                vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
                 vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
             vkCmdEndRenderPass(commandBuffers[i]);

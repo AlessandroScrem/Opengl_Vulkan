@@ -2,12 +2,13 @@
 
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanVertexBuffer.hpp"
 
 
 class VulkanPipeline
 {
 public:
-    VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchian);
+    VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanVertexBuffer &vertexbuffer);
     ~VulkanPipeline();
 
 
@@ -15,6 +16,7 @@ public:
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
     
     // used by VulkanEngine
+    const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
     void cleanupPipeline();
     void createPipeline();
     
@@ -24,7 +26,8 @@ private:
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
     VulkanDevice &device;
-    VulkanSwapchain &swapchian;
+    VulkanSwapchain &swapchain;
+    VulkanVertexBuffer &vertexbuffer;
 
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
