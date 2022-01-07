@@ -17,6 +17,7 @@ set(OGL_SRC
     ogl/OpenGLEngine.hpp
     ogl/makeOpengl.cpp
     ogl/OpenGLEngine.cpp
+    ogl/InitOpengl.cpp
 )
     
 set(COMMON_SRC

@@ -10,12 +10,15 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+void InitOpengl(GLFWwindow* window);
 
 Window::Window(EngineType type) : engineType{type}
 {
     SPDLOG_TRACE("constructor");
 
     initWindow();
+    createWindow();
+    setupCallbacks();
 }
 
 Window::~Window() {
@@ -44,16 +47,30 @@ void Window::initWindow()
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
+}
 
+//create and open window  
+void Window::createWindow() 
+{
     window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
     if( window == NULL ){
-        spdlog::critical( "failed to open GLFW window, they are not  OpenGL 3.3 compatible!");
+        spdlog::critical( "failed to open GLFW window!");
         glfwTerminate();
     } 
 
+    if(engineType == EngineType::Opengl)
+    {
+        InitOpengl(window);
+    }
+
+}
+
+void Window::setupCallbacks() 
+{
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);  
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);    
 }
 
 bool Window::shouldClose()
@@ -69,7 +86,9 @@ void Window::swapBuffers()
 std::pair<int, int> Window::GetWindowExtents() 
 {
     // FIXME  flag will be reset here 
-    if(is_framebufferResized) {is_framebufferResized = false;}
+    if(is_framebufferResized) {
+        is_framebufferResized = false;
+    }
     return { width, height };
 }
 
@@ -95,4 +114,9 @@ void Window::window_iconify_callback(GLFWwindow* window, int iconified)
     auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 
     app->is_iconified = iconified == 1 ? true : false; 
+}
+
+void Window::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
+{
+    spdlog::info("button {} clicked!",  button );
 }

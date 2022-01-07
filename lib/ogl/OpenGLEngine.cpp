@@ -1,6 +1,5 @@
 #include "OpenGLEngine.hpp"
-#include "common/shader.hpp"
-#include "common/mesh.hpp"
+
 
 //std
 #include <cstdlib>
@@ -12,12 +11,10 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-
-
-// settings
-const std::string WINDOW_TITLE   = "OpenGL";
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 800;
+OpenGLEngine::OpenGLEngine()
+{    
+    SPDLOG_TRACE("constructor"); 
+}
 
 OpenGLEngine::~OpenGLEngine() 
 {
@@ -27,7 +24,7 @@ OpenGLEngine::~OpenGLEngine()
 
 void OpenGLEngine::run() 
 {   
-    initOpengl(); 
+    initOpenglGlobalStates(); 
     mainLoop();
     cleanup();
 }
@@ -37,22 +34,8 @@ void OpenGLEngine::cleanup()
 
 }
 
-
-void OpenGLEngine::initOpengl() 
+void OpenGLEngine::initOpenglGlobalStates() 
 {
- 
-    glfwMakeContextCurrent(window.getWindowPtr());
-    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    // glfwSetCursorPosCallback(window, mouse_callback);
-    // glfwSetScrollCallback(window, scroll_callback);
-    glfwSetMouseButtonCallback(window.getWindowPtr() , mouse_button_callback);
-
-    glfwMakeContextCurrent(window.getWindowPtr() ); // Initialize GLEW
-    glewExperimental=true; // Needed in core profile
-    if (glewInit() != GLEW_OK) {
-        throw std::runtime_error("Failed to initialize GLEW");
-    }
-    
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
@@ -60,8 +43,8 @@ void OpenGLEngine::initOpengl()
 
 void OpenGLEngine::mainLoop() 
 {
-    Shader shader{};
-    Mesh mesh{};
+    // Shader shader{};
+    // Mesh mesh{};
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
@@ -90,8 +73,4 @@ void OpenGLEngine::clearBackground()
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
 }
 
-void OpenGLEngine::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
-{
-    spdlog::info("button {} clicked!",  button );
-}
 

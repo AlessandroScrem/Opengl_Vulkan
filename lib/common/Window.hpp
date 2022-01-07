@@ -31,9 +31,12 @@ public:
 
 private:
     void initWindow();
+    void createWindow();
+    void setupCallbacks();
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     static void window_iconify_callback(GLFWwindow* window, int iconified);
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) ;
 
     int width{800};
     int height{600};
