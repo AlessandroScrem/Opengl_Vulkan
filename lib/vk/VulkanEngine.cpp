@@ -238,7 +238,13 @@ void VulkanEngine::createCommandBuffers()
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = swapchain.getExtent(); 
 
-            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            // set the background color
+            float r = Engine::background.red;
+            float g = Engine::background.green;
+            float b = Engine::background.blue;
+            float a = Engine::background.alpha;
+            VkClearValue clearColor = {r, g, b, a};
+
             renderPassInfo.clearValueCount = 1;
             renderPassInfo.pClearValues = &clearColor;
 

@@ -14,20 +14,25 @@
 
 EngineType parser(int argc, const char** argv)
 {
+    EngineType engine{EngineType::Opengl};
+    
+    #ifdef VULKAN
+        engine = EngineType::Vulkan;
+    #endif// VULKAN 
 
-    if (argc == 1)
-    {   
-        // default
-        return EngineType::Opengl;
+    #ifdef   OPENGL
+        engine = EngineType::Opengl;
+    #endif// OPENGL
+
+   
+    if (argc == 2 && std::string{argv[1]} == "--vulkan"){
+        engine = EngineType::Vulkan;
+    }
+    if (argc == 2 && std::string{argv[1]} == "--opengl"){
+        engine = EngineType::Opengl;
     }
 
-    std::string arg1(argv[1]);
-    if (arg1 == "--vulkan"){
-        return EngineType::Vulkan;
-    }
-    if (arg1 == "--opengl"){
-        return EngineType::Opengl;
-    }
+    return engine;
 }
 
 int main(int argc, char const **argv)

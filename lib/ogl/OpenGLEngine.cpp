@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 
 
+
 // settings
 const std::string WINDOW_TITLE   = "OpenGL";
 const unsigned int SCR_WIDTH = 800;
@@ -61,24 +62,33 @@ void OpenGLEngine::mainLoop()
 {
     Shader shader{};
     Mesh mesh{};
-    
-    //render loop
-    while(!window.shouldClose() ) {
 
-        // render
-	    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    while(!window.shouldClose() ) {
+        glfwPollEvents();
+        drawFrame(shader, mesh);
+    }
+}
+void OpenGLEngine::drawFrame(Shader &shader, Mesh &mesh)
+{
+        clearBackground();
 
         shader.use();
+        // render
         mesh.draw();
 
         // Swap buffers
-        window.swapBuffers();
-        glfwPollEvents();
-    }
+        window.swapBuffers();  
 }
-
-
+void OpenGLEngine::clearBackground()
+{
+        // set the background color
+        float r = Engine::background.red;
+        float g = Engine::background.green;
+        float b = Engine::background.blue;
+        float a = Engine::background.alpha;
+	    glClearColor(r, g, b, a);
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
+}
 
 void OpenGLEngine::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
 {

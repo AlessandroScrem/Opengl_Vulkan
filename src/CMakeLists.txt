@@ -7,6 +7,10 @@ target_link_libraries(app
         mylib
 )
 
+
+target_compile_definitions(app PUBLIC ${ENGINE})
+message(STATUS "ENGINE = " ${ENGINE})
+
 # fix bin target directory to project/buld/debug|release
 set_target_properties( app
     PROPERTIES
