@@ -261,6 +261,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
     for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
+        SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
     }
 
     return requiredExtensions.empty();

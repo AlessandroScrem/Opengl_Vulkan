@@ -112,13 +112,37 @@ void VulkanPipeline::createPipeline()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    // Viewports and scissors 
+    //Viewports and scissors 
     VkExtent2D swapChainExtent = swapchain.getExtent();
     VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width  = (float) swapChainExtent.width;
-    viewport.height = (float) swapChainExtent.height;
+    float height = (float) swapChainExtent.height;
+    float width = (float) swapChainExtent.width;
+    float offsetx = 0.f;
+    float offsety = 0.f;
+
+    // Opengl compatible Viewport (SashaWillems)
+    // needs: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension 
+    //        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; 
+    //  
+    //  Vulkan viewport     Opengl viewport
+    //
+    //  ^                    --------------->
+    //  |                   |       x        
+    //  | y                 | y
+    //  |      x            | 
+    //   ----------->       v
+    // 
+    // flip y coordinates
+    if(Opengl_compatible_viewport)
+    {
+        offsety =  height;
+        height  = -height;
+    }
+    
+    viewport.y = offsety;
+    viewport.x = offsetx;
+    viewport.height = height;
+    viewport.width  = width;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -141,7 +165,13 @@ void VulkanPipeline::createPipeline()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    // Opengl compatible Viewport (SashaWillems)
+    if(Opengl_compatible_viewport)
+    {
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    }else{
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
     rasterizer.depthBiasEnable = VK_FALSE;
 
     // Multisampling

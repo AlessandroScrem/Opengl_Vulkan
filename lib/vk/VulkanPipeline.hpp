@@ -33,6 +33,8 @@ private:
 
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
+    
+    const bool Opengl_compatible_viewport = true; 
 
     const std::string vertshader{"shaders/vert.spv"};
     const std::string fragshader{"shaders/frag.spv"};
