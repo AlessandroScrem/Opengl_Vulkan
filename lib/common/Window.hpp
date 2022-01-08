@@ -40,7 +40,7 @@ private:
 
     int width{800};
     int height{600};
-    std::string windowName = {"Hello Window"};
+    std::string windowName = {};
     const EngineType  engineType;
 
     bool is_framebufferResized = false;

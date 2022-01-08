@@ -16,6 +16,19 @@ Window::Window(EngineType type) : engineType{type}
 {
     SPDLOG_TRACE("constructor");
 
+    switch (type)
+    {
+    case EngineType::Opengl :
+        windowName = "Hello Opengl";
+        break;    
+    case EngineType::Vulkan :
+        windowName = "Hello Vulkan";
+        break;    
+    default:
+        break;
+    }
+
+
     initWindow();
     createWindow();
     setupCallbacks();
