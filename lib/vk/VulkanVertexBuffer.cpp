@@ -173,6 +173,27 @@ void VulkanVertexBuffer::createDescriptorSetLayout()
     }
 }
 
+// Necessita
+// swapchain.getSwapchianImageSize()
+void VulkanVertexBuffer::createUniformBuffers() 
+{
+    SPDLOG_TRACE("createUniformBuffers");
+
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+    uniformBuffers.resize(swapchainImages);
+    uniformBuffersMemory.resize(swapchainImages);
+
+    for (size_t i = 0; i < swapchainImages; i++) {
+        device.createBuffer(bufferSize, 
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            uniformBuffers[i], 
+            uniformBuffersMemory[i]);
+        }
+}
+
 void VulkanVertexBuffer::createDescriptorPool() 
 {
     SPDLOG_TRACE("createDescriptorPool");
@@ -195,26 +216,6 @@ void VulkanVertexBuffer::createDescriptorPool()
 
 }
 
-// Necessita
-// swapchain.getSwapchianImageSize()
-void VulkanVertexBuffer::createUniformBuffers() 
-{
-    SPDLOG_TRACE("createUniformBuffers");
-
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    uniformBuffers.resize(swapchainImages);
-    uniformBuffersMemory.resize(swapchainImages);
-
-    for (size_t i = 0; i < swapchainImages; i++) {
-        device.createBuffer(bufferSize, 
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            uniformBuffers[i], 
-            uniformBuffersMemory[i]);
-        }
-}
 // You don’t need to explicitly clean up descriptor sets, 
 //  because they will be automatically freed when the descriptor pool is destroyed
 void VulkanVertexBuffer::createDescriptorSets() 
@@ -253,7 +254,6 @@ void VulkanVertexBuffer::createDescriptorSets()
 
         vkUpdateDescriptorSets(device.getDevice(), 1, &descriptorWrite, 0, nullptr);
     }
-
 }
 
 void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage) 

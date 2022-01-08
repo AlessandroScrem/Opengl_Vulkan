@@ -209,6 +209,7 @@ void VulkanEngine::recreateSwapChain()
 // pipeline.getGraphicsPipeline
 // vertexbuffer.getVertexBuffer()
 // vertexbuffer.getIndexBuffer()
+// vertexbuffer.getDescriptorSet
 void VulkanEngine::createCommandBuffers() 
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());

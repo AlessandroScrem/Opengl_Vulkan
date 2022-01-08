@@ -2,9 +2,6 @@
 
 #include "Engine.hpp"
 #include "common/Window.hpp"
-// #include "common/shader.hpp"
-// #include "common/mesh.hpp"
-// #include "common/vertex.h"
 #include "OpenglVertexBuffer.hpp"
 
 
@@ -27,8 +24,6 @@ private:
     Window window{EngineType::Opengl};
 
     Shader shader{};
-    OpenglVertexBuffer vertexBuffer{};
-
-    //Mesh mesh{};
+    OpenglVertexBuffer vertexBuffer{window};
 
 };

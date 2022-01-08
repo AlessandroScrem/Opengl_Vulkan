@@ -1,8 +1,13 @@
 #pragma once
-#include <GL/glew.h>
 #include "common/vertex.h"
-
+#include "common/Window.hpp"
+// lib
+#include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
+// std
 #include <iostream>
+
+
 /* 
 void glVertexAttribIPointer(	
 GLuint index,   Specifies the index of shader location
@@ -11,18 +16,22 @@ GLenum type,    Specifies the data type of each component in the array. The init
 normalized:     specifies whether fdata values should be normalized (GL_TRUE) (GL_FALSE) 
 stride:         Specifies the byte offset between consecutive generic vertex attributes. The initial value is 0.
 pointer:        Specifies a offset of the first component of the first generic vertex attribute in the array in the data store of 
-                        the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
-);       
-
+);               the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
 */
 class OpenglVertexBuffer
 {
 public:   
+    struct UniformBufferObject {
+        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
+    };
      struct Vertex {
         glm::vec2 pos;
         glm::vec3 color;
     };
-    OpenglVertexBuffer(){
+    OpenglVertexBuffer(Window &window) : window{window}
+    {
 
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -45,7 +54,8 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
         // You can unbind the VAO afterwards so other VAO 
-        glBindVertexArray(0); 
+        glBindVertexArray(0);
+ 
     }
 
     ~OpenglVertexBuffer(){   
@@ -59,7 +69,29 @@ public:
         glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_SHORT, 0);
     }
 
+    void updateUniformBuffers(){
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+      
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        auto [width, height] = window.GetWindowExtents();
+        ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+    }
+
+    const UniformBufferObject & getUbo() const { return ubo; }
+
 private:
+    void    createUniformBuffers();
+
+    Window &window;
+
+    UniformBufferObject ubo{};
+    
     unsigned int VBO, VAO, EBO; 
 
     //shader location 0 1 2
@@ -133,17 +165,29 @@ public:
     ~Shader(){glDeleteProgram(shaderProgram);}
     
     void use(){glUseProgram(shaderProgram);}
+    
+    void setMat4(const std::string &name, const glm::mat4 &mat) const
+    {
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+
 
 private:
    unsigned int shaderProgram;
     const char *vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec2 aPos;\n"
         "layout (location = 1) in vec3 aCol;\n"
+        "struct UniformBufferObject {\n"
+        "   mat4 model;\n"
+        "   mat4 view;\n"
+        "   mat4 proj;\n"
+        "};\n"
+        "uniform UniformBufferObject ubo;\n"
         "out vec3 ourColor;\n"
         "void main()\n"
         "{\n"
         "   ourColor = aCol;\n"
-        "   gl_Position = vec4(aPos, 0.0, 1.0);\n"
+        "   gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 0.0, 1.0);\n"
         "}\0";
 
     const char *fragmentShaderSource = "#version 330 core\n"
