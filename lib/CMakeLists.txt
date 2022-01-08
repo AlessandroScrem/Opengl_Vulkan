@@ -18,11 +18,13 @@ set(OGL_SRC
     ogl/makeOpengl.cpp
     ogl/OpenGLEngine.cpp
     ogl/InitOpengl.cpp
+    ogl/OpenglVertexBuffer.hpp
 )
     
 set(COMMON_SRC
     common/Window.hpp
     common/Window.cpp
+    common/vertex.h
     common/shader.hpp
     common/mesh.hpp
 )

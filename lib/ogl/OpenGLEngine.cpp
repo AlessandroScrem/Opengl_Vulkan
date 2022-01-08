@@ -48,16 +48,17 @@ void OpenGLEngine::mainLoop()
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
-        drawFrame(shader, mesh);
+        drawFrame();
     }
 }
-void OpenGLEngine::drawFrame(Shader &shader, Mesh &mesh)
+void OpenGLEngine::drawFrame()
 {
         clearBackground();
 
         shader.use();
         // render
-        mesh.draw();
+        //mesh.draw();
+        vertexBuffer.draw();
 
         // Swap buffers
         window.swapBuffers();  
