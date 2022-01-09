@@ -76,11 +76,10 @@ public:
         
         setVertexAttribPointer();
 
+        // You can unbind the buffers 
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
-        // You can unbind the VAO afterwards so other VAO 
-        //glBindVertexArray(0);
- 
+        createUniformBuffers();
     }
 
     ~OpenglVertexBuffer(){   
@@ -106,30 +105,28 @@ public:
         auto [width, height] = window.GetWindowExtents();
         ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
-
-        genUbo();
     }
 
     const UniformBufferObject & getUbo() const { return ubo; }
 
-    void genUbo(){
-        glGenBuffers(1, &uboMatrices);
-        
+    void bindUniformBuffers() {
         glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        
-        glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
-    }
-    void bindUbo(const UniformBufferObject   &Ubo) {
-        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(Ubo.proj) );
-        glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(Ubo.view) ); 
+        glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(ubo.model) ); 
+        glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(ubo.view) );
+        glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(ubo.proj) );
         glBindBuffer(GL_UNIFORM_BUFFER, 0);  
     }
 
 private:
-    void    createUniformBuffers();
+    void    createUniformBuffers(){
+        glGenBuffers(1, &uboMatrices);
+        
+        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 3 * sizeof(glm::mat4));
+    }
 
     void setVertexAttribPointer(){
         auto attributes =  Vertex::getAttributeDescriptions();
@@ -209,6 +206,8 @@ public:
         }
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+
+        createUniformBlockBinding();
     }
 
     ~Shader(){glDeleteProgram(shaderProgram);}
@@ -220,13 +219,12 @@ public:
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
 
-    void setUniform(){
-        uniformBlockIndex    = glGetUniformBlockIndex(shaderProgram, "UniformBufferObject");        
+private:
+    void createUniformBlockBinding(){
+        uniformBlockIndex    = glGetUniformBlockIndex(shaderProgram, "ubo");        
         glUniformBlockBinding(shaderProgram,    uniformBlockIndex, 0);
     }
 
-
-private:
     unsigned int shaderProgram;
     unsigned int uniformBlockIndex;
 
@@ -235,15 +233,15 @@ private:
         "layout (location = 1) in vec3 aCol;\n"
         "//struct UniformBufferObject {\n"
         "layout (std140) uniform UniformBufferObject {\n"
-        "   mat4 proj;\n"
+        "   mat4 model;\n"
         "   mat4 view;\n"
-        "};\n"
-        "uniform mat4 model;\n"
+        "   mat4 proj;\n"
+        "}ubo;\n"
         "out vec3 ourColor;\n"
         "void main()\n"
         "{\n"
         "   ourColor = aCol;\n"
-        "   gl_Position = proj * view * model * vec4(aPos, 0.0, 1.0);\n"
+        "   gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 0.0, 1.0);\n"
         "}\0";
 
     const char *fragmentShaderSource = "#version 450 core\n"
