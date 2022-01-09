@@ -57,14 +57,17 @@ void OpenGLEngine::drawFrame()
 
         vertexBuffer.updateUniformBuffers();
         shader.use();
+        shader.setUniform();
 
        // retrieve the matrix uniform locations
         auto ubo = vertexBuffer.getUbo();
-        shader.setMat4("ubo.proj", ubo.proj);
-        shader.setMat4("ubo.view", ubo.view);
-        shader.setMat4("ubo.model", ubo.model);
+        // shader.setMat4("ubo.proj", ubo.proj);
+        // shader.setMat4("ubo.view", ubo.view);
+        shader.setMat4("model", ubo.model);
 
-        
+        vertexBuffer.genUbo();
+        vertexBuffer.bindUbo(ubo);
+
 
         // render
         //mesh.draw();
