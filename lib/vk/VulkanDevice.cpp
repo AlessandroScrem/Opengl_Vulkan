@@ -285,7 +285,14 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice dev
     if (formatCount != 0) {
         details.formats.resize(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        #ifndef NDEBUG
+            SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
+            for(const auto sfmt : details.formats ){
+                SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
+            }
+        #endif
     }
+
 
     // 3) Available presentation modes
     uint32_t presentModeCount;

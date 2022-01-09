@@ -64,14 +64,17 @@ void OpenGLEngine::drawFrame()
         shader.setMat4("ubo.view", ubo.view);
         shader.setMat4("ubo.model", ubo.model);
 
+        
 
         // render
         //mesh.draw();
         vertexBuffer.draw();
 
         // Swap buffers
+        window.updateframebuffersize();
         window.swapBuffers();  
 }
+
 void OpenGLEngine::clearBackground()
 {
         // set the background color

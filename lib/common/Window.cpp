@@ -51,8 +51,8 @@ void Window::initWindow()
 
     if(engineType == EngineType::Opengl)
     {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We want OpenGL 4.5
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
     }
 
@@ -74,6 +74,9 @@ void Window::createWindow()
     if(engineType == EngineType::Opengl)
     {
         InitOpengl(window);
+        spdlog::info("Opengl release number {} ", glGetString(GL_VERSION) );
+        spdlog::info("GL_SHADING_LANGUAGE_VERSION {} ", glGetString(GL_SHADING_LANGUAGE_VERSION) );
+        spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
     }
 
 }
@@ -89,6 +92,11 @@ void Window::setupCallbacks()
 bool Window::shouldClose()
 {
     return glfwWindowShouldClose(window); 
+}
+
+void Window::updateframebuffersize() 
+{
+    glViewport(0, 0, width, height);
 }
 
 void Window::swapBuffers() 

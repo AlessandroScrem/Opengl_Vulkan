@@ -22,6 +22,7 @@ public:
     bool shouldClose();
     bool framebufferResized() {return is_framebufferResized; }
     bool waitforSize() { return is_iconified || is_zerosize ; }
+    void updateframebuffersize();
 
     std::pair<int, int> GetWindowExtents();
     void swapBuffers();

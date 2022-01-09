@@ -8,15 +8,24 @@
 #include <iostream>
 
 
+struct VertexInputAttributeDescription {
+    GLint  location;
+    GLint size;
+    GLenum  type;
+    GLboolean  normalized;  
+    GLsizei  stride;  
+    const void * offset;  
+};
+
 /* 
 void glVertexAttribIPointer(	
-GLuint index,   Specifies the index of shader location
-GLint size,     Specifies the number of components per generic vertex attribute. Must be 1, 2, 3, 4. 
-GLenum type,    Specifies the data type of each component in the array. The initial value is GL_FLOAT.
-normalized:     specifies whether fdata values should be normalized (GL_TRUE) (GL_FALSE) 
-stride:         Specifies the byte offset between consecutive generic vertex attributes. The initial value is 0.
-pointer:        Specifies a offset of the first component of the first generic vertex attribute in the array in the data store of 
-);               the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
+GLuint index location,  Specifies the index of shader location
+GLint size,             Specifies the number of components per generic vertex attribute. Must be 1, 2, 3, 4. 
+GLenum type,            Specifies the data type of each component in the array. The initial value is GL_FLOAT.
+bool normalized:        specifies whether fdata values should be normalized (GL_TRUE) (GL_FALSE) 
+stride:                 Specifies the byte offset between consecutive generic vertex attributes. The initial value is 0.
+pointer offset:         Specifies a offset of the first component of the first generic vertex attribute in the array in the data store of 
+);                          the buffer currently bound to the GL_ARRAY_BUFFER target. The initial value is 0.
 */
 class OpenglVertexBuffer
 {
@@ -29,6 +38,25 @@ public:
      struct Vertex {
         glm::vec2 pos;
         glm::vec3 color;
+
+     static std::array<VertexInputAttributeDescription, 2> getAttributeDescriptions() {
+            std::array<VertexInputAttributeDescription, 2> attributeDescriptions{};
+            attributeDescriptions[0].location = 0;
+            attributeDescriptions[0].size = 2;
+            attributeDescriptions[0].type = GL_FLOAT;
+            attributeDescriptions[0].normalized = GL_FALSE;
+            attributeDescriptions[0].stride = sizeof(Vertex);
+            attributeDescriptions[0].offset = (GLvoid*)offsetof(Vertex, pos);
+
+            attributeDescriptions[1].location = 1;
+            attributeDescriptions[1].size = 3;
+            attributeDescriptions[1].type = GL_FLOAT;
+            attributeDescriptions[1].normalized = GL_FALSE;
+            attributeDescriptions[1].stride = sizeof(Vertex);
+            attributeDescriptions[1].offset = (GLvoid*)offsetof(Vertex, color);
+
+            return attributeDescriptions;
+        }
     };
     OpenglVertexBuffer(Window &window) : window{window}
     {
@@ -45,16 +73,12 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(uint16_t), indices.data(), GL_STATIC_DRAW);
         
-        glEnableVertexAttribArray(position_attrib_index);
-        glEnableVertexAttribArray(color_attrib_index); 
-        glVertexAttribPointer(position_attrib_index, 2, GL_FLOAT, GL_FALSE, vertex_stride, (GLvoid*)vertex_offset );
-        glVertexAttribPointer(color_attrib_index, 3, GL_FLOAT, GL_FALSE, vertex_stride, (GLvoid*)color_offset );
-
+        setVertexAttribPointer();
 
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
         // You can unbind the VAO afterwards so other VAO 
-        glBindVertexArray(0);
+        //glBindVertexArray(0);
  
     }
 
@@ -81,6 +105,7 @@ public:
         auto [width, height] = window.GetWindowExtents();
         ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
+
     }
 
     const UniformBufferObject & getUbo() const { return ubo; }
@@ -88,22 +113,26 @@ public:
 private:
     void    createUniformBuffers();
 
+    void setVertexAttribPointer(){
+        auto attributes =  Vertex::getAttributeDescriptions();
+        for( const auto & attribute : attributes){
+            glEnableVertexAttribArray(attribute.location); 
+            glVertexAttribPointer(
+                attribute.location, 
+                attribute.size, 
+                attribute.type, 
+                attribute.normalized, 
+                attribute.stride, 
+                attribute.offset 
+            );
+        }
+    }
+
     Window &window;
 
     UniformBufferObject ubo{};
     
     unsigned int VBO, VAO, EBO; 
-
-    //shader location 0 1 2
-    const unsigned int position_attrib_index{0};
-    const unsigned int color_attrib_index{1}; 
-    const unsigned int normal_attrib_index{2};
-
-    const unsigned int  vertex_stride = sizeof(Vertex);
-
-    GLintptr vertex_offset = 0 * sizeof(float);
-    GLintptr color_offset = sizeof(glm::vec2);
-    
 
    const std::vector<Vertex> vertices{
         {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
