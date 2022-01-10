@@ -5,6 +5,7 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
+#include "VulkanImage.hpp"
 
 class VulkanEngine : public Engine
 {
@@ -30,6 +31,7 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
+    VulkanImage vulkanimage{device};
     VulkanVertexBuffer vertexbuffer{device, swapchain};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 

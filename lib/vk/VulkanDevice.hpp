@@ -52,17 +52,19 @@ public:
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
 
-    VkCommandPool getCommadPool() { return commandPool; }
-
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     
-    // used by VulkanEngine
+    // used by VulkanEngine , VulkanImage
+    VkCommandPool getCommadPool() { return commandPool; }
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
+    // used by VulkanImage
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+    void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
     
 
 private:
@@ -74,7 +76,6 @@ private:
 
     void createCommandPool();
     
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     std::vector<const char*> getRequiredExtensions();
 

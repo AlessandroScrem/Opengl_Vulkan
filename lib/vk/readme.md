@@ -20,6 +20,11 @@
   - createRenderPass();
   - createFramebuffers();
 
+- VulkanImage
+  - createTextureImage();
+  - createTextureImageView();
+  - createTextureSampler();
+
 - VulkanVertexBuffer
   - createVertexBuffer();
   - createIndexBuffer();
@@ -30,8 +35,8 @@
 
 - VulkanPipeline
   - createPipeline()
-    - pipeLineLayout
-    - graphicsPipeline
+  - pipeLineLayout
+  - graphicsPipeline
 
 - VulkanEngine()
   - createCommandBuffer()
@@ -56,6 +61,12 @@
   - cleanupUniformBuffers()
   - cleanupDescriptorPool()
   - destroyDescpriptorSetLayout()
+
+- VulkanImage
+  - vkDestroy textureSampler
+  - vkDestroy ImageView
+  - vkDestroy textureImage
+  - vkFree textureImageMemory
 
 - VulkanSwapchian
   - vkDestroyFramebuffer()

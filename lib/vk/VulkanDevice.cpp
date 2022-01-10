@@ -174,6 +174,11 @@ void VulkanDevice::pickPhysicalDevice()
     }      
 }
 
+void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties) 
+{
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties); 
+}
+
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
