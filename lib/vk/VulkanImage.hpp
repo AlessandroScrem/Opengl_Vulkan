@@ -8,6 +8,9 @@ public:
     VulkanImage(VulkanDevice &device) ;
     ~VulkanImage();
 
+    VkImageView& getTextureImageView() { return textureImageView; }
+    VkSampler& getTextureSampler() { return textureSampler; }
+
 private:
 
     void createTexture();
@@ -18,7 +21,7 @@ private:
                     VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
-                    
+
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout); 
 
     VkCommandBuffer beginSingleTimeCommands();

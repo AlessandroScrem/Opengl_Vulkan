@@ -6,9 +6,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain) 
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanImage &vulkanimage) 
     : device{device}
     ,swapchain{swapchain}
+    ,vulkanimage{vulkanimage}
 { 
     SPDLOG_TRACE("constructor");
     createIndexBuffer();   
@@ -158,15 +159,24 @@ void VulkanVertexBuffer::createDescriptorSetLayout()
     SPDLOG_TRACE("createDescriptorSetLayout");
 
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorCount = 1;
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -200,14 +210,16 @@ void VulkanVertexBuffer::createDescriptorPool()
 
     auto swapchainImages =  swapchain.getSwapchianImageSize();
 
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(swapchainImages); 
+    std::array<VkDescriptorPoolSize, 2> poolSize{};
+    poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize[0].descriptorCount = static_cast<uint32_t>(swapchainImages); 
+    poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize[1].descriptorCount = static_cast<uint32_t>(swapchainImages); 
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
+    poolInfo.pPoolSizes = poolSize.data();
     poolInfo.maxSets = static_cast<uint32_t>(swapchainImages);
 
     if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
@@ -216,11 +228,16 @@ void VulkanVertexBuffer::createDescriptorPool()
 
 }
 
-// You don’t need to explicitly clean up descriptor sets, 
+//  You don’t need to explicitly clean up descriptor sets, 
 //  because they will be automatically freed when the descriptor pool is destroyed
+// Necessita
+// swapchain.getSwapchianImageSize();
+// vulkanimage.getTextureImageView();
+// vulkanimage.getTextureSampler();
 void VulkanVertexBuffer::createDescriptorSets() 
 {
     SPDLOG_TRACE("createDescriptorSets");
+
 
     auto swapchainImages =  swapchain.getSwapchianImageSize();
 
@@ -238,21 +255,38 @@ void VulkanVertexBuffer::createDescriptorSets()
 
     // populate every descriptor:
     for (size_t i = 0; i < swapchainImages; i++) {
+ 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = uniformBuffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = vulkanimage.getTextureImageView();
+        imageInfo.sampler =  vulkanimage.getTextureSampler();
 
-        vkUpdateDescriptorSets(device.getDevice(), 1, &descriptorWrite, 0, nullptr);
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(device.getDevice(), 
+                static_cast<uint32_t>(descriptorWrites.size()), 
+                descriptorWrites.data(), 
+                0, nullptr);
     }
 }
 
@@ -266,6 +300,7 @@ void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::scale(ubo.model, glm::vec3{2.0});
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     auto extent = swapchain.getExtent();
