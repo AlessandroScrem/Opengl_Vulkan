@@ -26,7 +26,7 @@ add_test(
 add_test(
          NAME opengl 
      COMMAND $<TARGET_FILE:app> --opengl
-     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
      )   
 
 set_tests_properties(vulkan PROPERTIES

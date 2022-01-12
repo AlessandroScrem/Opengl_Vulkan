@@ -21,6 +21,9 @@ set(OGL_SRC
     ogl/OpenGLEngine.cpp
     ogl/InitOpengl.cpp
     ogl/OpenglVertexBuffer.hpp
+    ogl/OpenglVertexBuffer.hpp
+    ogl/OpenglImage.hpp
+    ogl/OpenglImage.cpp
 )
     
 set(COMMON_SRC
