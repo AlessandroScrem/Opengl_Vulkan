@@ -4,6 +4,8 @@
 #include "OpenglImage.hpp"
 // lib
 #include <GL/glew.h>
+#define GLM_FORCE_RADIANS
+//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 // std
@@ -33,19 +35,19 @@ class OpenglVertexBuffer
 {
 public:   
     struct UniformBufferObject {
-        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 model{glm::mat4(1.0f)};
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 proj;
     };
      struct Vertex {
-        glm::vec2 pos;
+        glm::vec3 pos;
         glm::vec3 color;
         glm::vec2 texCoord;
 
      static std::array<VertexInputAttributeDescription, 3> getAttributeDescriptions() {
             std::array<VertexInputAttributeDescription, 3> attributeDescriptions{};
             attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].size = 2;
+            attributeDescriptions[0].size = 3;
             attributeDescriptions[0].type = GL_FLOAT;
             attributeDescriptions[0].normalized = GL_FALSE;
             attributeDescriptions[0].stride = sizeof(Vertex);
@@ -110,13 +112,16 @@ public:
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
       
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.model = glm::scale(ubo.model, glm::vec3{2.0});
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        //ubo.model = glm::scale(ubo.model, glm::vec3{2.0});
+        //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //ubo.view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 
         auto [width, height] = window.GetWindowExtents();
         ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        //ubo.proj[1][1] *= -1;
     }
 
     const UniformBufferObject & getUbo() const { return ubo; }
@@ -164,17 +169,24 @@ private:
     
     unsigned int VBO, VAO, EBO; 
 
+
    const std::vector<Vertex> vertices{
-     // pos           color                texCoord          
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f},   {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f},  {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-    }; 
+        // pos                  color               texCoord          
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}, 
+        {{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, 
+        {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, 
+        {{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}, 
+
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+   };
 
     const std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0
-    };  
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4
+    }; 
 };
 
 class Shader
@@ -243,7 +255,7 @@ private:
     unsigned int uniformBlockIndex;
 
     const char *vertexShaderSource = "#version 450 core\n"
-        "layout (location = 0) in vec2 aPos;\n"
+        "layout (location = 0) in vec3 aPos;\n"
         "layout (location = 1) in vec3 aCol;\n"
         "layout (location = 2) in vec2 aTexCoord;\n"
         "//struct UniformBufferObject {\n"
@@ -257,7 +269,7 @@ private:
         "void main()\n"
         "{\n"
         "   ourColor = aCol;\n"
-        "   gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 0.0, 1.0);\n"
+        "   gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 1.0);\n"
         "   TexCoord = aTexCoord;\n"
         "}\0";
 
