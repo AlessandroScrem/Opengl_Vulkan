@@ -5,6 +5,7 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
+#include "VulkanImage.hpp"
 
 class VulkanEngine : public Engine
 {
@@ -30,7 +31,8 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    VulkanVertexBuffer vertexbuffer{device, swapchain};
+    VulkanImage vulkanimage{device, swapchain};
+    VulkanVertexBuffer vertexbuffer{device, swapchain, vulkanimage};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 
     std::vector<VkCommandBuffer> commandBuffers;

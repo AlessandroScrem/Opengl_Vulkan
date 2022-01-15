@@ -96,8 +96,8 @@ void VulkanPipeline::createPipeline()
 
     //*** get data from Vertex here
     //***
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VulkanVertexBuffer::getBindingDescription();
+    auto attributeDescriptions = VulkanVertexBuffer::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -112,13 +112,25 @@ void VulkanPipeline::createPipeline()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    // Viewports and scissors 
+    //Viewports and scissors 
     VkExtent2D swapChainExtent = swapchain.getExtent();
     VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width  = (float) swapChainExtent.width;
-    viewport.height = (float) swapChainExtent.height;
+    float height = (float) swapChainExtent.height;
+    float width = (float) swapChainExtent.width;
+    float offsetx = 0.f;
+    float offsety = 0.f;
+
+    // Opengl compatible Viewport (SashaWillems)
+    if(Opengl_compatible_viewport)
+    {
+        offsety =  height;
+        height  = -height;
+    }
+    
+    viewport.y = offsety;
+    viewport.x = offsetx;
+    viewport.height = height;
+    viewport.width  = width;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -141,7 +153,15 @@ void VulkanPipeline::createPipeline()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    //rasterizer.cullMode = VK_CULL_MODE_NONE;
+
+    // Opengl compatible Viewport (SashaWillems)
+    if(Opengl_compatible_viewport)
+    {
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    }else{
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
     rasterizer.depthBiasEnable = VK_FALSE;
 
     // Multisampling
@@ -150,6 +170,14 @@ void VulkanPipeline::createPipeline()
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+    // Depth and stencil state
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
 
     // Color blending
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
@@ -188,6 +216,7 @@ void VulkanPipeline::createPipeline()
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
 
     pipelineInfo.layout = pipelineLayout;

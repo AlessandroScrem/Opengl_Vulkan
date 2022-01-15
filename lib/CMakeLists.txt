@@ -11,19 +11,29 @@ set(VK_SRC
     vk/VulkanPipeline.cpp
     vk/VulkanVertexBuffer.hpp
     vk/VulkanVertexBuffer.cpp
+    vk/VulkanImage.hpp
+    vk/VulkanImage.cpp
 )
     
 set(OGL_SRC
     ogl/OpenGLEngine.hpp
     ogl/makeOpengl.cpp
     ogl/OpenGLEngine.cpp
+    ogl/InitOpengl.cpp
+    ogl/OpenglVertexBuffer.hpp
+    ogl/OpenglVertexBuffer.hpp
+    ogl/OpenglImage.hpp
+    ogl/OpenglImage.cpp
 )
     
 set(COMMON_SRC
     common/Window.hpp
     common/Window.cpp
+    common/vertex.h
     common/shader.hpp
     common/mesh.hpp
+    common/model.hpp
+    common/model.cpp
 )
 set(PUB_SRC
     Engine.hpp
@@ -47,9 +57,10 @@ target_link_options(mylib INTERFACE "/ignore:4099")
 
 target_include_directories(mylib
      PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR} 
-        #../spdlog-1.x/include 
-
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE
+        stb
+        tinyobjloader  
  )
 
 

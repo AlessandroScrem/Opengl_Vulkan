@@ -1,0 +1,28 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: Release
+
+engine:
+  default: Vulkan
+  choices:
+    Vulkan:
+      short: Vulkan
+      settings:
+        ENGINE: VULKAN
+      env:
+        PIPPO: pippo
+    Opengl:
+      short: Opengl
+      settings:
+        ENGINE: OPENGL
+      env:
+        PIPPO: pluto
+

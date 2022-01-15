@@ -36,11 +36,19 @@ VulkanEngine::~VulkanEngine()
 
 void VulkanEngine::run() 
 {
+    SPDLOG_TRACE("**********************************************");  
+    SPDLOG_TRACE("*******           START           ************");  
+    SPDLOG_TRACE("**********************************************");  
+
     while(!window.shouldClose() ) {
         glfwPollEvents();
         drawFrame();
     }
-    vkDeviceWaitIdle(device.getDevice());   
+    vkDeviceWaitIdle(device.getDevice()); 
+
+    SPDLOG_TRACE("**********************************************");  
+    SPDLOG_TRACE("*******           END             ************");  
+    SPDLOG_TRACE("**********************************************");  
 }
 
 // Necessita:
@@ -209,6 +217,7 @@ void VulkanEngine::recreateSwapChain()
 // pipeline.getGraphicsPipeline
 // vertexbuffer.getVertexBuffer()
 // vertexbuffer.getIndexBuffer()
+// vertexbuffer.getDescriptorSet
 void VulkanEngine::createCommandBuffers() 
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());
@@ -238,9 +247,19 @@ void VulkanEngine::createCommandBuffers()
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = swapchain.getExtent(); 
 
-            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
+            // set the background color
+            float r = Engine::background.red;
+            float g = Engine::background.green;
+            float b = Engine::background.blue;
+            float a = Engine::background.alpha;
+
+            std::array<VkClearValue, 2> clearValues{};
+            clearValues[0].color = {{r, g, b, a}};
+            clearValues[1].depthStencil = {1.0f, 0};
+
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
+
 
             vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
                 vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
@@ -255,7 +274,7 @@ void VulkanEngine::createCommandBuffers()
 
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 
                 vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 

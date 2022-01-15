@@ -125,14 +125,12 @@ void VulkanDevice::createLogicalDevice()
     // Creating the logical device
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
     createInfo.pEnabledFeatures = &deviceFeatures; 
-
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     if (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -174,6 +172,11 @@ void VulkanDevice::pickPhysicalDevice()
     }      
 }
 
+void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties) 
+{
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties); 
+}
+
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
@@ -185,8 +188,13 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device)
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
+    // check if anisotropic filtering feature is available:
+    // feature if requested from texture sampler
+    // otherwise we have to disable the feature in texture sampler
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-    return indices.isComplete() && extensionsSupported && swapChainAdequate;
+    return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
 QueueFamilyIndices VulkanDevice::findQueueFamilies(VkPhysicalDevice device) 
@@ -261,6 +269,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
     for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
+        SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
     }
 
     return requiredExtensions.empty();
@@ -284,7 +293,14 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice dev
     if (formatCount != 0) {
         details.formats.resize(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        #ifndef NDEBUG
+            SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
+            for(const auto sfmt : details.formats ){
+                SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
+            }
+        #endif
     }
+
 
     // 3) Available presentation modes
     uint32_t presentModeCount;
@@ -501,3 +517,64 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
 }
 
+VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+    throw std::runtime_error("failed to find supported format!");
+}
+
+VkFormat VulkanDevice::findDepthFormat() {
+    return findSupportedFormat( 
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    );
+}
+
+// kind of helper function
+void VulkanDevice::createImage(uint32_t width, uint32_t height, 
+                    VkFormat format, VkImageTiling tiling, 
+                    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+                    VkImage& image, VkDeviceMemory& imageMemory) 
+{
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create image!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(logicalDevice, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate image memory!");
+    }
+
+    vkBindImageMemory(logicalDevice, image, imageMemory, 0);
+}

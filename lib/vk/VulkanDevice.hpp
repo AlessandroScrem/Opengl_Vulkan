@@ -52,17 +52,27 @@ public:
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
 
-    VkCommandPool getCommadPool() { return commandPool; }
-
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     
-    // used by VulkanEngine
+    // used by VulkanEngine , VulkanImage
+    VkCommandPool getCommadPool() { return commandPool; }
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
+    VkFormat findDepthFormat();
+    void createImage(uint32_t width, uint32_t height, 
+                    VkFormat format, VkImageTiling tiling, 
+                    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+                    VkImage& image, VkDeviceMemory& imageMemory);
+    
+    // used by VulkanImage
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    
 
+    void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
     
 
 private:
@@ -74,7 +84,6 @@ private:
 
     void createCommandPool();
     
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     std::vector<const char*> getRequiredExtensions();
 
@@ -108,5 +117,8 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger; 
  
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation"};
-    const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+    // Opengl compatible Viewport (SashaWillems)
+    // needs: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension 
+    const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MAINTENANCE1_EXTENSION_NAME};
 };

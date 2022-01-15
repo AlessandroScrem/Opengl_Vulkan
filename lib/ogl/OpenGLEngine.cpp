@@ -1,6 +1,5 @@
 #include "OpenGLEngine.hpp"
-#include "common/shader.hpp"
-#include "common/mesh.hpp"
+
 
 //std
 #include <cstdlib>
@@ -12,21 +11,20 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-
-// settings
-const std::string WINDOW_TITLE   = "OpenGL";
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 800;
+OpenGLEngine::OpenGLEngine()
+{    
+    SPDLOG_TRACE("constructor"); 
+}
 
 OpenGLEngine::~OpenGLEngine() 
 {
     SPDLOG_TRACE("destructor");
-    run();
+
 }
 
 void OpenGLEngine::run() 
 {   
-    initOpengl(); 
+    initOpenglGlobalStates(); 
     mainLoop();
     cleanup();
 }
@@ -36,52 +34,54 @@ void OpenGLEngine::cleanup()
 
 }
 
-
-void OpenGLEngine::initOpengl() 
+void OpenGLEngine::initOpenglGlobalStates() 
 {
- 
-    glfwMakeContextCurrent(window.getWindowPtr());
-    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    // glfwSetCursorPosCallback(window, mouse_callback);
-    // glfwSetScrollCallback(window, scroll_callback);
-    glfwSetMouseButtonCallback(window.getWindowPtr() , mouse_button_callback);
-
-    glfwMakeContextCurrent(window.getWindowPtr() ); // Initialize GLEW
-    glewExperimental=true; // Needed in core profile
-    if (glewInit() != GLEW_OK) {
-        throw std::runtime_error("Failed to initialize GLEW");
-    }
-    
     // configure global opengl state
     // -----------------------------
+    //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glEnable(GL_CULL_FACE); 
+    glCullFace(GL_BACK); 
+    //glFrontFace(GL_CW); // revert winding order as Vulkan default
+    glFrontFace(GL_CCW ); // default 
+    
     glEnable(GL_DEPTH_TEST);
 }
 
 void OpenGLEngine::mainLoop() 
 {
-    Shader shader{};
-    Mesh mesh{};
-    
-    //render loop
+    // Shader shader{};
+    // Mesh mesh{};
+
     while(!window.shouldClose() ) {
-
-        // render
-	    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-        shader.use();
-        mesh.draw();
-
-        // Swap buffers
-        window.swapBuffers();
         glfwPollEvents();
+        drawFrame();
     }
 }
-
-
-
-void OpenGLEngine::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
+void OpenGLEngine::drawFrame()
 {
-    spdlog::info("button {} clicked!",  button );
+        clearBackground();
+
+        vertexBuffer.updateUniformBuffers();
+        vertexBuffer.bindUniformBuffers();
+
+        // render
+        shader.use();
+        vertexBuffer.draw();
+
+        // Swap buffers
+        window.updateframebuffersize();
+        window.swapBuffers();  
 }
+
+void OpenGLEngine::clearBackground()
+{
+        // set the background color
+        float r = Engine::background.red;
+        float g = Engine::background.green;
+        float b = Engine::background.blue;
+        float a = Engine::background.alpha;
+	    glClearColor(r, g, b, a);
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
+}
+
 

@@ -2,20 +2,28 @@
 
 #include "Engine.hpp"
 #include "common/Window.hpp"
+#include "OpenglVertexBuffer.hpp"
+
 
 class OpenGLEngine : public Engine
 {    
 public:
-    OpenGLEngine(){    SPDLOG_TRACE("constructor"); }
+    OpenGLEngine();
     ~OpenGLEngine();
 
     void run() override;
 
 private:
-    void initOpengl();
+    void initOpenglGlobalStates();
     void mainLoop();
     void cleanup();
+    void drawFrame();
+ 
+    void clearBackground();
     
-    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     Window window{EngineType::Opengl};
+
+    Shader shader{};
+    OpenglVertexBuffer vertexBuffer{window};
+
 };

@@ -22,6 +22,7 @@ public:
     bool shouldClose();
     bool framebufferResized() {return is_framebufferResized; }
     bool waitforSize() { return is_iconified || is_zerosize ; }
+    void updateframebuffersize();
 
     std::pair<int, int> GetWindowExtents();
     void swapBuffers();
@@ -31,13 +32,16 @@ public:
 
 private:
     void initWindow();
+    void createWindow();
+    void setupCallbacks();
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     static void window_iconify_callback(GLFWwindow* window, int iconified);
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) ;
 
     int width{800};
     int height{600};
-    std::string windowName = {"Hello Window"};
+    std::string windowName = {};
     const EngineType  engineType;
 
     bool is_framebufferResized = false;
