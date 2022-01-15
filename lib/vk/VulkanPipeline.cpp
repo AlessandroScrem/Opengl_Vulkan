@@ -121,18 +121,6 @@ void VulkanPipeline::createPipeline()
     float offsety = 0.f;
 
     // Opengl compatible Viewport (SashaWillems)
-    // needs: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension 
-    //        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; 
-    //  
-    //  Vulkan viewport     Opengl viewport
-    //
-    //  ^                    --------------->
-    //  |                   |       x        
-    //  | y                 | y
-    //  |      x            | 
-    //   ----------->       v
-    // 
-    // flip y coordinates
     if(Opengl_compatible_viewport)
     {
         offsety =  height;
@@ -164,8 +152,9 @@ void VulkanPipeline::createPipeline()
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-//    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    //rasterizer.cullMode = VK_CULL_MODE_NONE;
+
     // Opengl compatible Viewport (SashaWillems)
     if(Opengl_compatible_viewport)
     {
@@ -188,12 +177,7 @@ void VulkanPipeline::createPipeline()
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f; // Optional
-    depthStencil.maxDepthBounds = 1.0f; // Optional
     depthStencil.stencilTestEnable = VK_FALSE;
-    depthStencil.front = {}; // Optional
-    depthStencil.back = {}; // Optional
-
 
     // Color blending
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};

@@ -36,11 +36,19 @@ VulkanEngine::~VulkanEngine()
 
 void VulkanEngine::run() 
 {
+    SPDLOG_TRACE("**********************************************");  
+    SPDLOG_TRACE("*******           START           ************");  
+    SPDLOG_TRACE("**********************************************");  
+
     while(!window.shouldClose() ) {
         glfwPollEvents();
         drawFrame();
     }
-    vkDeviceWaitIdle(device.getDevice());   
+    vkDeviceWaitIdle(device.getDevice()); 
+
+    SPDLOG_TRACE("**********************************************");  
+    SPDLOG_TRACE("*******           END             ************");  
+    SPDLOG_TRACE("**********************************************");  
 }
 
 // Necessita:

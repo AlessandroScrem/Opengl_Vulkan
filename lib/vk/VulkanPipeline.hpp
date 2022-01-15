@@ -34,10 +34,13 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     
-    const bool Opengl_compatible_viewport = true; 
-
     const std::string vertshader{"shaders/vert.spv"};
     const std::string fragshader{"shaders/frag.spv"};
-
+    
+    
+    // Opengl compatible Viewport (SashaWillems)
+    // require: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension support for passing negative viewport heights: 
+    // FIXME  tentativo di uniformare opengl a vulkan  
+    const bool Opengl_compatible_viewport = false; 
 };
 

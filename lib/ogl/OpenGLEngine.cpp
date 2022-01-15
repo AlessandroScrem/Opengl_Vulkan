@@ -38,7 +38,11 @@ void OpenGLEngine::initOpenglGlobalStates()
 {
     // configure global opengl state
     // -----------------------------
-    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glEnable(GL_CULL_FACE); 
+    glCullFace(GL_BACK); 
+    glFrontFace(GL_CW); // revert winding order as Vulkan default
+    
     glEnable(GL_DEPTH_TEST);
 }
 
