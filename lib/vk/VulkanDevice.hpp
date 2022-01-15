@@ -61,8 +61,16 @@ public:
     VkCommandPool getCommadPool() { return commandPool; }
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
+    VkFormat findDepthFormat();
+    void createImage(uint32_t width, uint32_t height, 
+                    VkFormat format, VkImageTiling tiling, 
+                    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+                    VkImage& image, VkDeviceMemory& imageMemory);
+    
     // used by VulkanImage
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    
 
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
     

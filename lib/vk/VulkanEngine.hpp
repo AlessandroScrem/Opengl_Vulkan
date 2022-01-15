@@ -31,7 +31,7 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    VulkanImage vulkanimage{device};
+    VulkanImage vulkanimage{device, swapchain};
     VulkanVertexBuffer vertexbuffer{device, swapchain, vulkanimage};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 

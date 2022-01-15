@@ -38,7 +38,8 @@ void OpenGLEngine::initOpenglGlobalStates()
 {
     // configure global opengl state
     // -----------------------------
-    // glEnable(GL_DEPTH_TEST);
+    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void OpenGLEngine::mainLoop() 

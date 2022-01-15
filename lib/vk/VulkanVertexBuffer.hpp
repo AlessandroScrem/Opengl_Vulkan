@@ -5,7 +5,7 @@
 // lib
 // lib
 #define GLM_FORCE_RADIANS
-//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 //#define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -110,30 +110,34 @@ private:
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
 
-    // Coordinate system:
+    //                  Coordinate system:
     //
-    //  Vulkan viewport     Opengl viewport
-    //
-    //  ^                    ----------->
-    //  |                   |       x        
-    //  | y                 | y
-    //  |      x            | 
-    //   ----------->       v
+    //     Vulkan viewport                 Opengl viewport
+    // -----------------------      ---------------------
+    // |                      |     |                    |
+    // |         ^            |     |                    |
+    // |         | y          |     |                    |
+    // |         |            |     |                    |
+    // |         o------->    |     |         o------>   |
+    // |              x       |     |         |       x  |       
+    // |                      |     |         | y        |
+    // |                      |     |         v          |
+    // |----------------------      |---------------------                              
     // 
 
-    // texture coord:                    indices
+    //   texture coord:                    indices
     //  
     //  0,0                         3                   2
-    //  ---------------------       ---------------------
-    //  |                   |       |                   |
-    //  |                   |       |                   |
-    //  |                   |       |       origin      |
-    //  |                   |       |        0.0        |
-    //  |                   |       |                   |
-    //  |                   |       |                   |
-    //  |                   |       |                   |
-    //  |___________________|       |___________________|
-    //                     1,1      0                   1
+    //  ---------------------       ----------------------
+    //  |                   |       |                    |
+    //  |                   |       |                    |
+    //  |                   |       |       origin       |
+    //  |                   |       |        0.0         |
+    //  |                   |       |                    |
+    //  |                   |       |                    |
+    //  |                   |       |                    |
+    //  |___________________|       |____________________|
+    //                     1,1      0                    1
                                
                                 
     const std::vector<Vertex> vertices = {

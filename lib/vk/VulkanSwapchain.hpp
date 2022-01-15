@@ -20,6 +20,9 @@ public:
     // used by VulkanCommandBuffer
     size_t getFramebuffersSize() { return swapChainFramebuffers.size(); }
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
+    
+    // used by VulkanImage
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
     // used by VulkanEngine
     VkSwapchainKHR getSwapchain() { return swapChain; }
@@ -32,6 +35,7 @@ private:
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
+    void createDepthResources();
 
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -52,6 +56,10 @@ private:
     VkFormat swapChainImageFormat;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
+
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;    
 };
 
 
