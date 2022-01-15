@@ -44,7 +44,8 @@ void VulkanImage::createTexture()
     // 4) Add a combined image sampler descriptor to sample colors from the texture
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* pixels = stbi_load(texpath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {

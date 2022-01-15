@@ -5,27 +5,18 @@
 // std
 #include <vector>
 
-// struct UniformBufferObject {
-//     alignas(16) glm::mat4 model;
-//     alignas(16) glm::mat4 view;
-//     alignas(16) glm::mat4 proj;
-// };
 
-
-struct MyVertex {
-    glm::vec2 pos;
+struct Vertex {
+    glm::vec3 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 };
 
-struct MyMesh {
-    const std::vector<MyVertex> vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-    }; 
+typedef  uint32_t Index;
 
-    const std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0
-    };  
+struct UniformBufferObject {
+    alignas(16) glm::mat4 model{glm::mat4(1.0f)};
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
 };
+

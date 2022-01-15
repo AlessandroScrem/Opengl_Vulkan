@@ -32,6 +32,8 @@ set(COMMON_SRC
     common/vertex.h
     common/shader.hpp
     common/mesh.hpp
+    common/model.hpp
+    common/model.cpp
 )
 set(PUB_SRC
     Engine.hpp
@@ -57,7 +59,8 @@ target_include_directories(mylib
      PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
-        stb  
+        stb
+        tinyobjloader  
  )
 
 

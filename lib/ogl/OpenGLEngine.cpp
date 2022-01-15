@@ -41,7 +41,8 @@ void OpenGLEngine::initOpenglGlobalStates()
     //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     glEnable(GL_CULL_FACE); 
     glCullFace(GL_BACK); 
-    glFrontFace(GL_CW); // revert winding order as Vulkan default
+    //glFrontFace(GL_CW); // revert winding order as Vulkan default
+    glFrontFace(GL_CCW ); // default 
     
     glEnable(GL_DEPTH_TEST);
 }

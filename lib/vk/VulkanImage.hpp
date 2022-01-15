@@ -3,6 +3,9 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 
+//std
+#include <string>
+
 class VulkanImage
 {
 public:
@@ -14,8 +17,6 @@ public:
 
 private:
 
-
-    void createDepthResources();   
     void createTexture();
     void createTextureImageView();
     void createTextureSampler();
@@ -36,6 +37,9 @@ private:
 
     VkImageView textureImageView;
     VkSampler textureSampler;
+
+    //const std::string texpath{"textures/texture.jpg"};
+    const std::string texpath{"textures/viking_room.png"};
 
 };
 

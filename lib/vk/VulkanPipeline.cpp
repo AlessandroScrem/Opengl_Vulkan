@@ -96,8 +96,8 @@ void VulkanPipeline::createPipeline()
 
     //*** get data from Vertex here
     //***
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VulkanVertexBuffer::getBindingDescription();
+    auto attributeDescriptions = VulkanVertexBuffer::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());

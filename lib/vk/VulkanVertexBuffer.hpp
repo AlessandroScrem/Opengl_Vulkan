@@ -1,6 +1,8 @@
 #pragma once
 #include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"
+#include "common/vertex.h"
+#include "common/model.hpp"
 
 // lib
 // lib
@@ -22,19 +24,19 @@
     A nested structure must be aligned by the base alignment of its members rounded up to a multiple of 16.
     A mat4 matrix must have the same alignment as a vec4.
  */
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model{glm::mat4(1.0f)};
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
 
 
-struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec2 texCoord;
 
- static VkVertexInputBindingDescription getBindingDescription() {
+class VulkanDevice;
+class VulkanSwapchain;
+
+class VulkanVertexBuffer
+{
+public:
+    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain,  VulkanImage &vulkanimage);
+    ~VulkanVertexBuffer();
+
+static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
@@ -61,20 +63,12 @@ static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions
 
         return attributeDescriptions;
     }
-};
 
-class VulkanDevice;
-class VulkanSwapchain;
 
-class VulkanVertexBuffer
-{
-public:
-    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain,  VulkanImage &vulkanimage);
-    ~VulkanVertexBuffer();
 
     VkBuffer getVertexBuffer() { return vertexBuffer; }
     VkBuffer getIndexBuffer() { return indexBuffer; }
-    size_t getIndexSize() { return indices.size(); }
+    size_t getIndexSize() { return model.indicesSize(); }
 
     void updateUniformBuffer(uint32_t currentImage);
     const VkDescriptorSetLayout &  getDescriptorSetLayout() const { return descriptorSetLayout; }
@@ -88,6 +82,7 @@ public:
     void cleanupUniformBuffers();
 
 private:
+
     void createVertexBuffer();
     void createIndexBuffer();
 
@@ -109,6 +104,9 @@ private:
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
+
+    Model model{};
+
 
     //                  Coordinate system:
     //
@@ -140,7 +138,8 @@ private:
     //                     1,1      0                    1
                                
                                 
-    const std::vector<Vertex> vertices = {
+/*
+     const std::vector<Vertex> vertices = {
         // pos                  color               texCoord          
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}, // 0  bottom left
         {{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // 1  bottom right
@@ -153,9 +152,10 @@ private:
         {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
     }; 
 
-    const std::vector<uint16_t> indices = {
+    const std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0,
         4, 5, 6, 6, 7, 4
     }; 
+ */
 };
 

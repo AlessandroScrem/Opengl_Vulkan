@@ -1,5 +1,6 @@
 #pragma once
 #include "common/vertex.h"
+#include "common/model.hpp"
 #include "common/Window.hpp"
 #include "OpenglImage.hpp"
 // lib
@@ -34,44 +35,40 @@ pointer offset:         Specifies a offset of the first component of the first g
 class OpenglVertexBuffer
 {
 public:   
-    struct UniformBufferObject {
-        alignas(16) glm::mat4 model{glm::mat4(1.0f)};
-        alignas(16) glm::mat4 view;
-        alignas(16) glm::mat4 proj;
-    };
-     struct Vertex {
-        glm::vec3 pos;
-        glm::vec3 color;
-        glm::vec2 texCoord;
 
-     static std::array<VertexInputAttributeDescription, 3> getAttributeDescriptions() {
-            std::array<VertexInputAttributeDescription, 3> attributeDescriptions{};
-            attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].size = 3;
-            attributeDescriptions[0].type = GL_FLOAT;
-            attributeDescriptions[0].normalized = GL_FALSE;
-            attributeDescriptions[0].stride = sizeof(Vertex);
-            attributeDescriptions[0].offset = (GLvoid*)offsetof(Vertex, pos);
 
-            attributeDescriptions[1].location = 1;
-            attributeDescriptions[1].size = 3;
-            attributeDescriptions[1].type = GL_FLOAT;
-            attributeDescriptions[1].normalized = GL_FALSE;
-            attributeDescriptions[1].stride = sizeof(Vertex);
-            attributeDescriptions[1].offset = (GLvoid*)offsetof(Vertex, color);
+    static std::array<VertexInputAttributeDescription, 3> getAttributeDescriptions() {
+        std::array<VertexInputAttributeDescription, 3> attributeDescriptions{};
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].size = 3;
+        attributeDescriptions[0].type = GL_FLOAT;
+        attributeDescriptions[0].normalized = GL_FALSE;
+        attributeDescriptions[0].stride = sizeof(Vertex);
+        attributeDescriptions[0].offset = (GLvoid*)offsetof(Vertex, pos);
 
-            attributeDescriptions[2].location = 2;
-            attributeDescriptions[2].size = 2;
-            attributeDescriptions[2].type = GL_FLOAT;
-            attributeDescriptions[2].normalized = GL_FALSE;
-            attributeDescriptions[2].stride = sizeof(Vertex);
-            attributeDescriptions[2].offset = (GLvoid*)offsetof(Vertex, texCoord);
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].size = 3;
+        attributeDescriptions[1].type = GL_FLOAT;
+        attributeDescriptions[1].normalized = GL_FALSE;
+        attributeDescriptions[1].stride = sizeof(Vertex);
+        attributeDescriptions[1].offset = (GLvoid*)offsetof(Vertex, color);
 
-            return attributeDescriptions;
-        }
-    };
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].size = 2;
+        attributeDescriptions[2].type = GL_FLOAT;
+        attributeDescriptions[2].normalized = GL_FALSE;
+        attributeDescriptions[2].stride = sizeof(Vertex);
+        attributeDescriptions[2].offset = (GLvoid*)offsetof(Vertex, texCoord);
+
+        return attributeDescriptions;
+    }
+
     OpenglVertexBuffer(Window &window) : window{window}
     {
+        auto vertices_size = model.verticesSize();
+        auto vertices_data = model.verticesData();
+        auto indices_size  = model.indicesSize();
+        auto indices_data  = model.indicesData();
 
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -80,10 +77,10 @@ public:
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices_size * sizeof(Vertex), vertices_data, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(uint16_t), indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(Index), indices_data, GL_STATIC_DRAW);
         
         setVertexAttribPointer();
 
@@ -102,7 +99,7 @@ public:
     void draw(){
         glBindVertexArray(VAO); 
         glBindTexture(GL_TEXTURE_2D, texture.getId());
-        glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei) model.indicesSize() , GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE0);
     }
 
@@ -112,12 +109,11 @@ public:
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
       
-        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        //ubo.model = glm::scale(ubo.model, glm::vec3{2.0});
-        //ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //ubo.view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+   
+        // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         auto [width, height] = window.GetWindowExtents();
         ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
@@ -146,7 +142,7 @@ private:
     }
 
     void setVertexAttribPointer(){
-        auto attributes =  Vertex::getAttributeDescriptions();
+        auto attributes =  OpenglVertexBuffer::getAttributeDescriptions();
         for( const auto & attribute : attributes){
             glEnableVertexAttribArray(attribute.location); 
             glVertexAttribPointer(
@@ -161,16 +157,19 @@ private:
     }
 
     Window &window;
-    OpenglImage texture{"textures/texture.jpg"};
+    OpenglImage texture{"textures/viking_room.png"};
 
     UniformBufferObject ubo{};
 
     unsigned int uboMatrices;
     
-    unsigned int VBO, VAO, EBO; 
+    unsigned int VBO, VAO, EBO;
+
+    Model model{}; 
 
 
-   const std::vector<Vertex> vertices{
+/*
+    const std::vector<Vertex> vertices{
         // pos                  color               texCoord          
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}, 
         {{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, 
@@ -186,7 +185,9 @@ private:
     const std::vector<uint16_t> indices = {
         0, 1, 2, 2, 3, 0,
         4, 5, 6, 6, 7, 4
-    }; 
+    };  
+*/
+
 };
 
 class Shader

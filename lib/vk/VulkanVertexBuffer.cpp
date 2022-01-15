@@ -4,7 +4,6 @@
 
 
 
-
 VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanImage &vulkanimage) 
     : device{device}
     ,swapchain{swapchain}
@@ -82,7 +81,7 @@ void VulkanVertexBuffer::createVertexBuffer()
 {
     SPDLOG_TRACE("createVertexBuffer");
 
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(Vertex) * model.verticesSize();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -103,7 +102,7 @@ void VulkanVertexBuffer::createVertexBuffer()
     // at the end we unmap a previously mapped memory object 
     void* data;
     vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t) bufferSize);
+        memcpy(data, model.verticesData(), (size_t) bufferSize);
     vkUnmapMemory(device.getDevice(), stagingBufferMemory);
 
     // The vertexBuffer is now allocated from a memory type that is device local
@@ -125,7 +124,7 @@ void VulkanVertexBuffer::createIndexBuffer()
 {
     SPDLOG_TRACE("createIndexBuffer");
 
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    VkDeviceSize bufferSize = sizeof(Index) * model.indicesSize();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -137,7 +136,7 @@ void VulkanVertexBuffer::createIndexBuffer()
 
     void* data;
     vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t) bufferSize);
+        memcpy(data, model.indicesData(), (size_t) bufferSize);
     vkUnmapMemory(device.getDevice(), stagingBufferMemory);
 
     device.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
@@ -299,19 +298,18 @@ void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage)
 
     UniformBufferObject ubo{};
 
-//    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+    // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     auto extent = swapchain.getExtent();
     ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / (float) extent.height, 0.1f, 10.0f);
-//    ubo.proj[1][1] *= -1;
+    ubo.proj[1][1] *= -1;
 
     void* data;
     vkMapMemory(device.getDevice(), uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
     vkUnmapMemory(device.getDevice(), uniformBuffersMemory[currentImage]);
 }
-
