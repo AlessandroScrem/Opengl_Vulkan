@@ -33,6 +33,7 @@ private:
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
+    void createColorResources();
     void createDepthResources();
 
 
@@ -54,6 +55,10 @@ private:
     VkFormat swapChainImageFormat;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
+
+    VkImage colorImage;
+    VkDeviceMemory colorImageMemory;
+    VkImageView colorImageView;
 
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;

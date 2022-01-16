@@ -165,10 +165,12 @@ void VulkanPipeline::createPipeline()
     rasterizer.depthBiasEnable = VK_FALSE;
 
     // Multisampling
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+    
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.rasterizationSamples = msaaSamples;
 
     // Depth and stencil state
     VkPipelineDepthStencilStateCreateInfo depthStencil{};

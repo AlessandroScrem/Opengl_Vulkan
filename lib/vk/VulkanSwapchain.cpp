@@ -28,6 +28,7 @@ void VulkanSwapchain::createAllSwapchian()
     createSwapchain();
     createImageViews();
     createRenderPass();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
 }
@@ -38,6 +39,11 @@ void VulkanSwapchain::cleanupSwapChain()
         vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
     }
     SPDLOG_TRACE("vkDestroyFramebuffer");
+
+    vkDestroyImageView(device.getDevice(), colorImageView, nullptr);
+    vkDestroyImage(device.getDevice(), colorImage, nullptr);
+    vkFreeMemory(device.getDevice(), colorImageMemory, nullptr);
+    SPDLOG_TRACE("vkDestroy ColorResources");
 
     vkDestroyImageView(device.getDevice(), depthImageView, nullptr);
     vkDestroyImage(device.getDevice(), depthImage, nullptr);
@@ -246,21 +252,48 @@ void VulkanSwapchain::createRenderPass()
 {
     SPDLOG_TRACE("createRenderPass");
 
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+
     // color Attachment description
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.samples = msaaSamples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    //----------------- MSAA ----------------
+    // if msaaSamples > VK_SAMPLE_COUNT_1_BIT
+    // Change the finalLayout from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL. 
+    // That’s because multisampled images cannot be presented directly. We first need to resolve them to a regular image.
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Therefore we will have to add only one new attachment for color which is a so-called resolve attachment:
+
+    // color resolve Attachment description
+    VkAttachmentDescription colorAttachmentResolve{};
+    colorAttachmentResolve.format = swapChainImageFormat;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Set the colorAttachmentResolveRef in order 
+    // to pass to subpass.pResolveAttachments subpass  member 
+    VkAttachmentReference colorAttachmentResolveRef{};
+    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //----------------- MSAA ----------------
 
     // depth Attachment description
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = device.findDepthFormat();
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.samples = msaaSamples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -284,6 +317,7 @@ void VulkanSwapchain::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pResolveAttachments = &colorAttachmentResolveRef; // MSAA
 
     // Subpass dependencies
     VkSubpassDependency dependency{};
@@ -295,7 +329,7 @@ void VulkanSwapchain::createRenderPass()
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     // Render pass
-    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -318,9 +352,10 @@ void VulkanSwapchain::createFramebuffers()
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            std::array<VkImageView, 2> attachments = {
-                swapChainImageViews[i],
-                depthImageView
+            std::array<VkImageView, 3> attachments = {
+                colorImageView,
+                depthImageView,
+                swapChainImageViews[i]
             };
 
         VkFramebufferCreateInfo framebufferInfo{};
@@ -338,14 +373,36 @@ void VulkanSwapchain::createFramebuffers()
     }
 }
 
+void VulkanSwapchain::createColorResources() 
+{
+   SPDLOG_TRACE("createColorResources");
+
+    VkFormat colorFormat = swapChainImageFormat;
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+    const uint32_t mipmap_one = 1;
+
+    device.createImage(swapChainExtent.width, swapChainExtent.height, mipmap_one, 
+                msaaSamples, 
+                colorFormat, 
+                VK_IMAGE_TILING_OPTIMAL, 
+                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+                colorImage, 
+                colorImageMemory);
+
+    colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
+}
+
 void VulkanSwapchain::createDepthResources() 
 {
     SPDLOG_TRACE("createDepthResources");
 
     VkFormat depthFormat = device.findDepthFormat();
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
     const uint32_t mipmap_one = 1;
 
-    device.createImage(swapChainExtent.width,  swapChainExtent.height, mipmap_one, 
+    device.createImage(swapChainExtent.width,  swapChainExtent.height, mipmap_one,
+                msaaSamples, 
                 depthFormat, 
                 VK_IMAGE_TILING_OPTIMAL, 
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 

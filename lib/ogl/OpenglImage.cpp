@@ -16,6 +16,7 @@
 
 OpenglImage::OpenglImage(const std::string  &filename)
 {
+    SPDLOG_TRACE("constructor"); 
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -38,6 +39,7 @@ OpenglImage::OpenglImage(const std::string  &filename)
 
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
+
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

@@ -49,6 +49,7 @@ public:
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
+    const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
 
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -61,7 +62,7 @@ public:
     VkQueue getPresentQueue() {return presentQueue; }
     VkFormat findDepthFormat();
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
-                    VkFormat format, VkImageTiling tiling, 
+                    VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
     
@@ -69,7 +70,10 @@ public:
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
-    void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties);   
+    void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties); 
+
+    VkSampleCountFlagBits getMaxUsableSampleCount();  
+
 
 private:
     void createInstance();
@@ -103,6 +107,7 @@ private:
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkDevice logicalDevice;
 
     VkCommandPool commandPool;

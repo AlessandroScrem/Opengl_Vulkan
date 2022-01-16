@@ -18,6 +18,8 @@
   - createSwapChain();
   - createImageViews();
   - createRenderPass();
+  - createColorResources();
+  - createDepthResources();
   - createFramebuffers();
 
 - VulkanImage
@@ -70,6 +72,8 @@
 
 - VulkanSwapchian
   - vkDestroyFramebuffer()
+  - vkDestroy ColorResources()
+  - vkDestroy DepthResources()
   - vkDestroyImageView()
   - vkDestroyRenderPass()
   - vkDestroySwapchainKHR()
