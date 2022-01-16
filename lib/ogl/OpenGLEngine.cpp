@@ -39,8 +39,12 @@ void OpenGLEngine::initOpenglGlobalStates()
     glCullFace(GL_BACK); 
     //glFrontFace(GL_CW); // revert winding order as Vulkan default
     glFrontFace(GL_CCW ); // default 
-    
     glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_MULTISAMPLE);
+    GLint maxSamples;
+    glGetIntegerv ( GL_MAX_SAMPLES, &maxSamples );
+    spdlog::info("Opengl maxSamples = {}", maxSamples);
 }
 
 void OpenGLEngine::mainLoop() 
