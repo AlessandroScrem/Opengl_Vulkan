@@ -60,7 +60,7 @@ public:
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
     VkFormat findDepthFormat();
-    void createImage(uint32_t width, uint32_t height, 
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
                     VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
@@ -68,10 +68,8 @@ public:
     // used by VulkanImage
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-    
-
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
-    
+    void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties);   
 
 private:
     void createInstance();

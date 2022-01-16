@@ -177,6 +177,11 @@ void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &prope
     vkGetPhysicalDeviceProperties(physicalDevice, &properties); 
 }
 
+void VulkanDevice::GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties)   
+{
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);   
+}
+
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
@@ -339,6 +344,7 @@ void VulkanDevice::setupDebugMessenger()
             throw std::runtime_error("failed to set up debug messenger!");
     }  
 }
+
 
 void VulkanDevice::createSurface() 
 {
@@ -540,7 +546,7 @@ VkFormat VulkanDevice::findDepthFormat() {
 }
 
 // kind of helper function
-void VulkanDevice::createImage(uint32_t width, uint32_t height, 
+void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
                     VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory) 
@@ -551,7 +557,7 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height,
     imageInfo.extent.width = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
+    imageInfo.mipLevels = mipLevels;
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = tiling;

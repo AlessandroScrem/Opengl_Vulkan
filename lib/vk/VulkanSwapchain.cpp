@@ -210,7 +210,7 @@ VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
 }
 
 
-VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -218,7 +218,7 @@ VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkI
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.levelCount = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
@@ -235,9 +235,10 @@ void VulkanSwapchain::createImageViews()
     SPDLOG_TRACE("createImageViews");
 
     swapChainImageViews.resize(swapChainImages.size());
+    const uint32_t mipmap_one = 1;
 
     for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-                swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+                swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
             }    
 }
 
@@ -342,7 +343,9 @@ void VulkanSwapchain::createDepthResources()
     SPDLOG_TRACE("createDepthResources");
 
     VkFormat depthFormat = device.findDepthFormat();
-    device.createImage(swapChainExtent.width,  swapChainExtent.height, 
+    const uint32_t mipmap_one = 1;
+
+    device.createImage(swapChainExtent.width,  swapChainExtent.height, mipmap_one, 
                 depthFormat, 
                 VK_IMAGE_TILING_OPTIMAL, 
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
@@ -350,6 +353,6 @@ void VulkanSwapchain::createDepthResources()
                 depthImage, 
                 depthImageMemory
                 );
-    depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mipmap_one);
 }
 

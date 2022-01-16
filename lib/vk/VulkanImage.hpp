@@ -22,6 +22,7 @@ private:
     void createTextureSampler();
 
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout); 
+    void generateMipmaps(VkImage image,const VkFormat imageFormat,  int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -32,6 +33,7 @@ private:
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
 
+    uint32_t mipLevels;
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
 

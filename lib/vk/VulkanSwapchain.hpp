@@ -20,7 +20,7 @@ public:
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
     
     // used by VulkanImage
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
     // used by VulkanEngine
     VkSwapchainKHR getSwapchain() { return swapChain; }
