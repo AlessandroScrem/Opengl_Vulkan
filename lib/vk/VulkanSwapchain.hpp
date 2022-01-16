@@ -1,7 +1,5 @@
 #pragma once
 #include "VulkanDevice.hpp"
-//#include <vulkan/vulkan.hpp>
-
 
 class VulkanSwapchain
 {

@@ -4,7 +4,6 @@
 
 //std
 #include <memory>
-#include <iostream>
 
 struct Color
 {

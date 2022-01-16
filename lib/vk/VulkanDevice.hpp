@@ -1,7 +1,6 @@
 #pragma once
 #include "common/Window.hpp"
 
-
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,7 +8,6 @@
 //std
 #include <vector>
 #include <optional>
-
 
 
 struct QueueFamilyIndices {

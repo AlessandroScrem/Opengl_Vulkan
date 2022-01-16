@@ -1,8 +1,6 @@
 #pragma once
 
 #include "VulkanDevice.hpp"
-// #include "VulkanSwapchain.hpp"
-// #include "VulkanVertexBuffer.hpp"
 
 class VulkanSwapchain;
 class VulkanVertexBuffer;

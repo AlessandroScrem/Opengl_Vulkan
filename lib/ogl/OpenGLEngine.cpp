@@ -1,15 +1,11 @@
 #include "OpenGLEngine.hpp"
 
-
-//std
-#include <cstdlib>
-#include <iostream>
-
 //libs
 #include <GL/glew.h>
-//libs
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
+//std
 
 OpenGLEngine::OpenGLEngine()
 {    

@@ -5,27 +5,13 @@
 #include "common/model.hpp"
 
 // lib
-// lib
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-//#define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 // std
 #include <array>
-
-/* 
-    Vulkan expects the data in your structure to be aligned in memory in a specific way, for example:
-
-    Scalars have to be aligned by N (= 4 bytes given 32 bit floats).
-    A vec2 must be aligned by 2N (= 8 bytes)
-    A vec3 or vec4 must be aligned by 4N (= 16 bytes)
-    A nested structure must be aligned by the base alignment of its members rounded up to a multiple of 16.
-    A mat4 matrix must have the same alignment as a vec4.
- */
-
-
 
 class VulkanDevice;
 class VulkanSwapchain;
