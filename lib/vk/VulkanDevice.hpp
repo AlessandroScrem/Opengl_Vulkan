@@ -49,7 +49,7 @@ public:
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
-    const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
+    const VkSampleCountFlagBits getMsaaSamples() { return VK_SAMPLE_COUNT_2_BIT /*msaaSamples*/; }
 
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -72,7 +72,6 @@ public:
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
     void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties); 
 
-    VkSampleCountFlagBits getMaxUsableSampleCount();  
 
 
 private:
@@ -86,6 +85,7 @@ private:
     
 
     std::vector<const char*> getRequiredExtensions();
+    VkSampleCountFlagBits getMaxUsableSampleCount();  
 
     bool isDeviceSuitable(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);

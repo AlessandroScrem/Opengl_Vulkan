@@ -41,10 +41,15 @@ void OpenGLEngine::initOpenglGlobalStates()
     glFrontFace(GL_CCW ); // default 
     glEnable(GL_DEPTH_TEST);
 
+  // using multisample
     glEnable(GL_MULTISAMPLE);
     GLint maxSamples;
+    GLint samples;
     glGetIntegerv ( GL_MAX_SAMPLES, &maxSamples );
+    glGetIntegerv ( GL_SAMPLES, &samples );
     spdlog::info("Opengl maxSamples = {}", maxSamples);
+    spdlog::info("Opengl samples = {}", samples);
+
 }
 
 void OpenGLEngine::mainLoop() 
