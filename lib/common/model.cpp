@@ -37,6 +37,8 @@ void Model::load()
 
     std::unordered_map<Vertex, Index> uniqueVertices{};
 
+    SPDLOG_INFO("size_of shapes = {}", shapes.size());   
+
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
             Vertex vertex{};
@@ -57,11 +59,6 @@ void Model::load()
                 uniqueVertices[vertex] = static_cast<Index>(vertices.size());
                 vertices.push_back(vertex);
             }
-
-            // include all vertices
-            //vertices.push_back(vertex);
-            //indices.push_back(static_cast<Index>(indices.size()) );
-
             indices.push_back(uniqueVertices[vertex]);
         }
     }

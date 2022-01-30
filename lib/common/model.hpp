@@ -26,5 +26,6 @@ private:
     std::vector<Vertex> vertices{};
     std::vector<Index> indices{};
     const std::string modelpath{"models/viking_room.obj"};
+    //const std::string modelpath{"models/backpack/backpack.obj"};
 };
 

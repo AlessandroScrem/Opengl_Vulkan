@@ -49,7 +49,7 @@ public:
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
-    const VkSampleCountFlagBits getMsaaSamples() { return VK_SAMPLE_COUNT_2_BIT /*msaaSamples*/; }
+    const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
 
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -85,7 +85,8 @@ private:
     
 
     std::vector<const char*> getRequiredExtensions();
-    VkSampleCountFlagBits getMaxUsableSampleCount();  
+    VkSampleCountFlagBits getMaxUsableSampleCount(); 
+    void setMsaaValue(VkSampleCountFlagBits value); 
 
     bool isDeviceSuitable(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
@@ -107,7 +108,7 @@ private:
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkSampleCountFlagBits maxMsaaSamples, msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkDevice logicalDevice;
 
     VkCommandPool commandPool;

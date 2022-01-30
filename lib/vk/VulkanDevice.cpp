@@ -37,6 +37,8 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
 
     createCommandPool();
     SPDLOG_TRACE("createCommandPool");
+
+    setMsaaValue(VK_SAMPLE_COUNT_2_BIT);
 }
 
 VulkanDevice::~VulkanDevice() 
@@ -163,8 +165,8 @@ void VulkanDevice::pickPhysicalDevice()
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
             physicalDevice = device;
-            msaaSamples = getMaxUsableSampleCount();
-            spdlog::info("msaaSamples = {}", msaaSamples);
+            msaaSamples = maxMsaaSamples = getMaxUsableSampleCount();
+            setMsaaValue(maxMsaaSamples); // set to max
             break;
         }
     }
@@ -600,4 +602,11 @@ VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() {
     if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
     return VK_SAMPLE_COUNT_1_BIT;
+}
+
+void VulkanDevice::setMsaaValue(VkSampleCountFlagBits value){
+    if(value <= maxMsaaSamples){
+        msaaSamples = value;
+        spdlog::info("mssaaSamples = {}", msaaSamples);
+    }
 }
