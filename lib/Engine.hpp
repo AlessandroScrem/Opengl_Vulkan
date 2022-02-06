@@ -1,6 +1,8 @@
 #pragma once
 
 #include "mytypes.hpp"
+#include "common\camera.hpp"
+#include "common/model.hpp"
 
 //std
 #include <memory>
@@ -27,7 +29,9 @@ public:
    static std::unique_ptr<Engine> create(EngineType type);
 
 protected:
+    Model model{};
     Color background{};
+    Camera ourCamera{glm::vec3(-0.0f, 0.0f, 5.0f)}; 
 
 private:
     static std::unique_ptr<Engine> makeVulkan();

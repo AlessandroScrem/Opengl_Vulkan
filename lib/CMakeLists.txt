@@ -24,16 +24,18 @@ set(OGL_SRC
     ogl/OpenglVertexBuffer.hpp
     ogl/OpenglImage.hpp
     ogl/OpenglImage.cpp
+    ogl/OpenglShader.hpp
+    ogl/OpenglUbo.hpp
 )
     
 set(COMMON_SRC
     common/Window.hpp
     common/Window.cpp
     common/vertex.h
-    common/shader.hpp
-    common/mesh.hpp
     common/model.hpp
     common/model.cpp
+    common/camera.hpp
+    common/utils.hpp
 )
 set(PUB_SRC
     Engine.hpp
