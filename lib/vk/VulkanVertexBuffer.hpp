@@ -1,5 +1,6 @@
 #pragma once
 #include "VulkanDevice.hpp"
+#include "VulkanUbo.hpp"
 #include "VulkanImage.hpp"
 #include "common/vertex.h"
 #include "common/model.hpp"
@@ -19,7 +20,7 @@ class VulkanSwapchain;
 class VulkanVertexBuffer
 {
 public:
-    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain,  VulkanImage &vulkanimage);
+    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage);
     ~VulkanVertexBuffer();
 
 static VkVertexInputBindingDescription getBindingDescription() {
@@ -60,12 +61,9 @@ static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions
     const VkDescriptorSetLayout &  getDescriptorSetLayout() const { return descriptorSetLayout; }
     const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
 
-    // recreated and cleaned from VulkanEngine.recreateswapchain()
-    void createUniformBuffers();
     void createDescriptorPool();
     void createDescriptorSets();
     void cleanupDescriptorPool();
-    void cleanupUniformBuffers();
 
 private:
 
@@ -77,6 +75,7 @@ private:
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
+    VulkanUbo &ubo;
     VulkanImage &vulkanimage;
 
     VkBuffer vertexBuffer;
@@ -87,9 +86,6 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
-
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
 
     Model model{};
 

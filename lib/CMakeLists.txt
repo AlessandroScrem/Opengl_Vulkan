@@ -13,6 +13,8 @@ set(VK_SRC
     vk/VulkanVertexBuffer.cpp
     vk/VulkanImage.hpp
     vk/VulkanImage.cpp
+    vk/VulkanUbo.hpp
+    vk/VulkanUbo.cpp
 )
     
 set(OGL_SRC

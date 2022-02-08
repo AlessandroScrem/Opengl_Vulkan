@@ -3,6 +3,7 @@
 #include "common/Window.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanUbo.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanImage.hpp"
@@ -31,8 +32,9 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
+    VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
-    VulkanVertexBuffer vertexbuffer{device, swapchain, vulkanimage};
+    VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 
     std::vector<VkCommandBuffer> commandBuffers;

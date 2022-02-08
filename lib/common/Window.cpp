@@ -108,6 +108,7 @@ void Window::swapBuffers()
 std::pair<int, int> Window::GetWindowExtents() 
 {
     // FIXME  flag will be reset here 
+    // maybe implement observable pattern
     if(is_framebufferResized) {
         is_framebufferResized = false;
     }
@@ -122,11 +123,7 @@ void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height
     app->is_framebufferResized = true;
     app->width = width;
     app->height = height;
-
-    app->is_zerosize = false;
-    if(width == 0 || height == 0){
-        app->is_zerosize = true;
-    }
+    app->is_zerosize = (!width || !height);  
 
     spdlog::info("window resized");   
 }

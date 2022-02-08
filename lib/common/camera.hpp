@@ -60,8 +60,10 @@ public:
     /**
      * @brief Construct a new Camera object
      * 
-     * @param position 
-     * @param up 
+     * @param position
+     * @param target 
+     * @param up
+     * @param Fov - (optional) default = 45
      */
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 5.0f),
             glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), 

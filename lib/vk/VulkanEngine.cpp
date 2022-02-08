@@ -83,7 +83,8 @@ void VulkanEngine::drawFrame()
     // Mark the image as now being in use by this frame
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
-    vertexbuffer.updateUniformBuffer(imageIndex);
+    //vertexbuffer.updateUniformBuffer(imageIndex);
+    ubo.updateUniformBuffer(imageIndex);
  
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -184,13 +185,15 @@ void VulkanEngine::recreateSwapChain()
 // destroy
     cleanupCommandBuffers();
     pipeline.cleanupPipeline();
-    vertexbuffer.cleanupUniformBuffers();
+    //vertexbuffer.cleanupUniformBuffers();
+    ubo.cleanupUniformBuffers();
     vertexbuffer.cleanupDescriptorPool();
     swapchain.cleanupSwapChain();
 
 // create
     swapchain.createAllSwapchian();
-    vertexbuffer.createUniformBuffers();
+    //vertexbuffer.createUniformBuffers();
+    ubo.createUniformBuffers();
     vertexbuffer.createDescriptorPool();
     vertexbuffer.createDescriptorSets();
     pipeline.createPipeline();

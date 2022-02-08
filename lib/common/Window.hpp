@@ -24,11 +24,14 @@ public:
     bool waitforSize() { return is_iconified || is_zerosize ; }
     void updateframebuffersize();
 
-    std::pair<int, int> GetWindowExtents();
-    void swapBuffers();
-
     GLFWwindow* getWindowPtr() { return window; }
+    std::pair<int, int> GetWindowExtents();
+    float getWindowAspect() { 
+        if(is_zerosize) return 1.0;
+        return (float) width / height; 
+    }
 
+    void swapBuffers();
 
 private:
     void initWindow();

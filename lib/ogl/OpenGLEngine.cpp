@@ -54,9 +54,6 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 void OpenGLEngine::mainLoop() 
 {
-    // Shader shader{};
-    // Mesh mesh{};
-
     while(!window.shouldClose() ) {
         glfwPollEvents();
         drawFrame();
@@ -96,10 +93,8 @@ void OpenGLEngine::updateUbo()
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    auto [width, height] = window.GetWindowExtents();
-    ubo.proj = glm::perspective(glm::radians(45.0f), width / (float) height, 0.1f, 10.0f);
+    ubo.view = ourCamera.GetViewMatrix();
+    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
 
     // update uniform buffer data
     ubo.bind();

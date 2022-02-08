@@ -4,16 +4,16 @@
 
 
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanImage &vulkanimage) 
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage) 
     : device{device}
     ,swapchain{swapchain}
+    ,ubo{ubo}
     ,vulkanimage{vulkanimage}
 { 
     SPDLOG_TRACE("constructor");
     createIndexBuffer();   
     createVertexBuffer();   
     createDescriptorSetLayout();
-    createUniformBuffers();
     createDescriptorPool();
     createDescriptorSets();
 }
@@ -31,25 +31,11 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
     vkFreeMemory(device.getDevice(), vertexBufferMemory, nullptr);  
     SPDLOG_TRACE("Vertex vkFreeMemory");
 
-    cleanupUniformBuffers();
     cleanupDescriptorPool();
 
     vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
     SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
 } 
-
-// Necessita
-// swapchain.getSwapchianImageSize()
-void VulkanVertexBuffer::cleanupUniformBuffers() 
-{   
-    SPDLOG_TRACE("cleanupUniformBuffers");
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    for (size_t i = 0; i < swapchainImages ; i++) {
-        vkDestroyBuffer(device.getDevice(), uniformBuffers[i], nullptr);
-        vkFreeMemory(device.getDevice(), uniformBuffersMemory[i], nullptr);
-    }
-}
 
 void VulkanVertexBuffer::cleanupDescriptorPool()
 {
@@ -181,27 +167,6 @@ void VulkanVertexBuffer::createDescriptorSetLayout()
     }
 }
 
-// Necessita
-// swapchain.getSwapchianImageSize()
-void VulkanVertexBuffer::createUniformBuffers() 
-{
-    SPDLOG_TRACE("createUniformBuffers");
-
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    uniformBuffers.resize(swapchainImages);
-    uniformBuffersMemory.resize(swapchainImages);
-
-    for (size_t i = 0; i < swapchainImages; i++) {
-        device.createBuffer(bufferSize, 
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            uniformBuffers[i], 
-            uniformBuffersMemory[i]);
-        }
-}
-
 void VulkanVertexBuffer::createDescriptorPool() 
 {
     SPDLOG_TRACE("createDescriptorPool");
@@ -232,12 +197,14 @@ void VulkanVertexBuffer::createDescriptorPool()
 // swapchain.getSwapchianImageSize();
 // vulkanimage.getTextureImageView();
 // vulkanimage.getTextureSampler();
+// vulkanubo.getUniformBuffers();
 void VulkanVertexBuffer::createDescriptorSets() 
 {
     SPDLOG_TRACE("createDescriptorSets");
 
 
     auto swapchainImages =  swapchain.getSwapchianImageSize();
+    auto& uniformBuffers = ubo.getUniformBuffers();
 
     std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -286,30 +253,4 @@ void VulkanVertexBuffer::createDescriptorSets()
                 descriptorWrites.data(), 
                 0, nullptr);
     }
-}
-
-void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage) 
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-
-    UniformBufferObject ubo{};
-
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    auto extent = swapchain.getExtent();
-    ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / (float) extent.height, 0.1f, 10.0f);
-    ubo.proj[1][1] *= -1;
-
-    void* data;
-    vkMapMemory(device.getDevice(), uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-        memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device.getDevice(), uniformBuffersMemory[currentImage]);
 }

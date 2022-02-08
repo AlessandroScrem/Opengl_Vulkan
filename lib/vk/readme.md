@@ -21,6 +21,8 @@
   - createColorResources();
   - createDepthResources();
   - createFramebuffers();
+- VulkanUbo
+  - createUniformBuffers()
 
 - VulkanImage
   - createTextureImage();
@@ -31,7 +33,6 @@
   - createVertexBuffer();
   - createIndexBuffer();
   - createDescpriptorSetLayout()
-  - createUniformBuffers()
   - createDescriptorPool()
   - createDescriptorSets()
 
@@ -60,7 +61,6 @@
   - Index FreeMemory();
   - Vertex destroyBuffer()
   - Vertex FreeMemory();
-  - cleanupUniformBuffers()
   - cleanupDescriptorPool()
   - destroyDescpriptorSetLayout()
 
@@ -69,6 +69,9 @@
   - vkDestroy ImageView
   - vkDestroy textureImage
   - vkFree textureImageMemory
+
+- VulkanUbo
+  - cleanupUniformBuffers()
 
 - VulkanSwapchian
   - vkDestroyFramebuffer()
