@@ -42,6 +42,7 @@ void VulkanEngine::run()
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
+        window.update();
         drawFrame();
     }
     vkDeviceWaitIdle(device.getDevice()); 
@@ -178,8 +179,10 @@ void VulkanEngine::createSyncObjects()
 void VulkanEngine::recreateSwapChain() 
 {  
      while (window.waitforSize()) {
+        window.update();
         glfwWaitEvents();
     }
+
     vkDeviceWaitIdle(device.getDevice());
 
 // destroy

@@ -8,7 +8,6 @@
 //std
 #include <string>
 
-
 struct GLFWwindow;
 
 class Window
@@ -24,12 +23,13 @@ public:
     bool framebufferResized() {return is_framebufferResized; }
     bool waitforSize() { return is_iconified || is_zerosize ; }
     void updateframebuffersize();
+    void update();
 
-    GLFWwindow* getWindowPtr() { return window; }
+    GLFWwindow* getWindowPtr() { return window_; }
     std::pair<int, int> GetWindowExtents();
     float getWindowAspect() { 
         if(is_zerosize) return 1.0;
-        return (float) width / height; 
+        return (float) width_ / height_; 
     }
 
     void swapBuffers();
@@ -37,15 +37,10 @@ public:
 private:
     void initWindow();
     void createWindow();
-    void setupCallbacks();
     void registerCallbacks();
 
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-    static void window_iconify_callback(GLFWwindow* window, int iconified);
-    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) ;
-
-    int width{800};
-    int height{600};
+    int width_{800};
+    int height_{600};
     std::string windowName = {};
     const EngineType  engineType;
     ngn::MultiplatformInput input_ {};
@@ -54,5 +49,5 @@ private:
     bool is_iconified = false;
     bool is_zerosize = false;
 
-    GLFWwindow* window = nullptr;
+    GLFWwindow* window_ = nullptr;
 };

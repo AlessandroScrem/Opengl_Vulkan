@@ -41,7 +41,7 @@ Window::Window(EngineType type) : engineType{type}
 Window::~Window() {
     SPDLOG_TRACE("destructor");
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(window_);
     glfwTerminate();
 }
 
@@ -70,15 +70,15 @@ void Window::initWindow()
 //create and open window  
 void Window::createWindow() 
 {
-    window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
-    if( window == NULL ){
+    window_ = glfwCreateWindow(width_, height_, windowName.c_str(), nullptr, nullptr);
+    if( window_ == NULL ){
         spdlog::critical( "failed to open GLFW window!");
         glfwTerminate();
     } 
 
     if(engineType == EngineType::Opengl)
     {
-        InitOpengl(window);
+        InitOpengl(window_);
         spdlog::info("Opengl release number {} ", glGetString(GL_VERSION) );
         spdlog::info("GL_SHADING_LANGUAGE_VERSION {} ", glGetString(GL_SHADING_LANGUAGE_VERSION) );
         spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
@@ -90,10 +90,10 @@ void Window::registerCallbacks()
 {   
 using namespace  ngn;
 
-    glfwSetWindowUserPointer(window, &input_);
+    glfwSetWindowUserPointer(window_, &input_);
 
     // register keyboard
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         // Get the input
         auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
 
@@ -115,7 +115,7 @@ using namespace  ngn;
     });
 
     // register mouse btn
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+    glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
         // Get the input
         auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
 
@@ -125,11 +125,10 @@ using namespace  ngn;
     });
 
     // register mouse move
-    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) { 
+    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos) { 
         // Get the mouse pos
         Mouse::Move((float)xpos, (float)ypos);           
     }); 
-
 
     // Register input devices
     auto* inputManager = ServiceLocator::GetInputManager();
@@ -145,48 +144,41 @@ using namespace  ngn;
         .Index = 0,
         .StateFunc = std::bind(&MultiplatformInput::GetMouseState, &input_, std::placeholders::_1)
     });
-
-    // register window resize
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        app->is_framebufferResized = true;
-        app->width = width;
-        app->height = height;
-        app->is_zerosize = (!width || !height);  
-
-        spdlog::info("window resized");   
-    });
-
-    // register window minimize
-    glfwSetWindowIconifyCallback(window,[](GLFWwindow* window, int iconified) {
-        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        app->is_iconified = iconified == 1 ? true : false; ;
-    });   
 }
 
 bool Window::shouldClose()
 {
-    return glfwWindowShouldClose(window); 
+    return glfwWindowShouldClose(window_); 
 }
 
 void Window::updateframebuffersize() 
 {
-    glViewport(0, 0, width, height);
+    if (is_framebufferResized){
+        glViewport(0, 0, width_, height_);
+    }
 }
 
 void Window::swapBuffers() 
 { 
-    glfwSwapBuffers(window); 
+    glfwSwapBuffers(window_); 
+}
+void Window::update(){
+    GetWindowExtents();
 }
 
 std::pair<int, int> Window::GetWindowExtents() 
 {
-    // FIXME  flag will be reset here 
-    // maybe implement observable pattern
-    if(is_framebufferResized) {
-        is_framebufferResized = false;
+    int w, h;
+    glfwGetFramebufferSize(window_, &w, &h);
+    if(is_zerosize = (!w || !h) ) {
+        spdlog::info("is_framebufferResized = {}", is_zerosize);
     }
-    return { width, height };
+    if(is_framebufferResized = (w != width_ || h != height_) ) {
+        width_ = w;
+        height_ = h;
+        spdlog::info("is_framebufferResized = {}", is_framebufferResized);
+
+    }
+    return { width_, width_ };
 }
+
