@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mytypes.hpp"
+#include "common\Input\multiplatform_input.hpp"
 
 // lib
 
@@ -37,6 +38,7 @@ private:
     void initWindow();
     void createWindow();
     void setupCallbacks();
+    void registerCallbacks();
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     static void window_iconify_callback(GLFWwindow* window, int iconified);
@@ -46,6 +48,7 @@ private:
     int height{600};
     std::string windowName = {};
     const EngineType  engineType;
+    ngn::MultiplatformInput input_ {};
 
     bool is_framebufferResized = false;
     bool is_iconified = false;

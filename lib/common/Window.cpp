@@ -1,4 +1,6 @@
 #include "Window.hpp"
+#include "common\Input\service_locator.hpp"
+#include "common\input\utils.hpp"
 
 //std
 #include <cstdlib>
@@ -28,10 +30,12 @@ Window::Window(EngineType type) : engineType{type}
         break;
     }
 
+    // provide input manager
+    ngn::ServiceLocator::Provide(new ngn::InputManager());
 
     initWindow();
     createWindow();
-    setupCallbacks();
+    registerCallbacks();
 }
 
 Window::~Window() {
@@ -82,12 +86,84 @@ void Window::createWindow()
 
 }
 
-void Window::setupCallbacks() 
-{
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);  
-    glfwSetWindowIconifyCallback(window, window_iconify_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);    
+void Window::registerCallbacks() 
+{   
+using namespace  ngn;
+
+    glfwSetWindowUserPointer(window, &input_);
+
+    // register keyboard
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        // Get the input
+        auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
+
+        if (input) {
+            // set the new value for key
+            float value = 0.f;
+
+            switch (action) {
+                case GLFW_PRESS:
+                case GLFW_REPEAT:
+                    value = 1.f;
+                    break;
+                default:
+                    value = 0.f;
+            }
+            
+            input->UpdateKeyboardState(key, value);
+        }
+    });
+
+    // register mouse btn
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+        // Get the input
+        auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
+
+        if (input) {
+            input->UpdateMouseState(button, action == GLFW_PRESS ? 1.f : 0.f);
+        }
+    });
+
+    // register mouse move
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) { 
+        // Get the mouse pos
+        Mouse::Move((float)xpos, (float)ypos);           
+    }); 
+
+
+    // Register input devices
+    auto* inputManager = ServiceLocator::GetInputManager();
+
+    inputManager->RegisterDevice(InputDevice {
+        .Type = InputDeviceType::KEYBOARD,
+        .Index = 0,
+        .StateFunc = std::bind(&MultiplatformInput::GetKeyboardState, &input_, std::placeholders::_1)
+    });
+
+    inputManager->RegisterDevice(InputDevice {
+        .Type = InputDeviceType::MOUSE,
+        .Index = 0,
+        .StateFunc = std::bind(&MultiplatformInput::GetMouseState, &input_, std::placeholders::_1)
+    });
+
+    // register window resize
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+
+        app->is_framebufferResized = true;
+        app->width = width;
+        app->height = height;
+        app->is_zerosize = (!width || !height);  
+
+        spdlog::info("window resized");   
+    });
+
+    // register window minimize
+    glfwSetWindowIconifyCallback(window,[](GLFWwindow* window, int iconified) {
+        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+
+        app->is_iconified = iconified == 1 ? true : false; ;
+    });   
 }
 
 bool Window::shouldClose()
@@ -113,29 +189,4 @@ std::pair<int, int> Window::GetWindowExtents()
         is_framebufferResized = false;
     }
     return { width, height };
-}
-
-void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) 
-{
-    // TODO change variable name or move outside to app class
-    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    app->is_framebufferResized = true;
-    app->width = width;
-    app->height = height;
-    app->is_zerosize = (!width || !height);  
-
-    spdlog::info("window resized");   
-}
-
-void Window::window_iconify_callback(GLFWwindow* window, int iconified) 
-{
-    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    app->is_iconified = iconified == 1 ? true : false; 
-}
-
-void Window::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
-{
-    spdlog::info("button {} clicked!",  button );
 }

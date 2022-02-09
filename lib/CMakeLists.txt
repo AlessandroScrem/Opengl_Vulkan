@@ -37,7 +37,15 @@ set(COMMON_SRC
     common/model.hpp
     common/model.cpp
     common/camera.hpp
-    common/utils.hpp
+    
+    common/input/utils.hpp
+    common/input/input_key.hpp
+    common/input/input_devices.hpp
+    common/input/input_manager.hpp
+    common/input/input_manager.cpp
+    common/input/multiplatform_input.hpp
+    common/input/multiplatform_input.cpp
+    common/input/service_locator.hpp
 )
 set(PUB_SRC
     Engine.hpp
