@@ -13,7 +13,7 @@ struct GLFWwindow;
 class Window
 {
 public:
-    Window(EngineType type);
+    Window(EngineType type, ngn::MultiplatformInput &input);
     ~Window();
 
     Window(const Window &) = delete;
@@ -43,7 +43,8 @@ private:
     int height_{600};
     std::string windowName = {};
     const EngineType  engineType;
-    ngn::MultiplatformInput input_ {};
+
+    ngn::MultiplatformInput &input_;
 
     bool is_framebufferResized = false;
     bool is_iconified = false;

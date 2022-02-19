@@ -37,6 +37,7 @@ set(COMMON_SRC
     common/model.hpp
     common/model.cpp
     common/camera.hpp
+    common/camera.cpp
     
     common/input/utils.hpp
     common/input/input_key.hpp
@@ -51,6 +52,7 @@ set(PUB_SRC
     Engine.hpp
     Engine.cpp
     mytypes.hpp
+    ngn_command.hpp
 )
 
 add_library(mylib  ${COMMON_SRC} ${PUB_SRC} ${OGL_SRC} ${VK_SRC})

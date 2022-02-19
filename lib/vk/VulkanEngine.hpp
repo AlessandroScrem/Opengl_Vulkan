@@ -1,6 +1,8 @@
 #pragma once
 #include "Engine.hpp"
 #include "common/Window.hpp"
+#include "common/Input/multiplatform_input.hpp"
+
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanUbo.hpp"
@@ -28,7 +30,7 @@ private:
     void createCommandBuffers();
     void cleanupCommandBuffers();
 
-    Window window{EngineType::Vulkan};
+    Window window{EngineType::Vulkan, Engine::input_};
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};

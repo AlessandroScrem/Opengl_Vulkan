@@ -26,7 +26,7 @@ private:
  
     void clearBackground();
     
-    Window window{EngineType::Opengl};
+    Window window{EngineType::Opengl, Engine::input_};
 
     OpenglShader shader{};
     OpenglUbo ubo{};

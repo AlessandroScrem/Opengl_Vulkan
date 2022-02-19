@@ -14,7 +14,9 @@
 
 void InitOpengl(GLFWwindow* window);
 
-Window::Window(EngineType type) : engineType{type}
+Window::Window(EngineType type, ngn::MultiplatformInput &input) 
+: engineType{type} 
+, input_{input}
 {
     SPDLOG_TRACE("constructor");
 
@@ -29,9 +31,6 @@ Window::Window(EngineType type) : engineType{type}
     default:
         break;
     }
-
-    // provide input manager
-    ngn::ServiceLocator::Provide(new ngn::InputManager());
 
     initWindow();
     createWindow();
@@ -90,6 +89,11 @@ void Window::registerCallbacks()
 {   
 using namespace  ngn;
 
+    if(!&input_){
+        spdlog::error("failed to get MultiplatformInput pointer");
+        return;
+    }
+
     glfwSetWindowUserPointer(window_, &input_);
 
     // register keyboard
@@ -130,20 +134,17 @@ using namespace  ngn;
         Mouse::Move((float)xpos, (float)ypos);           
     }); 
 
-    // Register input devices
-    auto* inputManager = ServiceLocator::GetInputManager();
-
-    inputManager->RegisterDevice(InputDevice {
-        .Type = InputDeviceType::KEYBOARD,
-        .Index = 0,
-        .StateFunc = std::bind(&MultiplatformInput::GetKeyboardState, &input_, std::placeholders::_1)
+    // register window resize
+    glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height) { 
+        //does nothing
+        spdlog::info("window resized");   
     });
 
-    inputManager->RegisterDevice(InputDevice {
-        .Type = InputDeviceType::MOUSE,
-        .Index = 0,
-        .StateFunc = std::bind(&MultiplatformInput::GetMouseState, &input_, std::placeholders::_1)
-    });
+    // register window minimize
+    glfwSetWindowIconifyCallback(window_,[](GLFWwindow* window, int iconified) {
+        //does nothing
+        spdlog::info("window iconified");
+    });   
 }
 
 bool Window::shouldClose()

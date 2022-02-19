@@ -42,6 +42,7 @@ void VulkanEngine::run()
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
+        Engine::updateEvents();
         window.update();
         drawFrame();
     }

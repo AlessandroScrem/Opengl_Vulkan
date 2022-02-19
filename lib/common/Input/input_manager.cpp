@@ -1,7 +1,7 @@
 #include "input_manager.hpp"
 
 // std
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 namespace ngn
 {
@@ -51,16 +51,16 @@ namespace ngn
 
 
     InputManager::InputManager() {
-        std::cout << "Input Manager intialized!\n";
+        SPDLOG_TRACE("Input Manager intialized!");
     }
 
     InputManager::~InputManager() {
     }
 
     void InputManager::RegisterDevice(const InputDevice& device) {
-        std::cout << "Device registered of type: " << static_cast<int>(device.Type) << std::endl;
+        spdlog::info("Device registered of type: {}", static_cast<int>(device.Type) );
         devices_.emplace_back(device);
-        std::cout << "Device #: " << devices_.size() << std::endl;
+        spdlog::info("Device #: {}" ,devices_.size() );
     }
     
     void InputManager::RemoveDevice(InputDeviceType source, int inputIndex) 
