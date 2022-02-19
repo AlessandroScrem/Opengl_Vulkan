@@ -12,7 +12,6 @@
  namespace ngn
 {
 
-
 // action 
 struct Feed{
 
@@ -63,28 +62,26 @@ struct Time{
 // mouse direction utility
 class Mouse{
 private:
-    // Constants
-    // ******************************************
-    inline static const float mouseSensitivity = {0.1f};
-	   
+    	   
     enum class  Direction
     { 
         straightX, 
         straightY, 
         Free
     };
-public:
+
+    // Constants
+    inline static const float mouseSensitivity = {0.1f};
+
     // mouse position first point
     inline static glm::vec2 clickpoint{glm::vec2(0.f)}; 
     inline static glm::vec2 prevpoint{glm::vec2(0.f)};
     inline static glm::vec2 pos{glm::vec2(0.f)};
-private:
     // is checking for direction
     inline static bool checkdir{false};
     // movement is just started
     inline static bool is_clicked{false};
     inline static Direction direction = Direction::Free;
-
 
     /**
      * @brief Check for mouse movement is free or straight
@@ -111,24 +108,27 @@ private:
      }
 
 public:
-   static std::string getDirection_str(){
-       std::string dir{};
-       switch (direction)
-       {
-       case Direction::straightX:
-           dir = "straightX";
-           break;
-       case Direction::straightY:
-           dir = "straightY";
-           break;
-       case Direction::Free:
-           dir = "Free";
-           break;   
-       default:
+
+    static float getMouseSensitivity(){return mouseSensitivity;}
+
+    static std::string getDirection_str(){
+        std::string dir{};
+        switch (direction)
+        {
+        case Direction::straightX:
+            dir = "straightX";
+            break;
+        case Direction::straightY:
+            dir = "straightY";
+            break;
+        case Direction::Free:
+            dir = "Free";
+            break;   
+        default:
             dir = "";
-           break;
-       }
-       return dir;
+            break;
+        }
+        return dir;
     }
 
     static bool isClicked(){return is_clicked;}
@@ -151,6 +151,7 @@ public:
     static void Stop(){
         is_clicked = false;
         checkdir = false;
+        direction = Direction::Free;
     }
 
     // dummy function
@@ -199,7 +200,5 @@ public:
         
         return offset;
     }
-};
-
-    
+};    
 } // namespace utils
