@@ -16,6 +16,7 @@ public:
     ~OpenGLEngine();
 
     void run() override;
+    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);};
 
 private:
     void initOpenglGlobalStates();

@@ -24,6 +24,7 @@ public:
     virtual ~Engine(){SPDLOG_TRACE("destructor");}
        
     virtual void run() = 0;
+    virtual void setWindowMessage(std::string msg) =0;
 
 
    static std::unique_ptr<Engine> create(EngineType type);
@@ -34,7 +35,7 @@ protected:
     
     Model model{};
     Color background{};
-    Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)}; 
+    Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)}; 
 
 private:
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};

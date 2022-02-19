@@ -35,7 +35,7 @@ struct Feed{
 struct Time{
 
     // Time between current frame and last frame
-    inline static float frameTime = 0.0f;
+    inline static float frameTime = 1.0f;
     static float getFrameTime(){ return frameTime; }
 
    /**
@@ -94,7 +94,7 @@ private:
         float deltax = (float) abs(pos.x - clickpoint.x);
         float deltay = (float) abs(pos.y - clickpoint.y);
         // 
-        if(deltax > 20|| deltay > 20){
+        if(deltax > 30|| deltay > 30){
             if (deltay <  3 ){
                 // if the angle is almost horizontal -> mouse forced to X direction
                 direction = Direction::straightX;

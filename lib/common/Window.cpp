@@ -23,10 +23,10 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
     switch (type)
     {
     case EngineType::Opengl :
-        windowName = "Hello Opengl";
+        windowName_ = "Hello Opengl";
         break;    
     case EngineType::Vulkan :
-        windowName = "Hello Vulkan";
+        windowName_ = "Hello Vulkan";
         break;    
     default:
         break;
@@ -69,7 +69,7 @@ void Window::initWindow()
 //create and open window  
 void Window::createWindow() 
 {
-    window_ = glfwCreateWindow(width_, height_, windowName.c_str(), nullptr, nullptr);
+    window_ = glfwCreateWindow(width_, height_, windowName_.c_str(), nullptr, nullptr);
     if( window_ == NULL ){
         spdlog::critical( "failed to open GLFW window!");
         glfwTerminate();
@@ -85,9 +85,15 @@ void Window::createWindow()
 
 }
 
+void Window::SetWindowTitle(std::string msg) {
+    glfwSetWindowTitle(window_, (windowName_ + msg).c_str());
+}
+
 void Window::registerCallbacks() 
-{   
-using namespace  ngn;
+{
+
+    SPDLOG_TRACE("registerCallbacks");  
+    using namespace  ngn;
 
     if(!&input_){
         spdlog::error("failed to get MultiplatformInput pointer");

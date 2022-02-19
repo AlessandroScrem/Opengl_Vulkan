@@ -24,6 +24,7 @@ public:
     bool waitforSize() { return is_iconified || is_zerosize ; }
     void updateframebuffersize();
     void update();
+    void setWindowMessage(std::string msg){SetWindowTitle(msg);}
 
     GLFWwindow* getWindowPtr() { return window_; }
     std::pair<int, int> GetWindowExtents();
@@ -38,10 +39,11 @@ private:
     void initWindow();
     void createWindow();
     void registerCallbacks();
+    void SetWindowTitle(std::string msg = "");
 
     int width_{800};
     int height_{600};
-    std::string windowName = {};
+    std::string windowName_ = {};
     const EngineType  engineType;
 
     ngn::MultiplatformInput &input_;

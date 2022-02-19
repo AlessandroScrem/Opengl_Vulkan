@@ -1,12 +1,8 @@
 
 
 #include "common/camera.hpp"
-
-
-// #include <glm/gtx/vector_angle.hpp>
-// #include <glm/gtx/euler_angles.hpp>
-// #include <glm/gtc/constants.hpp>
-
+//libs
+#include <spdlog/spdlog.h>
 
 /**
  * @brief Update camera position from fontroller
@@ -43,6 +39,7 @@ void Camera::Update(CameraController controller)
  */
 void Camera::cameraOrbit(float xoffset, float yoffset)
 {
+
     // rot around Y world
     glm::mat4 Ymat = glm::rotate(glm::mat4(1.0f), -xoffset, glm::vec3(0.0f,1.0f,0.0f)); 
     // rot around X cam

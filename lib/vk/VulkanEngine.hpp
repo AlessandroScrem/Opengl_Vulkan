@@ -17,6 +17,7 @@ public:
     ~VulkanEngine();
 
     void run() override;
+    void setWindowMessage(std::string msg) override{};
 
 
 private:

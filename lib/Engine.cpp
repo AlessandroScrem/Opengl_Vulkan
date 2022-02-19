@@ -32,8 +32,8 @@ Engine::create(EngineType type)
 
 void Engine::updateEvents() 
 {
-    if (auto im = ngn::ServiceLocator::GetInputManager()) {
-        im->processInput();
+    if (ngn::ServiceLocator::GetInputManager()) {
+        ngn::ServiceLocator::GetInputManager()->processInput();
     }
 
     std::string cmd;
@@ -41,11 +41,18 @@ void Engine::updateEvents()
         command.second->Execute();
         cmd = command.first;
     }
+    std::stringstream msg;
+    msg << " [ " <<  ngn::Time::getFps() << " ms/frame ]" << " Focal = " << ourCamera.GetFocal() ;
+    msg << " Cmd  " << cmd ;
+    msg << " " << ngn::Mouse::getDirection_str();
+    setWindowMessage(msg.str());
 }
 
 
 void Engine::MapActions() 
 {
+    SPDLOG_TRACE("MapActions");
+
     using namespace ngn;
 
     auto* inputManager_ = ServiceLocator::GetInputManager();
@@ -167,7 +174,6 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
-                spdlog::info("left click down");
                 Mouse::Start();
                 commands_.emplace("click orbit", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(0.f)) );  
                 shouldupdate = true;
