@@ -177,9 +177,9 @@ public:
             ckeckdirection();
         }
         // x direction left to right 
-        offset.x = (pos.x - prevpoint.x) * mouseSensitivity * Time::getFrameTime();
+        offset.x = (pos.x - prevpoint.x) * mouseSensitivity;
         // y direction up to down
-        offset.y = (pos.y - prevpoint.y) * mouseSensitivity * Time::getFrameTime();
+        offset.y = (pos.y - prevpoint.y) * mouseSensitivity;
 
         switch (direction)
         {

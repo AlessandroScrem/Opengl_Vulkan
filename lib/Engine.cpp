@@ -119,9 +119,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // step = 10 / sec
-                float step = 0.5f * Time::getFrameTime();
-                value *= step;
+                // step = rad / sec
+                value /= 180;
                 commands_.emplace("orbit left/right", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(value, 0.f)) );  
                 shouldupdate = true;
                 
@@ -138,9 +137,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // step = 10 / sec
-                float step = 0.5f * Time::getFrameTime();
-                value *= step;
+                // step = rad / sec
+                value /= 180;
                 commands_.emplace("orbit up/down", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(0.f, value)) );  
                 shouldupdate = true;
             }else{

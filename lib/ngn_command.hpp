@@ -28,7 +28,7 @@ namespace ngn
 
         void Execute() const override{
             if(Mouse::isClicked()){ 
-                glm::vec2 mouse = Mouse::getDirection();
+                glm::vec2 mouse = Mouse::getDirection() * Time::getFrameTime();
                 cam_.cameraOrbit(mouse.x, mouse.y);
             }else{
                 cam_.cameraOrbit(offset_.x, offset_.y);
@@ -62,7 +62,7 @@ namespace ngn
 
         void Execute() const override{
             if(Mouse::isClicked()){ 
-                glm::vec2 mouse = Mouse::getDirection();
+                glm::vec2 mouse = Mouse::getDirection() * Time::getFrameTime();
                 cam_.cameraPan(mouse.x, mouse.y);
             }else{
                 cam_.cameraPan(offset_.x, offset_.y);
@@ -81,7 +81,7 @@ namespace ngn
 
         void Execute() const override{
             if(Mouse::isClicked()){ 
-                glm::vec2 mouse = Mouse::getDirection();
+                glm::vec2 mouse = Mouse::getDirection() * Time::getFrameTime();
                 cam_.cameraRoll(mouse.x, mouse.y);
             }else{
                 cam_.cameraRoll(offset_.x, offset_.y);
