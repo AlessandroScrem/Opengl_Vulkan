@@ -45,6 +45,7 @@ void Engine::updateEvents()
     msg << " [ " <<  ngn::Time::getFps() << " ms/frame ]" << " Focal = " << ourCamera.GetFocal() ;
     msg << " Cmd  " << cmd ;
     msg << " " << ngn::Mouse::getDirection_str();
+    msg << " " << glm::to_string(ngn::Mouse::getDirection());
     setWindowMessage(msg.str());
 }
 

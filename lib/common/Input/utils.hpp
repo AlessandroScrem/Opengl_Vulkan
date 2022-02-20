@@ -74,9 +74,11 @@ private:
     inline static const float mouseSensitivity = {0.1f};
 
     // mouse position first point
-    inline static glm::vec2 clickpoint{glm::vec2(0.f)}; 
-    inline static glm::vec2 prevpoint{glm::vec2(0.f)};
-    inline static glm::vec2 pos{glm::vec2(0.f)};
+    inline static glm::vec2 clickpoint{0.f}; 
+    inline static glm::vec2 prevpoint{0.f};
+    // mouse movement
+    inline static glm::vec2 offset_{0.0f};
+
     // is checking for direction
     inline static bool checkdir{false};
     // movement is just started
@@ -87,9 +89,9 @@ private:
      * @brief Check for mouse movement is free or straight
      * 
      */
-    static void ckeckdirection(){
-        float deltax = (float) abs(pos.x - clickpoint.x);
-        float deltay = (float) abs(pos.y - clickpoint.y);
+    static void ckeckdirection(float xpos, float ypos){
+        float deltax = (float) abs(xpos - clickpoint.x);
+        float deltay = (float) abs(ypos - clickpoint.y);
         // 
         if(deltax > 30|| deltay > 30){
             if (deltay <  3 ){
@@ -130,7 +132,7 @@ public:
         }
         return dir;
     }
-
+ 
     static bool isClicked(){return is_clicked;}
 
    /**
@@ -138,26 +140,37 @@ public:
     * 
     */
     static void Start(){
-        clickpoint = pos; 
-        prevpoint = clickpoint;
+        clickpoint = prevpoint; 
         checkdir = true;
         is_clicked = true;
+        offset_ = {0.0f, 0.0f};
+        direction = Direction::Free;
    }
 
     /**
-     * @brief Call to stop mouse movement calculation
+     * @brief Stop after mouse button up 
      * 
      */
     static void Stop(){
         is_clicked = false;
         checkdir = false;
-        direction = Direction::Free;
+        offset_ = {0.0f, 0.0f};
     }
 
-    // dummy function
+    /**
+     * @brief Mouse is moving
+     * 
+     * @param xpos 
+     * @param ypos 
+     */
     static void Move(float xpos, float ypos){
-        pos.x = xpos;
-        pos.y = ypos;
+        if(checkdir){
+            ckeckdirection(xpos, ypos);
+        }
+        offset_.x = xpos - prevpoint.x;
+        offset_.y = ypos - prevpoint.y;
+        prevpoint.x = xpos;
+        prevpoint.y = ypos;
     }
 
     /**
@@ -167,19 +180,13 @@ public:
      *                         
      */
     static glm::vec2 getDirection(){
-        glm::vec2  offset = glm::vec2(0.0f);
+        glm::vec2  offset{0.0f};
 
         if(!is_clicked) {
             return offset;
         }
 
-        if(checkdir){
-            ckeckdirection();
-        }
-        // x direction left to right 
-        offset.x = (pos.x - prevpoint.x) * mouseSensitivity;
-        // y direction up to down
-        offset.y = (pos.y - prevpoint.y) * mouseSensitivity;
+        offset = offset_ * mouseSensitivity;
 
         switch (direction)
         {
@@ -193,11 +200,7 @@ public:
             break;      
         default:
             break;
-        }
-        // set mouse lastpoint to current position
-        prevpoint.x = pos.x;
-        prevpoint.y = pos.y;
-        
+        }        
         return offset;
     }
 };    

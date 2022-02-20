@@ -1,6 +1,25 @@
 #include "doctest.h"
 #include "common/Input/utils.hpp"
 
+//libs
+#include <glm/gtx/string_cast.hpp>
+#include <string>
+
+namespace doctest {
+  template<> struct StringMaker<glm::vec3> {
+      static String convert(const glm::vec3& value) {
+          return glm::to_string(value).c_str();
+      }
+  };
+
+  template<> struct StringMaker<glm::vec2> {
+      static String convert(const glm::vec2& value) {
+          return glm::to_string(value).c_str();
+
+      }
+  };
+}
+
 TEST_CASE("") {
   // arrange
 
@@ -9,85 +28,130 @@ TEST_CASE("") {
   // assert
 }
 
-TEST_CASE("When mouse::Start() is called -> Mouse::isClicked() is true") {
-  // arrange
-  // act
-  ngn::Mouse::Start();
-
-  REQUIRE(ngn::Mouse::getDirection_str() == "Free");
-  
-  // assert
-  CHECK(ngn::Mouse::isClicked() == true);
+void InitializeMouseState(){
+   ngn::Mouse::Move(0,0);
+   ngn::Mouse::Stop();
 }
 
-
-
-
-TEST_CASE("When Mouse::Start && Mouse::Stop direction is Free ") {
+TEST_CASE("When mouse::Start() ,  getDirection == zero ") {
   // arrange
-  ngn::Mouse::Move(0,0);
+  // act
+  InitializeMouseState();
   ngn::Mouse::Start();
-  ngn::Mouse::getDirection();
-  REQUIRE(ngn::Mouse::isClicked() == true);
+
   REQUIRE(ngn::Mouse::getDirection_str() == "Free");
+  REQUIRE(ngn::Mouse::isClicked() == true);
+  
+  // assert
+  CHECK(ngn::Mouse::getDirection().x ==  0.0f);
+  CHECK(ngn::Mouse::getDirection().y ==  0.0f);
+}
+
+TEST_CASE("When Mouse::Stop , direction is Free ") {
+  // arrange
+  InitializeMouseState();
+  ngn::Mouse::Start();
+  REQUIRE(ngn::Mouse::isClicked() == true);
   // act
 
   ngn::Mouse::Stop();
+  REQUIRE(ngn::Mouse::isClicked() == false);
 
   // assert
   CHECK(ngn::Mouse::getDirection_str() == "Free");
-  CHECK(ngn::Mouse::isClicked() == false);
 }
 
-TEST_CASE("When Mouse::Move()") {
+TEST_CASE("Mouse movements") {
   // arrange
+  InitializeMouseState();
+  glm::vec2 move{};
+  glm::vec2 result{};
+  ngn::Mouse::Start();
+  ngn::Mouse::Move(100, 120);
+  ngn::Mouse::Move(0, 0);
+
+  SUBCASE("positive movement move must return offset"){
+    // arrange
+    move = {10,10};
+    result = move * ngn::Mouse::getMouseSensitivity();
+
+    // act
+    ngn::Mouse::Move(move.x, move.y);
+
+    // assert
+    CHECK(ngn::Mouse::getDirection() == result);
+    SUBCASE("negative movement must return negative offset "){
+      // arrange
+      auto offset = glm::vec2{-5, -5};
+      move += offset;
+      result = offset * ngn::Mouse::getMouseSensitivity();
+
+      // act
+      ngn::Mouse::Move(move.x, move.y);
+
+      // assert
+      CHECK(ngn::Mouse::getDirection() == result);
+      SUBCASE("zero movement  must return zero"){
+        // arrange
+        move += glm::vec2{0, 0};
+
+        // act
+        ngn::Mouse::Move(move.x, move.y);
+
+        // assert
+        CHECK(ngn::Mouse::getDirection().x == 0);
+        CHECK(ngn::Mouse::getDirection().y == 0);
+      }
+    }
+  }
+
+}
+
+TEST_CASE("Mouse::Move() straight ") {
+  // arrange
+  InitializeMouseState();
+  ngn::Mouse::Start();
   float scale = ngn::Mouse::getMouseSensitivity();
+  const float delta = 31;
   glm::vec2 move{};
   glm::vec2 result{};
   std::string direction("Free");
-  ngn::Mouse::Move(0,0);
-  ngn::Mouse::Start();
-  ngn::Mouse::getDirection();
-  REQUIRE(ngn::Mouse::isClicked() == true);
-  REQUIRE(ngn::Mouse::getDirection_str() == "Free");
 
-  SUBCASE(""){
-    SUBCASE("x>30 && y<3 -> straightX "){
+  SUBCASE("when delta > 30 "){
+    SUBCASE("x>delta && y<3 -> straightX "){
       // arrange 
-      move = {31, 0};
-      result = { (move.x * scale), 0.0f};
+      move = {delta, 0};
+      result = { (delta * scale), 0.0f};
       direction = "straightX";
     }
     SUBCASE("negative X movements"){
       // arrange
-      move = {-31, 0};
-      result = {(move.x * scale), 0.0f};
+      move = {-delta, 0};
+      result = {(-delta * scale), 0.0f};
       direction = "straightX";
     }
-    SUBCASE("x<3 && y>30 -> straightY"){
+    SUBCASE("y>delta -> straightY"){
       // arrange
-      move = {0, 31};
-      result = {0.0f, (move.y * scale)};
+      move = {0, delta};
+      result = {0.0f, (delta * scale)};
       direction = "straightY";
     }
     SUBCASE("negative Y movements"){
       // arrange
-      move = {0, -31};
-      result = {0.0f, (move.y * scale)};
+      move = {0, -delta};
+      result = {0.0f, (-delta * scale)};
       direction = "straightY";
     }
     
+    // act
     ngn::Mouse::Move(move.x, move.y);
-    auto offset = ngn::Mouse::getDirection();
     REQUIRE(ngn::Mouse::getDirection_str() == direction);
-    REQUIRE(ngn::Mouse::isClicked() == true);
-    ngn::Mouse::Stop();
 
     // assert
-    CHECK(offset.x == result.x);
-    CHECK(offset.y == result.y);
+    CHECK(ngn::Mouse::getDirection().x == result.x);
+    CHECK(ngn::Mouse::getDirection().y == result.y);
+    // reset mouse conditions
+    ngn::Mouse::Stop();
   }
 
-  CHECK(ngn::Mouse::getDirection_str() == "Free");
-  CHECK(ngn::Mouse::isClicked() == false);
 }

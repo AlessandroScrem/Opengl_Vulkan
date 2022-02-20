@@ -170,6 +170,12 @@ void Window::swapBuffers()
     glfwSwapBuffers(window_); 
 }
 void Window::update(){
+ 
+    double xpos, ypos;
+    glfwGetCursorPos(window_, &xpos, &ypos);
+    // update global mouse position
+    ngn::Mouse::Move((float)xpos, (float)ypos);
+
     GetWindowExtents();
 }
 

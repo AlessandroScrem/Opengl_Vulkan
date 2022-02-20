@@ -55,23 +55,23 @@ void OpenGLEngine::initOpenglGlobalStates()
 void OpenGLEngine::mainLoop() 
 {
     while(!window.shouldClose() ) {
-        glfwPollEvents();
         Engine::updateEvents();
         window.update();
         drawFrame();
+        glfwWaitEvents();
     }
 }
 void OpenGLEngine::drawFrame()
 {
+        // init frame
         clearBackground();
 
-        updateUbo();
-
         // render
+        updateUbo();
         shader.use();
         vertexBuffer.draw();
 
-        // Swap buffers
+        // end frame
         window.updateframebuffersize();
         window.swapBuffers();  
 }
