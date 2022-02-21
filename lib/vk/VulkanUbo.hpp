@@ -3,14 +3,14 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 
-class VulkanUbo :  UniformBufferObject
+class VulkanUbo : public  UniformBufferObject
 {
 public:
     VulkanUbo(VulkanDevice &device, VulkanSwapchain &swapchian);
     ~VulkanUbo();
     void createUniformBuffers();
     void cleanupUniformBuffers();
-    void updateUniformBuffer(uint32_t currentImage);
+    void bind(uint32_t currentImage);
 
     const std::vector<VkBuffer>& getUniformBuffers(){return uniformBuffers;}
 private:

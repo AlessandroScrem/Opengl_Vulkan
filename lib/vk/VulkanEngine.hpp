@@ -22,6 +22,7 @@ public:
 
 private:
     void drawFrame();
+    void updateUbo(uint32_t currentImage);
 
     void createSyncObjects();
 

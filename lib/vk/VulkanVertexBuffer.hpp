@@ -51,13 +51,10 @@ static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions
         return attributeDescriptions;
     }
 
-
-
     VkBuffer getVertexBuffer() { return vertexBuffer; }
     VkBuffer getIndexBuffer() { return indexBuffer; }
     size_t getIndexSize() { return model.indicesSize(); }
 
-    void updateUniformBuffer(uint32_t currentImage);
     const VkDescriptorSetLayout &  getDescriptorSetLayout() const { return descriptorSetLayout; }
     const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
 
