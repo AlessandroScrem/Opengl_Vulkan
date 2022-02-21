@@ -134,12 +134,6 @@ void Window::registerCallbacks()
         }
     });
 
-    // register mouse move
-    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos) { 
-        // Get the mouse pos
-        Mouse::Move((float)xpos, (float)ypos);           
-    }); 
-
     // register window resize
     glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height) { 
         //does nothing
@@ -169,11 +163,13 @@ void Window::swapBuffers()
 { 
     glfwSwapBuffers(window_); 
 }
+
+
 void Window::update(){
  
     double xpos, ypos;
     glfwGetCursorPos(window_, &xpos, &ypos);
-    // update global mouse position
+    // update global mouse position 
     ngn::Mouse::Move((float)xpos, (float)ypos);
 
     GetWindowExtents();
