@@ -1,6 +1,6 @@
 
 
-#include "common/camera.hpp"
+#include "camera.hpp"
 //libs
 #include <spdlog/spdlog.h>
 

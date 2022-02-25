@@ -1,7 +1,7 @@
 #pragma once
-#include "Engine.hpp"
-#include "common/Window.hpp"
-#include "common/Input/multiplatform_input.hpp"
+#include "../Engine.hpp"
+#include "Window.hpp"
+#include "input/multiplatform_input.hpp"
 
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"

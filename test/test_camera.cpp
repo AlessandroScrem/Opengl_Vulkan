@@ -1,7 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #define GLM_FORCE_SWIZZLE
-#include "common/camera.hpp"
+// common lib
+#include <camera.hpp>
+
 //libs
 #include <math.h>
 #include <glm/gtx/string_cast.hpp>

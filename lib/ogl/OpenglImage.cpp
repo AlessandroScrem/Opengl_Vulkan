@@ -1,15 +1,14 @@
 #include "OpenGLImage.hpp"
 
 // implementex on VulkanImage.cpp
-//#define STB_IMAGE_IMPLEMENTATION    
+//#define STB_IMAGE_IMPLEMENTATION
+// stb lib    
 #include <stb_image.h>
 
 // libs
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
-
 // std
 #include <string>
 #include <iostream>

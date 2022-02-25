@@ -1,10 +1,12 @@
 #pragma once
-#include "common/vertex.h"
 
 // lib
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+// common
+#include <vertex.h>
 
 struct OpenglUbo : UniformBufferObject{
 

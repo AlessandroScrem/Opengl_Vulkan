@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mytypes.hpp"
-#include "common\Input\multiplatform_input.hpp"
+#include "input\multiplatform_input.hpp"
 
 // lib
 

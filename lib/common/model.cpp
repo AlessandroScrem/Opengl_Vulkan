@@ -1,4 +1,4 @@
-#include "common/model.hpp"
+#include "model.hpp"
 
 // lib
 #include <spdlog/spdlog.h>

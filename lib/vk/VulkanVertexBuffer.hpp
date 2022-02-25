@@ -2,8 +2,9 @@
 #include "VulkanDevice.hpp"
 #include "VulkanUbo.hpp"
 #include "VulkanImage.hpp"
-#include "common/vertex.h"
-#include "common/model.hpp"
+
+#include <vertex.h>
+#include <model.hpp>
 
 // lib
 #define GLM_FORCE_RADIANS

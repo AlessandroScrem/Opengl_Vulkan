@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.13)
 project(AppRunner VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)

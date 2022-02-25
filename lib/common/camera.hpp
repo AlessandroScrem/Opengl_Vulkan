@@ -1,6 +1,6 @@
 #pragma once
 
-#include "input\utils.hpp"
+#include "input/utils.hpp"
 
 // lib
 #include <glm/glm.hpp>

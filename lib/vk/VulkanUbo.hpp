@@ -1,5 +1,5 @@
 #pragma once
-#include "..\common\vertex.h"
+#include <vertex.h>
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 

@@ -1,6 +1,6 @@
 #include "Engine.hpp"
-#include "common/Input/service_locator.hpp"
-
+// common lib
+#include <service_locator.hpp>
 //libs
 #include <spdlog/spdlog.h>
 

@@ -1,6 +1,6 @@
 #include "Window.hpp"
-#include "common\Input\service_locator.hpp"
-#include "common\input\utils.hpp"
+#include "input\service_locator.hpp"
+#include "input\utils.hpp"
 
 //std
 #include <cstdlib>

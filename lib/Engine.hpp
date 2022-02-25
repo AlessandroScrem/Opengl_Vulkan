@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mytypes.hpp"
-#include "common/camera.hpp"
-#include "common/model.hpp"
 #include "ngn_command.hpp"
-#include "common/Input/multiplatform_input.hpp"
-
+//common lib
+#include <mytypes.hpp>
+#include <camera.hpp>
+#include <model.hpp>
+#include <multiplatform_input.hpp>
 //std
 #include <memory>
 

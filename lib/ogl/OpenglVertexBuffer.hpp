@@ -1,7 +1,4 @@
 #pragma once
-#include "common/vertex.h"
-#include "common/model.hpp"
-#include "common/Window.hpp"
 #include "OpenglImage.hpp"
 // lib
 #include <GL/glew.h>
@@ -9,6 +6,10 @@
 //#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+// common
+#include <vertex.h>
+#include <model.hpp>
+#include <Window.hpp>
 // std
 #include <iostream>
 

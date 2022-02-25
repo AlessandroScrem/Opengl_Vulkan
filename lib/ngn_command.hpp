@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common/input/utils.hpp"
-#include "common/camera.hpp"
-
+// common lib
+#include <utils.hpp>
+#include <camera.hpp>
 // libs
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp> 

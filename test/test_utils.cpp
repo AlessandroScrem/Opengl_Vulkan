@@ -1,5 +1,6 @@
 #include "doctest.h"
-#include "common/Input/utils.hpp"
+// common lib
+#include <utils.hpp>
 
 //libs
 #include <glm/gtx/string_cast.hpp>

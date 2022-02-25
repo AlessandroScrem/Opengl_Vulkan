@@ -9,7 +9,7 @@ add_executable(Test ${all_tests})
 
 target_link_libraries(Test 
     PRIVATE  
-        mylib
+        engine_lib
 )
 
 add_test(NAME Test COMMAND ${TARGETFILE}Test)

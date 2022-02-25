@@ -1,6 +1,7 @@
+// lib
 #include <GL/glew.h>
-
 #include <spdlog/spdlog.h>
+// std
 #include <initializer_list>
 #include <array>
 

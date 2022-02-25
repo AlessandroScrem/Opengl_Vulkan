@@ -1,5 +1,6 @@
 #pragma once
-#include "mytypes.hpp"
+//common
+#include <mytypes.hpp>
 
 //std
 #include <string>
