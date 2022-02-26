@@ -95,11 +95,6 @@ void Window::registerCallbacks()
     SPDLOG_TRACE("registerCallbacks");  
     using namespace  ngn;
 
-    if(!&input_){
-        spdlog::error("failed to get MultiplatformInput pointer");
-        return;
-    }
-
     glfwSetWindowUserPointer(window_, &input_);
 
     // register keyboard
@@ -179,10 +174,10 @@ std::pair<int, int> Window::GetWindowExtents()
 {
     int w, h;
     glfwGetFramebufferSize(window_, &w, &h);
-    if(is_zerosize = (!w || !h) ) {
+    if( (is_zerosize = (!w || !h)) ) {
         spdlog::info("is_framebufferResized = {}", is_zerosize);
     }
-    if(is_framebufferResized = (w != width_ || h != height_) ) {
+    if( (is_framebufferResized = (w != width_ || h != height_)) ) {
         width_ = w;
         height_ = h;
         spdlog::info("is_framebufferResized = {}", is_framebufferResized);

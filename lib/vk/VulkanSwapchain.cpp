@@ -3,6 +3,7 @@
 // std
 #include <cstdint> // Necessary for UINT32_MAX
 #include <algorithm> // Necessary for std::min/std::max
+#include <array>
 
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window) 

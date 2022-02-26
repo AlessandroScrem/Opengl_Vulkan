@@ -11,7 +11,7 @@
 #include <model.hpp>
 #include <Window.hpp>
 // std
-#include <iostream>
+#include <array>
 
 /* 
 void glVertexAttribIPointer(	

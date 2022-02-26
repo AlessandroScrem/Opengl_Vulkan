@@ -14,9 +14,9 @@ namespace ngn
         
         static inline void ShutdownServices() { shutdownInputManager(); }
 
-        static inline void Provide(InputManager* inputManager) {
-            if (inputManager_ != nullptr) return;
-            inputManager_ = std::unique_ptr<InputManager>(inputManager);
+        static inline void Provide() {
+            if (inputManager_) return;           
+            inputManager_ = std::make_unique<ngn::InputManager>();
         }
 
     private:

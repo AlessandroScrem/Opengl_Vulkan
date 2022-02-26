@@ -21,7 +21,7 @@ class Engine
 {    
 public:
     Engine();
-    virtual ~Engine(){SPDLOG_TRACE("destructor");}
+    virtual ~Engine();
        
     virtual void run() = 0;
     virtual void setWindowMessage(std::string msg) =0;

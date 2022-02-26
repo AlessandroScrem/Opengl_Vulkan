@@ -1,4 +1,4 @@
-#include "OpenGLImage.hpp"
+#include "OpenglImage.hpp"
 
 // implementex on VulkanImage.cpp
 //#define STB_IMAGE_IMPLEMENTATION
@@ -28,7 +28,7 @@ OpenglImage::OpenglImage(const std::string  &filename)
         throw std::runtime_error("failed to load texture image!");
     }
     
-    GLenum format;
+    GLenum format{};
     if (nrComponents == 1)
         format = GL_RED;
     else if (nrComponents == 3)

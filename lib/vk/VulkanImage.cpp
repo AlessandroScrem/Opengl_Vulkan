@@ -43,7 +43,7 @@ void VulkanImage::createTexture()
     // 3) Create an image sampler
     // 4) Add a combined image sampler descriptor to sample colors from the texture
 
-    int texWidth, texHeight, texChannels;
+    int texWidth{}, texHeight{}, texChannels{};
     stbi_set_flip_vertically_on_load(true);
     stbi_uc* pixels = stbi_load(texpath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -188,7 +188,8 @@ void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageL
         throw std::invalid_argument("unsupported layout transition!");
     }
 
-    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    // FIXME delete if works fine
+    // sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     vkCmdPipelineBarrier(
         commandBuffer,
         sourceStage, destinationStage,
