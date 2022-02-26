@@ -1,7 +1,6 @@
 #include "VulkanDevice.hpp"
 
 //std
-#include <iostream>
 #include <set>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -376,7 +375,7 @@ VulkanDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeveri
     void* pUserData) 
 {
     if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT){
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        spdlog::error("validation layer: {}" ,pCallbackData->pMessage);
     }
     return VK_FALSE;
 }

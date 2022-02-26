@@ -1,10 +1,6 @@
 #include "VulkanEngine.hpp"
-
 //std
-#include <iostream>
 #include <vector>
-
-// lib
 
 
 VulkanEngine::VulkanEngine()

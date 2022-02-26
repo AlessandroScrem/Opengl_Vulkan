@@ -188,8 +188,6 @@ void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageL
         throw std::invalid_argument("unsupported layout transition!");
     }
 
-    // FIXME delete if works fine
-    // sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     vkCmdPipelineBarrier(
         commandBuffer,
         sourceStage, destinationStage,

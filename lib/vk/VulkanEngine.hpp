@@ -1,7 +1,4 @@
 #pragma once
-#include "../Engine.hpp"
-#include "Window.hpp"
-#include "input/multiplatform_input.hpp"
 
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
@@ -9,6 +6,10 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanImage.hpp"
+#include "../Engine.hpp"
+//common lib
+#include <Window.hpp>
+#include <multiplatform_input.hpp>
 
 class VulkanEngine : public Engine
 {

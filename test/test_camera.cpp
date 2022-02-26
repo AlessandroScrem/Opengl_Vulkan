@@ -127,27 +127,6 @@ TEST_CASE("getCameraRight must return normalized cross product camera_up and fro
 
 
 TEST_SUITE("Camera Fov()") {
-  TEST_CASE("cameraFov(+/-offset) must change Fov") {
-    // arrange
-    Camera cam(cam_position, cam_target, cam_up);
-    float offset = 1.0f;
-    
-    SUBCASE("Fov must increment"){
-        // act
-        float fov = cam.GetFov() + offset;
-        cam.cameraFov(offset);
-        // assert
-        CHECK(cam.GetFov() == fov);
-    }
-    SUBCASE("Fov must decrement"){
-        // act
-        float fov = cam.GetFov() - offset;
-        cam.cameraFov(-offset);
-        // assert
-        CHECK(cam.GetFov() == fov);
-    }
-  }
-
   TEST_CASE("cameraFov() range must be from 2 to 178  ") {
     // arrange
     float maxfov = 178;
@@ -168,6 +147,26 @@ TEST_SUITE("Camera Fov()") {
         cam_maxfov.cameraFov(-increment);
         // assert max
         CHECK(cam_minfov.GetFov() >= minfov);
+    }
+  } 
+  TEST_CASE("cameraFov(+/-offset) must change Fov") {
+    // arrange
+    Camera cam(cam_position, cam_target, cam_up);
+    float offset = 1.0f;
+    
+    SUBCASE("Fov must increment"){
+        // act
+        float fov = cam.GetFov() + offset;
+        cam.cameraFov(offset);
+        // assert
+        CHECK(cam.GetFov() == fov);
+    }
+    SUBCASE("Fov must decrement"){
+        // act
+        float fov = cam.GetFov() - offset;
+        cam.cameraFov(-offset);
+        // assert
+        CHECK(cam.GetFov() == fov);
     }
   }
 }// end Fov

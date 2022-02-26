@@ -25,8 +25,9 @@ target_link_libraries(common_lib
     PRIVATE 
         glfw::glfw 
         glew::glew 
-        glm::glm
         spdlog::spdlog
+    PUBLIC
+        glm::glm
     )
 
 target_include_directories(common_lib 

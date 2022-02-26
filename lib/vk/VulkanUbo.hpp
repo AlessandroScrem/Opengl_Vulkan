@@ -1,7 +1,8 @@
 #pragma once
-#include <vertex.h>
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+//common lib
+#include <vertex.h>
 
 class VulkanUbo : public  UniformBufferObject
 {

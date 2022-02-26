@@ -1,14 +1,12 @@
 #pragma once
+//common lib
 #include <Window.hpp>
-
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 //std
 #include <vector>
 #include <optional>
-
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
