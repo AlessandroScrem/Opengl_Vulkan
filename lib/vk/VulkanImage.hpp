@@ -40,8 +40,8 @@ private:
     VkImageView textureImageView;
     VkSampler textureSampler;
 
-    //const std::string texpath{"textures/texture.jpg"};
-    const std::string texpath{"textures/viking_room.png"};
+    //const std::string texpath{"data/textures/texture.jpg"};
+    const std::string texpath{"data/textures/viking_room.png"};
 
 };
 

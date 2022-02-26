@@ -35,27 +35,11 @@ set_target_properties( app
 
 
    
-set (sh_dir "shaders")
+set (data_dir "data")
 # LOCAL DATA COPY
 add_custom_command(TARGET app PRE_BUILD
-COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${sh_dir}/
+COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${data_dir}/
 COMMAND ${CMAKE_COMMAND} -E copy_directory 
-${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${sh_dir}/
-$<TARGET_FILE_DIR:${PROJECT_NAME}>/${sh_dir}
-)
-set (tex_dir "textures")
-# LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${tex_dir}/
-    COMMAND ${CMAKE_COMMAND} -E copy_directory 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${tex_dir}/
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/${tex_dir}
-)
-set (mod_dir "models")
-# LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${mod_dir}/
-    COMMAND ${CMAKE_COMMAND} -E copy_directory 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${mod_dir}/
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/${mod_dir}
+${CMAKE_CURRENT_SOURCE_DIR}/../${data_dir}/
+$<TARGET_FILE_DIR:${PROJECT_NAME}>/${data_dir}
 )

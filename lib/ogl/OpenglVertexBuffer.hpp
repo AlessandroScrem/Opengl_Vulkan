@@ -138,8 +138,8 @@ private:
     }
 
     Window &window;
-    OpenglImage texture{"textures/viking_room.png"};
-    //OpenglImage texture{"textures/backpack-diffuse.png"};
+    OpenglImage texture{"data/textures/viking_room.png"};
+    //OpenglImage texture{"data/textures/backpack-diffuse.png"};
     
     unsigned int VBO, VAO, EBO;
 
