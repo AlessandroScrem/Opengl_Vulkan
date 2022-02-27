@@ -17,22 +17,25 @@ set_target_properties( app
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-# add_test(
-#          NAME vulkan 
-#      COMMAND $<TARGET_FILE:app> --vulkan
-#      WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#      )
+message(STATUS "TEST_APP = "${TEST_APP})
 
-# add_test(
-#          NAME opengl 
-#      COMMAND $<TARGET_FILE:app> --opengl
-#      WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#      )   
+if( ${TEST_APP})
+    add_test(
+            NAME vulkan 
+        COMMAND $<TARGET_FILE:app> --vulkan
+        WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        )
 
-# set_tests_properties(vulkan PROPERTIES
-#      FAIL_REGULAR_EXPRESSION "[^a-z]Error;ERROR;Failed"
-#    )
+    add_test(
+            NAME opengl 
+        COMMAND $<TARGET_FILE:app> --opengl
+        WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        )   
 
+    set_tests_properties(vulkan PROPERTIES
+        FAIL_REGULAR_EXPRESSION "[^a-z]Error;ERROR;Failed"
+    )
+endif()
 
    
 set (data_dir "data")

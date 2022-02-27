@@ -175,7 +175,7 @@ std::pair<int, int> Window::GetWindowExtents()
     int w, h;
     glfwGetFramebufferSize(window_, &w, &h);
     if( (is_zerosize = (!w || !h)) ) {
-        spdlog::info("is_framebufferResized = {}", is_zerosize);
+        spdlog::info("is_zerosize = {}", is_zerosize);
     }
     if( (is_framebufferResized = (w != width_ || h != height_)) ) {
         width_ = w;
@@ -183,6 +183,6 @@ std::pair<int, int> Window::GetWindowExtents()
         spdlog::info("is_framebufferResized = {}", is_framebufferResized);
 
     }
-    return { width_, width_ };
+    return { width_, height_ };
 }
 

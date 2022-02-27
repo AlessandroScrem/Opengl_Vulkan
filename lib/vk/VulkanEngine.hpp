@@ -18,12 +18,12 @@ public:
     ~VulkanEngine();
 
     void run() override;
-    void setWindowMessage(std::string msg) override{};
+    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);};
 
 
 private:
     void drawFrame();
-    void updateUbo(uint32_t currentImage);
+    void updateUbo();
 
     void createSyncObjects();
 

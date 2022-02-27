@@ -21,7 +21,6 @@ public:
 
 private:
     void initOpenglGlobalStates();
-    void mainLoop();
     void cleanup();
     void drawFrame();
     void updateUbo();

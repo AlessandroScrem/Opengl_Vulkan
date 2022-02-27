@@ -10,28 +10,24 @@
 OpenGLEngine::OpenGLEngine()
 {    
     SPDLOG_TRACE("constructor"); 
+    initOpenglGlobalStates(); 
 }
 
 OpenGLEngine::~OpenGLEngine() 
 {
     SPDLOG_TRACE("destructor");
-
-}
-
-void OpenGLEngine::run() 
-{   
-    initOpenglGlobalStates(); 
-    mainLoop();
     cleanup();
 }
 
 void OpenGLEngine::cleanup() 
 {   
-
+    SPDLOG_TRACE("cleanup");
 }
 
 void OpenGLEngine::initOpenglGlobalStates() 
 {
+    SPDLOG_TRACE("initOpenglGlobalStates");
+
     // configure global opengl state
     // -----------------------------
     //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
@@ -52,22 +48,28 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 }
 
-void OpenGLEngine::mainLoop() 
-{
+void OpenGLEngine::run() 
+{  
+    SPDLOG_TRACE("*******           START           ************");  
+
     while(!window.shouldClose() ) {
         Engine::updateEvents();
         window.update();
+        updateUbo();
         drawFrame();
         glfwWaitEvents();
     }
+    
+    SPDLOG_TRACE("*******           END             ************");  
 }
+
 void OpenGLEngine::drawFrame()
 {
         // init frame
         clearBackground();
 
         // render
-        updateUbo();
+        ubo.bind();
         shader.use();
         vertexBuffer.draw();
 
@@ -93,9 +95,6 @@ void OpenGLEngine::updateUbo()
     ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
-
-    // update uniform buffer data
-    ubo.bind();
 }
 
 

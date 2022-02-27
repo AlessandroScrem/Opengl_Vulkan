@@ -25,7 +25,7 @@ private:
             glDeleteShader(shader);
         }
 
-        unsigned int get(){return shader;}
+        unsigned int get() const {return shader;}
 
     private:
         void compile(){       
@@ -84,7 +84,7 @@ private:
     template <typename Container>
     void link(const Container &shaders){
         
-        for (auto shader : shaders){
+        for ( auto & shader : shaders){
             glAttachShader(shaderProgram, shader.get() );
         }
 
@@ -104,10 +104,10 @@ private:
 
     void buildShaders(){
 
-        std::array<ShaderSource, 2> shaders{
+        std::array<ShaderSource, 2> shaders{ {
             ShaderSource(vertexShaderSource, ShaderType::VertexShader),
             ShaderSource(fragmentShaderSource, ShaderType::FragmentShader)
-        };
+        } };
 
         shaderProgram = glCreateProgram();  
         // link shaders

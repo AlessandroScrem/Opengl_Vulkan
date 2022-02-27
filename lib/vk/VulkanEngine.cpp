@@ -31,21 +31,18 @@ VulkanEngine::~VulkanEngine()
 
 void VulkanEngine::run() 
 {
-    SPDLOG_TRACE("**********************************************");  
     SPDLOG_TRACE("*******           START           ************");  
-    SPDLOG_TRACE("**********************************************");  
 
     while(!window.shouldClose() ) {
-        glfwPollEvents();
         Engine::updateEvents();
         window.update();
+        updateUbo();
         drawFrame();
+        glfwWaitEvents();
     }
     vkDeviceWaitIdle(device.getDevice()); 
 
-    SPDLOG_TRACE("**********************************************");  
     SPDLOG_TRACE("*******           END             ************");  
-    SPDLOG_TRACE("**********************************************");  
 }
 
 // Necessita:
@@ -80,7 +77,7 @@ void VulkanEngine::drawFrame()
     // Mark the image as now being in use by this frame
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
-    updateUbo(imageIndex);
+    ubo.bind(imageIndex);
  
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -127,17 +124,13 @@ void VulkanEngine::drawFrame()
 
 }
 
-void VulkanEngine::updateUbo(uint32_t currentImage)
+void VulkanEngine::updateUbo()
 {
     // rotate model to y up
     ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
-    
-    // update uniform buffer data
-    ubo.bind(currentImage);
-
 }
 
 // Necessita:
@@ -187,7 +180,7 @@ void VulkanEngine::createSyncObjects()
 void VulkanEngine::recreateSwapChain() 
 {  
      while (window.waitforSize()) {
-        window.update();
+        window.GetWindowExtents();
         glfwWaitEvents();
     }
 

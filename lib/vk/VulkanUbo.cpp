@@ -50,7 +50,7 @@ void VulkanUbo::createUniformBuffers()
         }
 }
 
-// called by VulkanEngine::pdateUbo()
+// called by VulkanEngine::drawframe()
 void VulkanUbo::bind(uint32_t currentImage) 
 {
     void* data;
