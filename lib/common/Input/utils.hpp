@@ -1,15 +1,12 @@
 #pragma once
 
-//std
-#include <sstream>
-#include <string>
-#include <cassert>
-#include <chrono>
-
 //lib
 #include <glm/glm.hpp>
+//std
+#include <string>
+#include <chrono>
 
- namespace ngn
+namespace ngn
 {
 
 // action 
@@ -35,14 +32,19 @@ struct Time{
 
     // Time between current frame and last frame
     inline static float frameTime = 1.0f;
+
+    /**
+     * @brief Get the Frame Time object
+     * 
+     * @return float 
+     */
     static float getFrameTime(){ return frameTime; }
 
    /**
-     * @brief Get the Fps calculation
+     * @brief Update timeframe calculation
      * 
-     * @return float (ms/frame)
      */
-    static float getFps() {
+    static void update() {
         static int nbFrames = 0;
         static std::chrono::time_point<std::chrono::high_resolution_clock>  lastTime;
         auto newTime = std::chrono::high_resolution_clock::now();
@@ -54,7 +56,6 @@ struct Time{
             lastTime = newTime;
         }
         nbFrames++;
-        return frameTime;
     }
 };
 

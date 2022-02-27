@@ -41,13 +41,15 @@ void Engine::updateEvents()
         ngn::ServiceLocator::GetInputManager()->processInput();
     }
 
+    ngn::Time::update();
+
     std::string cmd;
     for(auto const& command : commands_){
         command.second->Execute();
         cmd = command.first;
     }
     std::stringstream msg;
-    msg << " [ " <<  ngn::Time::getFps() << " ms/frame ]" << " Focal = " << ourCamera.GetFocal() ;
+    msg << " [ " <<  ngn::Time::getFrameTime() << " ms/frame ]" << " Focal = " << ourCamera.GetFocal() ;
     msg << " Cmd  " << cmd ;
     msg << " " << ngn::Mouse::getDirection_str();
     msg << " " << glm::to_string(ngn::Mouse::getDirection());
@@ -125,8 +127,9 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // step = rad / sec
-                value /= 180;
+                // speed = 0,25 turns / sec
+                // value = rad * 4
+                value /= (3.14f * 4.0f);
                 commands_.emplace("orbit left/right", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(value, 0.f)) );  
                 shouldupdate = true;
                 
@@ -143,8 +146,9 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // step = rad / sec
-                value /= 180;
+                // speed = 0,25 turns / sec
+                // value = rad * 4
+                value /= (3.14f * 4.0f);
                 commands_.emplace("orbit up/down", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(0.f, value)) );  
                 shouldupdate = true;
             }else{

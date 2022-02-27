@@ -34,8 +34,8 @@ void Camera::Update(CameraController controller)
 /**
  * @brief Rotate camera matrix around Y axis then cameraRight()
  * 
- * @param xoffset 
- * @param yoffset 
+ * @param xoffset (radianns) 
+ * @param yoffset (radianns)
  */
 void Camera::cameraOrbit(float xoffset, float yoffset)
 {
