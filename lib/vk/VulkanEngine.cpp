@@ -34,11 +34,12 @@ void VulkanEngine::run()
     SPDLOG_TRACE("*******           START           ************");  
 
     while(!window.shouldClose() ) {
+        glfwPollEvents();
         Engine::updateEvents();
         window.update();
         updateUbo();
         drawFrame();
-        glfwWaitEvents();
+        //glfwWaitEvents();
     }
     vkDeviceWaitIdle(device.getDevice()); 
 

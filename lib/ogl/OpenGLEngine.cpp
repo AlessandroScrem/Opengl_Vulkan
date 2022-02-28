@@ -45,6 +45,8 @@ void OpenGLEngine::initOpenglGlobalStates()
     glGetIntegerv ( GL_SAMPLES, &samples );
     spdlog::info("Opengl maxSamples = {}", maxSamples);
     spdlog::info("Opengl samples = {}", samples);
+    //enable vsync
+    glfwSwapInterval(1);
 
 }
 
@@ -53,11 +55,12 @@ void OpenGLEngine::run()
     SPDLOG_TRACE("*******           START           ************");  
 
     while(!window.shouldClose() ) {
+        glfwPollEvents();
         Engine::updateEvents();
         window.update();
         updateUbo();
         drawFrame();
-        glfwWaitEvents();
+        //glfwWaitEvents();
     }
     
     SPDLOG_TRACE("*******           END             ************");  

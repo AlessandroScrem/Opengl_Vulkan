@@ -29,10 +29,11 @@ struct Feed{
 };
 
 struct Time{
-
+private:
     // Time between current frame and last frame
     inline static float frameTime = 1.0f;
 
+public:
     /**
      * @brief Get the Frame Time object
      * 
@@ -72,7 +73,7 @@ private:
     };
 
     // Constants
-    inline static const float mouseSensitivity = {0.1f};
+    inline static const float mouseSensitivity = {0.01f};
 
     // mouse position first point
     inline static glm::vec2 clickpoint{0.f}; 

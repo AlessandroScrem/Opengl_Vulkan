@@ -114,7 +114,7 @@ void Window::registerCallbacks()
                 default:
                     value = 0.f;
             }
-            
+
             input->UpdateKeyboardState(key, value);
         }
     });
