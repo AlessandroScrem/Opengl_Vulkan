@@ -14,10 +14,10 @@
 
 EngineType parser(int argc, const char** argv)
 {
-    EngineType engine{EngineType::Opengl};
+    EngineType eng_type{EngineType::Opengl};
     
     #ifdef VULKAN
-        engine = EngineType::Vulkan;
+        eng_type = EngineType::Vulkan;
     #endif// VULKAN 
 
     #ifdef   OPENGL
@@ -26,23 +26,23 @@ EngineType parser(int argc, const char** argv)
 
    
     if (argc == 2 && std::string{argv[1]} == "--vulkan"){
-        engine = EngineType::Vulkan;
+        eng_type = EngineType::Vulkan;
     }
     if (argc == 2 && std::string{argv[1]} == "--opengl"){
-        engine = EngineType::Opengl;
+        eng_type = EngineType::Opengl;
     }
 
-    return engine;
+    return eng_type;
 }
 
 int main(int argc, char const **argv)
 {
-    EngineType engine = parser(argc, argv);
+    EngineType eng_type = parser(argc, argv);
 
     spdlog::set_level(spdlog::level::trace);
 
     try {
-        auto app = Engine::create(engine);
+        auto app = Engine::create(eng_type);
         app->run();
 
     } catch (const std::exception& e) {

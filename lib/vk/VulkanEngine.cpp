@@ -173,7 +173,7 @@ void VulkanEngine::createSyncObjects()
 // in the VkSwapchainCreateInfoKHR struct and destroy the old swap chain as soon as you’ve finished using it.
 
 // Necessita:
-// window.iconified()
+// window.GetWindowExtents()
 // pipeline.cleanupPipeline();
 // pipeline.createPipeline();
 // swapchain.cleanupSwapChain();
@@ -190,14 +190,12 @@ void VulkanEngine::recreateSwapChain()
 // destroy
     cleanupCommandBuffers();
     pipeline.cleanupPipeline();
-    //vertexbuffer.cleanupUniformBuffers();
     ubo.cleanupUniformBuffers();
     vertexbuffer.cleanupDescriptorPool();
     swapchain.cleanupSwapChain();
 
 // create
     swapchain.createAllSwapchian();
-    //vertexbuffer.createUniformBuffers();
     ubo.createUniformBuffers();
     vertexbuffer.createDescriptorPool();
     vertexbuffer.createDescriptorSets();

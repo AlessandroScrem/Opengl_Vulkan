@@ -32,6 +32,7 @@ public:
 protected:
     ngn::MultiplatformInput input_{};
     void updateEvents();
+    EngineType engine_type{};
     
     Model model{};
     Color background{};

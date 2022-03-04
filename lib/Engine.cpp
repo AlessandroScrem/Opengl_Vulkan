@@ -22,17 +22,17 @@ Engine::~Engine(){
 std::unique_ptr<Engine>
 Engine::create(EngineType type)
 {
-    std::unique_ptr<Engine> window;
+    std::unique_ptr<Engine> engine;
 
     if(type == EngineType::Opengl){
-        window = makeOpengl();
+        engine = makeOpengl();
     }
 
     if(type == EngineType::Vulkan){
-        window = makeVulkan();
+        engine = makeVulkan();
     }
 
-    return window;   
+    return engine;   
 }
 
 void Engine::updateEvents() 
