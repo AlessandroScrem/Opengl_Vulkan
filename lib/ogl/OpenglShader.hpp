@@ -11,12 +11,6 @@
 class OpenglShader
 {
 private:
-
-    inline static std::map<ShaderType, Shader> shaders{ 
-        { ShaderType::Texture, Shader(vertex_texture, fragment_texture) },  
-        { ShaderType::Phong, Shader(vertex_phong, fragment_phong) },  
-    };
-
     enum class ShaderSourceType{
         VertexShader,
         FragmentShader
@@ -71,7 +65,7 @@ private:
     };
 
 public:
-    OpenglShader(ShaderType type = ShaderType::Texture){
+    OpenglShader(ShaderType type = TEXTURE_SHADER){
         SPDLOG_TRACE("constructor"); 
         buildShaders(type);
         createUniformBlockBinding();
@@ -84,10 +78,14 @@ public:
     
     void use(){glUseProgram(shaderProgram);}
     
-    // void setMat4(const std::string &name, const glm::mat4 &mat) const
-    // {
-    //     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-    // }
+    void setVec3(const std::string &name, const glm::vec3 &value) const
+    { 
+        glUniform3fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, &value[0]); 
+    }
+    void setVec3(const std::string &name, float x, float y, float z) const
+    { 
+        glUniform3f(glGetUniformLocation(shaderProgram, name.c_str()), x, y, z); 
+    }
 
 private:
     template <typename Container>
@@ -109,13 +107,11 @@ private:
         }
     }
 
-    void buildShaders(ShaderType type){
-
-        auto shader = shaders.at(type);
+    void buildShaders(ShaderType shader){
 
         std::array<ShaderSource, 2> shaders{ {
-            ShaderSource(shader.vshader.c_str(), ShaderSourceType::VertexShader),
-            ShaderSource(shader.fshader.c_str(), ShaderSourceType::FragmentShader)
+            ShaderSource(shader.vshader, ShaderSourceType::VertexShader),
+            ShaderSource(shader.fshader, ShaderSourceType::FragmentShader)
         } };
 
         shaderProgram = glCreateProgram();  

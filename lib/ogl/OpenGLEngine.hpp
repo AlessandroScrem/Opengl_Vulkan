@@ -8,8 +8,6 @@
 // common
 #include <Window.hpp>
 
-
-
 class OpenGLEngine : public Engine
 {    
 public:
@@ -29,8 +27,7 @@ private:
     
     Window window{EngineType::Opengl, Engine::input_};
 
-    OpenglShader shader{ShaderType::Phong};
+    OpenglShader shader{PHONG_SHADER};
     OpenglUbo ubo{};
     OpenglVertexBuffer vertexBuffer{model};
-
 };

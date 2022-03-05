@@ -73,6 +73,7 @@ void OpenGLEngine::drawFrame()
 
         // render
         ubo.bind();
+        shader.setVec3("viewPos", ourCamera.GetPosition());
         shader.use();
         vertexBuffer.draw();
 
