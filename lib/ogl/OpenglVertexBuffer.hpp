@@ -9,7 +9,6 @@
 // common
 #include <vertex.h>
 #include <model.hpp>
-#include <Window.hpp>
 // std
 #include <array>
 
@@ -46,8 +45,8 @@ struct VertexInputAttributeDescription {
 class OpenglVertexBuffer
 {
 public:   
-    static std::array<VertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VertexInputAttributeDescription, 3> attributeDescriptions{};
+    static std::array<VertexInputAttributeDescription, 4> getAttributeDescriptions() {
+        std::array<VertexInputAttributeDescription, 4> attributeDescriptions{};
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].size = 3;
         attributeDescriptions[0].type = GL_FLOAT;
@@ -63,16 +62,23 @@ public:
         attributeDescriptions[1].offset = (GLvoid*)offsetof(Vertex, color);
 
         attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].size = 2;
+        attributeDescriptions[2].size = 3;
         attributeDescriptions[2].type = GL_FLOAT;
         attributeDescriptions[2].normalized = GL_FALSE;
         attributeDescriptions[2].stride = sizeof(Vertex);
-        attributeDescriptions[2].offset = (GLvoid*)offsetof(Vertex, texCoord);
+        attributeDescriptions[2].offset = (GLvoid*)offsetof(Vertex, normal);
+
+        attributeDescriptions[3].location = 3;
+        attributeDescriptions[3].size = 2;
+        attributeDescriptions[3].type = GL_FLOAT;
+        attributeDescriptions[3].normalized = GL_FALSE;
+        attributeDescriptions[3].stride = sizeof(Vertex);
+        attributeDescriptions[3].offset = (GLvoid*)offsetof(Vertex, texCoord);
 
         return attributeDescriptions;
     }
 
-    OpenglVertexBuffer(Window &window, Model &model) : window{window}, model{model}
+    OpenglVertexBuffer(Model &model) : model{model}
     {
         auto vertices_size = model.verticesSize();
         auto vertices_data = model.verticesData();
@@ -127,9 +133,7 @@ private:
         }
     }
 
-    Window &window;
     OpenglImage texture{"data/textures/viking_room.png"};
-    //OpenglImage texture{"data/textures/backpack-diffuse.png"};
     
     unsigned int VBO, VAO, EBO;
 

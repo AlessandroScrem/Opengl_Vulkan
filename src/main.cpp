@@ -21,7 +21,7 @@ EngineType parser(int argc, const char** argv)
     #endif// VULKAN 
 
     #ifdef   OPENGL
-        engine = EngineType::Opengl;
+        eng_type = EngineType::Opengl;
     #endif// OPENGL
 
    

@@ -12,6 +12,8 @@ target_sources(ogl_lib
         OpenglImage.cpp
         OpenglShader.hpp
         OpenglUbo.hpp
+        OpenglObj.hpp
+        shader_constants.h
 )
 
 

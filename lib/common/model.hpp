@@ -3,16 +3,17 @@
 #include "vertex.h"
 
 // std
-#include <string>
 #include <vector>
+
+constexpr char  defmodel[] = "data/models/viking_room.obj";
 
 class Model
 { 
 public:
-    Model(){ load(); }
+    Model(const char * modelpath  = defmodel) { load(modelpath); }
     ~Model(){}
 
-    void load();
+    void load(const char * modelpath);
 
     size_t verticesSize() const  {return vertices.size(); }
     size_t indicesSize() const   {return indices.size(); }
@@ -25,7 +26,6 @@ private:
 
     std::vector<Vertex> vertices{};
     std::vector<Index> indices{};
-    const std::string modelpath{"data/models/viking_room.obj"};
-    //const std::string modelpath{"data/models/backpack/backpack.obj"};
+
 };
 

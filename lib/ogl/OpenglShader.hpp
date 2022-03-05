@@ -1,21 +1,30 @@
+#pragma once
+#include "shader_constants.h"
 // lib
 #include <GL/glew.h>
 #include <spdlog/spdlog.h>
 // std
 #include <initializer_list>
 #include <array>
+#include <map>
 
 class OpenglShader
 {
 private:
-    enum class ShaderType{
+
+    inline static std::map<ShaderType, Shader> shaders{ 
+        { ShaderType::Texture, Shader(vertex_texture, fragment_texture) },  
+        { ShaderType::Phong, Shader(vertex_phong, fragment_phong) },  
+    };
+
+    enum class ShaderSourceType{
         VertexShader,
         FragmentShader
     };
 
     class ShaderSource{
     public:
-        ShaderSource(const char *source , ShaderType type ) : source{source}, type{type}{ 
+        ShaderSource(const char *source , ShaderSourceType type ) : source{source}, type{type}{ 
             SPDLOG_TRACE("{} shader constructor", shadername); 
             compile();
         }
@@ -30,12 +39,12 @@ private:
     private:
         void compile(){       
 
-            if(type == ShaderType::VertexShader){
+            if(type == ShaderSourceType::VertexShader){
                 shader = glCreateShader(GL_VERTEX_SHADER);
                 shadername = "VERTEX";
             }
 
-            if(type == ShaderType::FragmentShader){
+            if(type == ShaderSourceType::FragmentShader){
                 shader = glCreateShader(GL_FRAGMENT_SHADER);
                 shadername = "FRAGMENT";
             }
@@ -57,14 +66,14 @@ private:
 
         unsigned int shader;
         const char *source;
-        ShaderType type;
+        ShaderSourceType type;
         std::string shadername; 
     };
 
 public:
-    OpenglShader(){
+    OpenglShader(ShaderType type = ShaderType::Texture){
         SPDLOG_TRACE("constructor"); 
-        buildShaders();
+        buildShaders(type);
         createUniformBlockBinding();
     }
 
@@ -98,15 +107,15 @@ private:
             glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
             spdlog::error("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{}", infoLog);
         }
-
     }
 
+    void buildShaders(ShaderType type){
 
-    void buildShaders(){
+        auto shader = shaders.at(type);
 
         std::array<ShaderSource, 2> shaders{ {
-            ShaderSource(vertexShaderSource, ShaderType::VertexShader),
-            ShaderSource(fragmentShaderSource, ShaderType::FragmentShader)
+            ShaderSource(shader.vshader.c_str(), ShaderSourceType::VertexShader),
+            ShaderSource(shader.fshader.c_str(), ShaderSourceType::FragmentShader)
         } };
 
         shaderProgram = glCreateProgram();  
@@ -120,44 +129,6 @@ private:
     }
 
     unsigned int shaderProgram;
-    unsigned int uniformBlockIndex;
-
-    const char *vertexShaderSource = R"(
-        #version 450 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aCol;
-        layout (location = 2) in vec2 aTexCoord;
-        
-        layout (std140) uniform UniformBufferObject {
-           mat4 model;
-           mat4 view;
-           mat4 proj;
-        }ubo;
-
-        out vec3 ourColor;
-        out vec2 TexCoord;
-        void main()
-        {
-           ourColor = aCol;
-           gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 1.0);
-           TexCoord = aTexCoord;
-        }
-        )";
-
-    const char *fragmentShaderSource = R"(
-        #version 450 core
-
-        in vec3 ourColor;
-        in vec2 TexCoord;
-        out vec4 FragColor;
-
-        uniform sampler2D ourTexture;
-
-        void main()
-        {
-           FragColor = texture(ourTexture, TexCoord);
-        }
-        )";
-
+    unsigned int uniformBlockIndex; 
 };
 

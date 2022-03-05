@@ -17,7 +17,7 @@ set_target_properties( app
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-message(STATUS "TEST_APP = "${TEST_APP})
+message(STATUS "TEST_APP = " ${TEST_APP})
 
 if( ${TEST_APP})
     add_test(
