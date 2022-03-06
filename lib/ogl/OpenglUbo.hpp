@@ -11,16 +11,16 @@
 struct OpenglUbo : UniformBufferObject{
 
     OpenglUbo(){
-        glGenBuffers(1, &uboMatrices);
+        glGenBuffers(1, &ubo);
         
-        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformBufferObject), NULL, GL_STATIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         
-        glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, sizeof(UniformBufferObject));
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, sizeof(UniformBufferObject));
     }
    void bind() {
-        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformBufferObject),glm::value_ptr(model), GL_STATIC_DRAW);
         // glBufferSubData(GL_UNIFORM_BUFFER, offsetof(UniformBufferObject, model), sizeof(glm::mat4), glm::value_ptr(model) ); 
         // glBufferSubData(GL_UNIFORM_BUFFER, offsetof(UniformBufferObject, view),  sizeof(glm::mat4), glm::value_ptr(view) );
@@ -29,5 +29,5 @@ struct OpenglUbo : UniformBufferObject{
     }
 
 private:
-    unsigned int uboMatrices;
+    unsigned int ubo;
 };

@@ -132,6 +132,8 @@ void VulkanEngine::updateUbo()
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
+
+    ubo.viewPos = ourCamera.GetPosition();
 }
 
 // Necessita:

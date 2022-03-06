@@ -6,7 +6,7 @@ struct ShaderType{
     const char * fshader;
 };
 
-
+namespace Opengl{
 inline  constexpr ShaderType TEXTURE_SHADER{
    .vshader = R"(
       #version 450 core
@@ -59,11 +59,13 @@ inline  constexpr ShaderType PHONG_SHADER{
          mat4 model;
          mat4 view;
          mat4 proj;
+         vec3 viewPos;
       }ubo;
 
       out vec3 fragColor;
       out vec3 Normal;
       out vec3 FragPos;
+      out vec3 viewPos;
 
       void main()
       {
@@ -71,6 +73,7 @@ inline  constexpr ShaderType PHONG_SHADER{
          FragPos = vec3(ubo.model * vec4(inPosition, 1.0));
          Normal = mat3(transpose(inverse(ubo.model))) * inNormal; 
          gl_Position = ubo.proj * ubo.view * vec4(FragPos, 1.0);
+         viewPos = ubo.viewPos;
       }
       )",
 
@@ -81,8 +84,7 @@ inline  constexpr ShaderType PHONG_SHADER{
       in vec3 fragColor;
       in vec3 Normal;
       in vec3 FragPos;
-   
-      uniform vec3 viewPos; 
+      in vec3 viewPos; 
 
       void main()
       {
@@ -111,5 +113,6 @@ inline  constexpr ShaderType PHONG_SHADER{
       }
       )"
 };
+}
 
 

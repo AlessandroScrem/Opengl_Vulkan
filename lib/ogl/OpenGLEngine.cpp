@@ -73,7 +73,6 @@ void OpenGLEngine::drawFrame()
 
         // render
         ubo.bind();
-        shader.setVec3("viewPos", ourCamera.GetPosition());
         shader.use();
         vertexBuffer.draw();
 
@@ -98,6 +97,7 @@ void OpenGLEngine::updateUbo()
     // rotate camera to y up
     ubo.view = glm::rotate(ourCamera.GetViewMatrix(), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
+    ubo.viewPos = ourCamera.GetPosition();
 }
 
 

@@ -33,5 +33,6 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model{glm::mat4(1.0f)};
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec3 viewPos;
 };
 
