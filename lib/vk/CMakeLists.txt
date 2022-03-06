@@ -18,6 +18,7 @@ target_sources(vk_lib
         VulkanImage.cpp
         VulkanUbo.hpp
         VulkanUbo.cpp
+        VulkanShader.hpp
 )
 
 target_link_libraries(vk_lib 

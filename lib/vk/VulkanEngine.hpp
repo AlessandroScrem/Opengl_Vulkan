@@ -6,6 +6,7 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanImage.hpp"
+#include "VulkanShader.hpp"
 #include "../Engine.hpp"
 //common lib
 #include <Window.hpp>
@@ -40,7 +41,8 @@ private:
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
     VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage};
-    VulkanPipeline pipeline{device, swapchain, vertexbuffer};
+    VulkanShader vulkanshader{device};
+    VulkanPipeline pipeline{device, swapchain, vertexbuffer, vulkanshader};
 
     std::vector<VkCommandBuffer> commandBuffers;
 

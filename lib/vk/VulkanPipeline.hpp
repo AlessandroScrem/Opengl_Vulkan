@@ -1,14 +1,17 @@
 #pragma once
-
 #include "VulkanDevice.hpp"
 
 class VulkanSwapchain;
 class VulkanVertexBuffer;
+class VulkanShader;
 
 class VulkanPipeline
 {
 public:
-    VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanVertexBuffer &vertexbuffer);
+    VulkanPipeline(VulkanDevice &device, 
+            VulkanSwapchain &swapchain, 
+            VulkanVertexBuffer &vertexbuffer,
+            VulkanShader &vulkanshader);
     ~VulkanPipeline();
 
 
@@ -20,21 +23,15 @@ public:
     void cleanupPipeline();
     void createPipeline();
     
-
 private: 
-
-    VkShaderModule createShaderModule(const std::vector<char>& code);
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
     VulkanVertexBuffer &vertexbuffer;
+    VulkanShader &vulkanshader;
 
     VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
-    
-    const std::string vertshader{"data/shaders/vert.spv"};
-    const std::string fragshader{"data/shaders/frag.spv"};
-    
+    VkPipeline graphicsPipeline;  
     
     // Opengl compatible Viewport (SashaWillems)
     // require: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension support for passing negative viewport heights: 

@@ -36,6 +36,9 @@
   - createDescriptorPool()
   - createDescriptorSets()
 
+- VulkanShader
+  - buildShaders()
+
 - VulkanPipeline
   - createPipeline()
   - pipeLineLayout
@@ -55,6 +58,10 @@
 - VulakanPipeline
   - vkDestroyPipeline(graphicsPipeline)
   - vkDestroyPipelineLayout(pipeLineLayout)
+
+- VulkanShader
+  - vkDestroyShaderModule(vertexmodule)
+  - vkDestroyShaderModule(fragmentexmodule)
 
 - VulkanVertexBuffer
   - Index destroyBuffer()
