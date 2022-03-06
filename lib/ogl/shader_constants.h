@@ -10,10 +10,10 @@ struct ShaderType{
 inline  constexpr ShaderType TEXTURE_SHADER{
    .vshader = R"(
       #version 450 core
-      layout (location = 0) in vec3 aPos;
-      layout (location = 1) in vec3 aCol;
-      layout (location = 2) in vec3 aNorm;
-      layout (location = 3) in vec2 aTexCoord;
+      layout (location = 0) in vec3 inPosition;
+      layout (location = 1) in vec3 inColor;
+      layout (location = 2) in vec3 inNormal;
+      layout (location = 3) in vec2 inTexCoord;
 
       layout (std140) uniform UniformBufferObject {
          mat4 model;
@@ -21,28 +21,29 @@ inline  constexpr ShaderType TEXTURE_SHADER{
          mat4 proj;
       }ubo;
 
-      out vec3 ourColor;
-      out vec2 TexCoord;
+      out vec3 FragCoord;
+      out vec2 fragTexCoord;
       void main()
       {
-         ourColor = aCol;
-         gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos, 1.0);
-         TexCoord = aTexCoord;
+         gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+         FragCoord = inColor;
+         fragTexCoord = inTexCoord;
       }
    )",
 
    .fshader = R"(
       #version 450 core
 
-      in vec3 ourColor;
-      in vec2 TexCoord;
-      out vec4 FragColor;
+      uniform sampler2D texSampler;
 
-      uniform sampler2D ourTexture;
+      in vec3 FragCoord;
+      in vec2 fragTexCoord;
+
+      out vec4 outColor;
 
       void main()
       {
-         FragColor = texture(ourTexture, TexCoord);
+         outColor = texture(texSampler, fragTexCoord);
       }
       )"
 };
@@ -50,9 +51,9 @@ inline  constexpr ShaderType TEXTURE_SHADER{
 inline  constexpr ShaderType PHONG_SHADER{
    .vshader = R"(
       #version 450 core
-      layout (location = 0) in vec3 aPos;
-      layout (location = 1) in vec3 aCol;
-      layout (location = 2) in vec3 aNorm;
+      layout (location = 0) in vec3 inPosition;
+      layout (location = 1) in vec3 inColor;
+      layout (location = 2) in vec3 inNormal;
       
       layout (std140) uniform UniformBufferObject {
          mat4 model;
@@ -60,24 +61,24 @@ inline  constexpr ShaderType PHONG_SHADER{
          mat4 proj;
       }ubo;
 
-      out vec3 vertexColor;
+      out vec3 fragColor;
       out vec3 Normal;
       out vec3 FragPos;
 
       void main()
       {
-         vertexColor = aCol;
-         FragPos = vec3(ubo.model * vec4(aPos, 1.0));
-         Normal = mat3(transpose(inverse(ubo.model))) * aNorm; 
+         fragColor = inColor;
+         FragPos = vec3(ubo.model * vec4(inPosition, 1.0));
+         Normal = mat3(transpose(inverse(ubo.model))) * inNormal; 
          gl_Position = ubo.proj * ubo.view * vec4(FragPos, 1.0);
       }
       )",
 
    .fshader = R"(
       #version 450 core
-      out vec4 FragColor;
+      out vec4 outColor;
 
-      in vec3 vertexColor;
+      in vec3 fragColor;
       in vec3 Normal;
       in vec3 FragPos;
    
@@ -105,8 +106,8 @@ inline  constexpr ShaderType PHONG_SHADER{
          float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
          vec3 specular = specularStrength * spec * lightColor;  
             
-         vec3 result = (ambient + diffuse + specular) * vertexColor;
-         FragColor = vec4(result, 1.0);
+         vec3 result = (ambient + diffuse + specular) * fragColor;
+         outColor = vec4(result, 1.0);
       }
       )"
 };

@@ -25,19 +25,20 @@ static std::vector<char> readFile(const std::string& filename) {
     return buffer;
 }
 
-struct ShaderType{
-    const char * vshader;
-    const char * fshader;
-};
-   
-inline  constexpr ShaderType TEXTURE_SHADER{
-    .vshader = "data/shaders/vert.spv",
-    .fshader = "data/shaders/frag.spv"
-};
 
 
 class VulkanShader
 {
+    struct ShaderType{
+        const char * vshader;
+        const char * fshader;
+    };
+    
+    inline static const  ShaderType TEXTURE_SHADER{
+        .vshader = "data/shaders/vert.spv",
+        .fshader = "data/shaders/frag.spv"
+    };
+    
 private:
     enum class ShaderSourceType{
         VertexShader,
