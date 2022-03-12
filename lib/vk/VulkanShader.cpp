@@ -4,7 +4,7 @@
 // std
 #include <string>
 
-std::vector<glm::uint> compileGlslToSvp(std::string source, shaderc_shader_kind kind)
+std::vector<uint32_t> compileGlslToSvp(const char *source, shaderc_shader_kind kind)
 {
     const shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -39,7 +39,7 @@ std::vector<glm::uint> compileGlslToSvp(std::string source, shaderc_shader_kind 
 
 void VulkanShader::ShaderSource::create()
 {
-    std::vector<glm::uint> fragmentCodeCompiled;
+    std::vector<uint32_t> fragmentCodeCompiled;
 
     if(type == ShaderSourceType::VertexShader){
         fragmentCodeCompiled = compileGlslToSvp(source, shaderc_glsl_vertex_shader);
@@ -60,10 +60,10 @@ void VulkanShader::ShaderSource::create()
     vertShaderStageInfo.pName = "main";
 }
 
-VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<glm::uint>& code) {
+VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<uint32_t>& code) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size()*sizeof(glm::uint);
+    createInfo.codeSize = code.size()*sizeof(uint32_t);
     createInfo.pCode = code.data();
 
     VkShaderModule shaderModule;

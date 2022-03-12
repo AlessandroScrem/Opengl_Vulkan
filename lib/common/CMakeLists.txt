@@ -37,3 +37,4 @@ target_include_directories(common_lib
     PRIVATE
         tinyobjloader
 )
+

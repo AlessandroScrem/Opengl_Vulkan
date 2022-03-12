@@ -2,7 +2,6 @@
 
 #include "camera.hpp"
 //libs
-#include <spdlog/spdlog.h>
 
 /**
  * @brief Update camera position from fontroller

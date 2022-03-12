@@ -1,7 +1,6 @@
 #include "input_manager.hpp"
-
+#include "mytypes.hpp"
 // std
-#include <spdlog/spdlog.h>
 
 namespace ngn
 {

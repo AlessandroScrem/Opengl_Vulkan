@@ -110,8 +110,8 @@ private:
             , source{source}
             , type{type}
         { 
-            SPDLOG_TRACE("{} shader constructor", shadername); 
             create();
+            SPDLOG_TRACE("{} shader constructor", shadername); 
         }
 
         ~ShaderSource(){
@@ -122,7 +122,7 @@ private:
         VkPipelineShaderStageCreateInfo get()  {return vertShaderStageInfo;}
 
     private:
-        VkShaderModule createShaderModule(const std::vector<glm::uint>& code);
+        VkShaderModule createShaderModule(const std::vector<uint32_t>& code);
         void create();
 
         VulkanDevice &device;
@@ -131,8 +131,8 @@ private:
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 
         const char *source;
+        std::string shadername{};
         ShaderSourceType type;
-        std::string shadername; 
     };
 
 public:
