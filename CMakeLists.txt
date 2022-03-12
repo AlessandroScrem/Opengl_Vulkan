@@ -13,7 +13,7 @@ find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(shaderc REQUIRED  glslang )
+find_package(shaderc REQUIRED)
 find_package(spdlog REQUIRED)
 
 add_subdirectory(lib)

@@ -27,9 +27,6 @@ private:
     void updateUbo();
 
     void createSyncObjects();
-
-    // const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
-
     void recreateSwapChain();
     void createCommandBuffers();
     void cleanupCommandBuffers();

@@ -20,6 +20,7 @@ target_sources(vk_lib
         VulkanUbo.cpp
         VulkanShader.hpp
         VulkanShader.cpp
+        shader_constants.h
 )
 
 target_link_libraries(vk_lib 
