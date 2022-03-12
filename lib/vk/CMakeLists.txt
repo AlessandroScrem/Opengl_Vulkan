@@ -19,6 +19,7 @@ target_sources(vk_lib
         VulkanUbo.hpp
         VulkanUbo.cpp
         VulkanShader.hpp
+        VulkanShader.cpp
 )
 
 target_link_libraries(vk_lib 
@@ -29,6 +30,8 @@ target_link_libraries(vk_lib
         glfw::glfw 
         glew::glew
         Vulkan::Vulkan
+        shaderc::shaderc #shader online compilation
+        glslang::SPIRV   #shader online compilation
         stb
 )
 
