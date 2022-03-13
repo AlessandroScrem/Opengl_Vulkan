@@ -65,7 +65,7 @@ private:
     };
 
 public:
-    OpenglShader(ShaderType type = GLSL::TEXTURE_SHADER){
+    OpenglShader(ShaderType type = GLSL::DUMMY_SHADER){
         SPDLOG_TRACE("constructor"); 
         buildShaders(type);
         createUniformBlockBinding();

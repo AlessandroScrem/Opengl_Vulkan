@@ -38,7 +38,7 @@ private:
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
     VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage};
-    VulkanShader vulkanshader{device, GLSL::PHONG_SHADER};
+    VulkanShader vulkanshader{device, Engine::glslShader};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer, vulkanshader};
 
     std::vector<VkCommandBuffer> commandBuffers;

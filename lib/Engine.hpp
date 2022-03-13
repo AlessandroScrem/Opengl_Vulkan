@@ -5,6 +5,7 @@
 #include <mytypes.hpp>
 #include <camera.hpp>
 #include <model.hpp>
+#include <glsl_constants.h>
 #include <multiplatform_input.hpp>
 //std
 #include <memory>
@@ -33,6 +34,7 @@ protected:
     ngn::MultiplatformInput input_{};
     void updateEvents();
     EngineType engine_type{};
+    const  ShaderType &glslShader = GLSL::PHONG_SHADER;
     
     Model model{};
     Color background{};

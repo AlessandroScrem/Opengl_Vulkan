@@ -26,8 +26,7 @@ private:
     
     Window window{EngineType::Opengl, Engine::input_};
 
-    //OpenglShader shader{Opengl::PHONG_SHADER};
-    OpenglShader shader{GLSL::PHONG_SHADER};
+    OpenglShader shader{Engine::glslShader};
 
     OpenglUbo ubo{};
     OpenglVertexBuffer vertexBuffer{model};

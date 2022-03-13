@@ -126,7 +126,7 @@ inline  constexpr  ShaderType DUMMY_SHADER{
     .vshader = R"(
         #version 450 
         layout(location = 0) in vec3 inPosition; 
-        void main(){ gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);}
+        void main(){ vec4(inPosition, 1.0); }
     )",
     .fshader = R"(
         #version 450
@@ -143,7 +143,7 @@ inline  constexpr  ShaderType DUMMY_SHADER{
     .vshader = R"(
         #version 450 
         layout(location = 0) in vec3 inPosition; 
-        void main(){ gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);}
+        void main(){ vec4(inPosition, 1.0); }
     )",
     .fshader = R"(
         #version 450

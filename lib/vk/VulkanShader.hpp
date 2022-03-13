@@ -50,7 +50,7 @@ private:
     };
 
 public:
-    VulkanShader(VulkanDevice &device, ShaderType type = GLSL::TEXTURE_SHADER)
+    VulkanShader(VulkanDevice &device, ShaderType type = GLSL::DUMMY_SHADER)
         : device{device}
         , shaderType{type} 
     {
