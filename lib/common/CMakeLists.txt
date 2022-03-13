@@ -10,6 +10,8 @@ target_sources(common_lib
         model.cpp
         camera.hpp
         camera.cpp
+        mytypes.hpp
+        glsl_constants.h
 
         input/utils.hpp
         input/input_key.hpp

@@ -1,10 +1,10 @@
 #pragma once
-#include "shader_constants.h"
-#include <common/mytypes.hpp>
+// lib common
+#include <mytypes.hpp>
+#include <glsl_constants.h>
 // lib
 #include <GL/glew.h>
 // std
-#include <initializer_list>
 #include <array>
 #include <map>
 
@@ -65,7 +65,7 @@ private:
     };
 
 public:
-    OpenglShader(ShaderType type = Opengl::TEXTURE_SHADER){
+    OpenglShader(ShaderType type = GLSL::TEXTURE_SHADER){
         SPDLOG_TRACE("constructor"); 
         buildShaders(type);
         createUniformBlockBinding();

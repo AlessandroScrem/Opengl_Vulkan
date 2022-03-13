@@ -5,7 +5,7 @@ struct ShaderType{
     const char * fshader;
 };
 
-namespace Vulkan {
+namespace GLSL {
 inline  constexpr  ShaderType PHONG_SHADER{
 .vshader = R"(
     #version 450
@@ -126,7 +126,7 @@ inline  constexpr  ShaderType DUMMY_SHADER{
     .vshader = R"(
         #version 450 
         layout(location = 0) in vec3 inPosition; 
-        void main(){ gl_Position = vec4(inPosition, 1.0); }
+        void main(){ gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);}
     )",
     .fshader = R"(
         #version 450
@@ -135,4 +135,21 @@ inline  constexpr  ShaderType DUMMY_SHADER{
     )"
 };
 
-} //namespace
+} // GLSL namespace
+
+
+namespace Vulkan {
+inline  constexpr  ShaderType DUMMY_SHADER{
+    .vshader = R"(
+        #version 450 
+        layout(location = 0) in vec3 inPosition; 
+        void main(){ gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);}
+    )",
+    .fshader = R"(
+        #version 450
+        layout(location = 0) out vec4 outColor;
+        void main(){ }
+    )"
+};
+
+} //Vulkan namespace

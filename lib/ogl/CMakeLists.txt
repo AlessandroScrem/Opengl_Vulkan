@@ -13,7 +13,6 @@ target_sources(ogl_lib
         OpenglShader.hpp
         OpenglUbo.hpp
         OpenglObj.hpp
-        shader_constants.h
 )
 
 
@@ -33,5 +32,5 @@ target_include_directories(ogl_lib
     PUBLIC 
         ${CMAKE_CURRENT_LIST_DIR}
     PRIVATE 
-    ${CMAKE_CURRENT_LIST_DIR}/..
+    #${CMAKE_CURRENT_LIST_DIR}/..
 )

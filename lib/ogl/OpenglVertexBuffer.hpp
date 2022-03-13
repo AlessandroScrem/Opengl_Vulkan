@@ -113,7 +113,7 @@ public:
         glBindVertexArray(VAO); 
         glBindTexture(GL_TEXTURE_2D, texture.getId());
         glDrawElements(GL_TRIANGLES, (GLsizei) model.indicesSize() , GL_UNSIGNED_INT, 0);
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE1);
     }
 
 private:

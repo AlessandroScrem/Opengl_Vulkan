@@ -1,8 +1,8 @@
 #pragma once
-#include "shader_constants.h"
 #include "VulkanDevice.hpp"
 // lib common
 #include <mytypes.hpp>
+#include <glsl_constants.h>
 // lib
 #include <glm/glm.hpp>
 // std
@@ -50,7 +50,7 @@ private:
     };
 
 public:
-    VulkanShader(VulkanDevice &device, ShaderType type = Vulkan::TEXTURE_SHADER)
+    VulkanShader(VulkanDevice &device, ShaderType type = GLSL::TEXTURE_SHADER)
         : device{device}
         , shaderType{type} 
     {

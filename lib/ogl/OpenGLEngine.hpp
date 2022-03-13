@@ -1,10 +1,9 @@
 #pragma once
 
+#include "..\Engine.hpp"
 #include "OpenglVertexBuffer.hpp"
 #include "OpenglShader.hpp"
 #include "OpenglUbo.hpp"
-// engine
-#include <Engine.hpp>
 // common
 #include <Window.hpp>
 
@@ -27,8 +26,8 @@ private:
     
     Window window{EngineType::Opengl, Engine::input_};
 
-    OpenglShader shader{Opengl::PHONG_SHADER};
-    //OpenglShader shader{Opengl::TEXTURE_SHADER};
+    //OpenglShader shader{Opengl::PHONG_SHADER};
+    OpenglShader shader{GLSL::PHONG_SHADER};
 
     OpenglUbo ubo{};
     OpenglVertexBuffer vertexBuffer{model};
