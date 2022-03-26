@@ -1,5 +1,5 @@
 
-add_subdirectory(stb)
+
 add_subdirectory(common)
 add_subdirectory(ogl)
 add_subdirectory(vk)
@@ -15,7 +15,7 @@ target_sources(engine_lib
 
 target_link_libraries(engine_lib
     PRIVATE 
-
+        stb_image
     PUBLIC 
         common_lib
         vk_lib

@@ -28,6 +28,7 @@ target_link_libraries(common_lib
         glfw::glfw 
         glew::glew 
         spdlog::spdlog
+        tinyobjloader
     PUBLIC
         glm::glm
     )
@@ -37,6 +38,5 @@ target_include_directories(common_lib
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/input
     PRIVATE
-        tinyobjloader
 )
 

@@ -1,7 +1,6 @@
 #include "VulkanImage.hpp"
 
 //lib
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 VulkanImage::VulkanImage(VulkanDevice &device, VulkanSwapchain &swapchain) 

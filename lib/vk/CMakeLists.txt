@@ -35,7 +35,7 @@ target_link_libraries(vk_lib
         Vulkan::Vulkan
         shaderc::shaderc #shader online compilation
         glslang::SPIRV   #shader online compilation
-        stb
+        stb_image
 )
 
 target_include_directories(vk_lib 

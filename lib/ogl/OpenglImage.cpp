@@ -1,7 +1,5 @@
 #include "OpenglImage.hpp"
 
-// implementex on VulkanImage.cpp
-//#define STB_IMAGE_IMPLEMENTATION
 // stb lib    
 #include <stb_image.h>
 

@@ -21,8 +21,8 @@ target_link_libraries(ogl_lib
         glfw::glfw 
         glew::glew
         Vulkan::Vulkan
-        stb
-    PUBLIC 
+        stb_image
+#    PUBLIC 
         common_lib
         glm::glm
         spdlog::spdlog
@@ -32,5 +32,4 @@ target_include_directories(ogl_lib
     PUBLIC 
         ${CMAKE_CURRENT_LIST_DIR}
     PRIVATE 
-    #${CMAKE_CURRENT_LIST_DIR}/..
 )
