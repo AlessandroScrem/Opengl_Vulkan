@@ -37,7 +37,7 @@ private:
     VulkanSwapchain swapchain{device, window};
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
-    VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage};
+    VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage, Engine::model};
     VulkanShader vulkanshader{device, Engine::glslShader};
     VulkanPipeline pipeline{device, swapchain, vertexbuffer, vulkanshader};
 

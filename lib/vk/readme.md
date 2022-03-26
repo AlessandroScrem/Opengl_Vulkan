@@ -12,6 +12,7 @@
   - createSurface();
   - pickPhysicalDevice();
   - createLogicalDevice();
+  - createVulkanAllocator()
   - createCommandPool()
 
 - VulkanSwapchain
@@ -91,6 +92,7 @@
 
 - VulkanDevice       
   - vkDestroyCommandPool()
+  - vmaDestroyAllocator()
   - vkDestroyDevice();
   - DestroyDebugUtilsMessengerEXT();
   - vkDestroySurfaceKHR();

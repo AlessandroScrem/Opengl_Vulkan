@@ -29,5 +29,5 @@ private:
     OpenglShader shader{Engine::glslShader};
 
     OpenglUbo ubo{};
-    OpenglVertexBuffer vertexBuffer{model};
+    OpenglVertexBuffer vertexBuffer{Engine::model};
 };

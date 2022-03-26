@@ -4,6 +4,7 @@
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "vktypes.h"
 //std
 #include <vector>
 #include <optional>
@@ -53,7 +54,13 @@ public:
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    
+
+    void createVmaBuffer(VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, VkBuffer &buffer,VmaAllocation &allocation, const void *bufferdata, size_t buffersize);
+    void destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation);
+    VmaAllocator getAllocator(){return _allocator;}
+
+
+
     // used by VulkanEngine , VulkanImage
     VkCommandPool getCommadPool() { return commandPool; }
     VkQueue getGraphicsQueue() {return graphicsQueue; }
@@ -78,6 +85,7 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+    void createVulkanAllocator();
 
     void createCommandPool();
     
@@ -108,6 +116,8 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkSampleCountFlagBits maxMsaaSamples, msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkDevice logicalDevice;
+
+    VmaAllocator _allocator; //vma lib allocator
 
     VkCommandPool commandPool;
     

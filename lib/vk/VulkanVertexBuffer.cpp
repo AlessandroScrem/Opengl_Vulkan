@@ -4,11 +4,12 @@
 
 
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage) 
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage, Model &model) 
     : device{device}
-    ,swapchain{swapchain}
-    ,ubo{ubo}
-    ,vulkanimage{vulkanimage}
+    , swapchain{swapchain}
+    , ubo{ubo}
+    , vulkanimage{vulkanimage}
+    , model{model}
 { 
     SPDLOG_TRACE("constructor");
     createIndexBuffer();   
@@ -22,14 +23,10 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 {   
     SPDLOG_TRACE("destructor");
 
-    vkDestroyBuffer(device.getDevice(), indexBuffer, nullptr);
-    SPDLOG_TRACE("Index vkDestroyBuffer");
-    vkFreeMemory(device.getDevice(), indexBufferMemory, nullptr);
-    SPDLOG_TRACE("Index vkFreeMemory");
-    vkDestroyBuffer(device.getDevice(), vertexBuffer, nullptr);
-    SPDLOG_TRACE("Vertex vkDestroyBuffer");
-    vkFreeMemory(device.getDevice(), vertexBufferMemory, nullptr);  
-    SPDLOG_TRACE("Vertex vkFreeMemory");
+    device.destroyVmaBuffer(vertexBuffer._buffer, vertexBuffer._allocation);
+    SPDLOG_TRACE("Vertex vmaDestroyBuffer");
+    device.destroyVmaBuffer(indexBuffer._buffer, indexBuffer._allocation);
+    SPDLOG_TRACE("Index vmaDestroyBuffer");
 
     cleanupDescriptorPool();
 
@@ -45,98 +42,40 @@ void VulkanVertexBuffer::cleanupDescriptorPool()
 }
 
 
-/*
-    Unfortunately the driver may not immediately copy the data into the buffer memory, for example because of caching. 
-    It is also possible that writes to the buffer are not visible in the mapped memory yet. 
-    There are two ways to deal with that problem:
-    
-    - Use a memory heap that is host coherent, indicated with VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    
-    - Call vkFlushMappedMemoryRanges after writing to the mapped memory, 
-        and call vkInvalidateMappedMemoryRanges before reading from the mapped memory
-
-    Flushing memory ranges or using a coherent memory heap means that the driver will be aware of our writes to the buffer,
-    but it doesn’t mean that they are actually visible on the GPU yet. 
-    The transfer of data to the GPU is an operation that happens in the background and the specification 
-    simply tells us that it is guaranteed to be complete as of the next call to vkQueueSubmit.
-*/
-// Necessita
-// device.findMemoryType
-// device.copyBuffer
-void VulkanVertexBuffer::createVertexBuffer() 
+void VulkanVertexBuffer::createVertexBuffer()
 {
-    SPDLOG_TRACE("createVertexBuffer");
+    //allocate vertex buffer
+    VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(Vertex) * model.verticesSize();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
-    VkDeviceSize bufferSize = sizeof(Vertex) * model.verticesSize();
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-
-    // Using a staging buffer
-    // We’re now going to change createVertexBuffer to only use a host visible buffer 
-    // as temporary buffer and use a device local one as actual vertex buffer.
-    // Vertex data will be loaded from high performance memory
-    device.createBuffer(bufferSize, 
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        stagingBuffer, 
-                        stagingBufferMemory
-    );
-
-    // For filling the vertices data to the memory
-    // we need a pointer to the buffer which the memory is associated to
-    // at the end we unmap a previously mapped memory object 
-    void* data;
-    vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, model.verticesData(), (size_t) bufferSize);
-    vkUnmapMemory(device.getDevice(), stagingBufferMemory);
-
-    // The vertexBuffer is now allocated from a memory type that is device local
-    // which generally means that we’re not able to use vkMapMemory. 
-    // However, we can copy data from the stagingBuffer to the vertexBuffer
-    device.createBuffer(bufferSize,
-                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        vertexBuffer, 
-                        vertexBufferMemory
-    );
-
-    device.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-    vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
+	//allocate the buffer
+    const void *bufferdata =  model.verticesData();
+    size_t buffersize = model.verticesSize() * sizeof(Vertex);
+	device.createVmaBuffer(bufferInfo, vmaallocInfo, vertexBuffer._buffer, vertexBuffer._allocation, bufferdata, buffersize);
 }
 
-void VulkanVertexBuffer::createIndexBuffer() 
+void VulkanVertexBuffer::createIndexBuffer()
 {
-    SPDLOG_TRACE("createIndexBuffer");
+   //allocate vertex buffer
+    VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(Index) * model.indicesSize();
+	bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
-    VkDeviceSize bufferSize = sizeof(Index) * model.indicesSize();
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    device.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        stagingBuffer, 
-                        stagingBufferMemory
-                        );
-
-    void* data;
-    vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, model.indicesData(), (size_t) bufferSize);
-    vkUnmapMemory(device.getDevice(), stagingBufferMemory);
-
-    device.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                        indexBuffer, 
-                        indexBufferMemory
-                        );
-
-    device.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-    vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
+	//allocate the buffer
+    const void *bufferdata =  model.indicesData();
+    size_t buffersize = model.indicesSize() * sizeof(Index);
+	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
 }
-
+ 
 // creare prima di createGraphicsPipeline();
 void VulkanVertexBuffer::createDescriptorSetLayout()
 {

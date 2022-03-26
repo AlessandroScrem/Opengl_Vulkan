@@ -36,6 +36,7 @@ target_link_libraries(vk_lib
         shaderc::shaderc #shader online compilation
         glslang::SPIRV   #shader online compilation
         stb_image
+        vma
 )
 
 target_include_directories(vk_lib 

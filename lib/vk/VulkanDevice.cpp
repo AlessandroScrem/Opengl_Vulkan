@@ -1,5 +1,8 @@
 #include "VulkanDevice.hpp"
 #include "vk_initializers.h"
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 
 //std
 #include <set>
@@ -35,6 +38,9 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
     createLogicalDevice();
     SPDLOG_TRACE("createLogicalDevice");
 
+    createVulkanAllocator();
+    SPDLOG_TRACE("createVulkanAllocator");
+
     createCommandPool();
     SPDLOG_TRACE("createCommandPool");
 
@@ -45,8 +51,14 @@ VulkanDevice::~VulkanDevice()
 {
     SPDLOG_TRACE("destructor");
 
+    //make sure the gpu has stopped doing its things
+	vkDeviceWaitIdle(logicalDevice);
+
     vkDestroyCommandPool(logicalDevice, commandPool, nullptr); 
     SPDLOG_TRACE("vkDestroyCommandPool");
+
+    vmaDestroyAllocator(_allocator);
+    SPDLOG_TRACE("vmaDestroyAllocator");
 
     vkDestroyDevice(logicalDevice, nullptr);
     SPDLOG_TRACE("vkDestroyDevice");
@@ -150,6 +162,16 @@ void VulkanDevice::createLogicalDevice()
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 }
 
+void VulkanDevice::createVulkanAllocator()
+{
+    //initialize the memory allocator
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = logicalDevice;
+    allocatorInfo.instance = instance;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+}
+
 void VulkanDevice::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
@@ -173,7 +195,7 @@ void VulkanDevice::pickPhysicalDevice()
 
     if (physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
-    }      
+    } 
 }
 
 void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties) 
@@ -518,6 +540,24 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+}
+
+void VulkanDevice::createVmaBuffer(VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, VkBuffer &buffer,VmaAllocation &allocation, const void *bufferdata, size_t buffersize)
+{
+    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &buffer, &allocation, nullptr) );
+
+    //copy  data
+    void* data;
+	vmaMapMemory(_allocator, allocation, &data);
+
+	memcpy(data, bufferdata, buffersize);
+
+	vmaUnmapMemory(_allocator, allocation);
+}
+
+void VulkanDevice::destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation)
+{
+    vmaDestroyBuffer(_allocator, buffer, allocation);
 }
 
 VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {

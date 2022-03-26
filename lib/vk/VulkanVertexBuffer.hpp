@@ -19,7 +19,7 @@ class VulkanSwapchain;
 class VulkanVertexBuffer
 {
 public:
-    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage);
+    VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage, Model &model);
     ~VulkanVertexBuffer();
 
 static VkVertexInputBindingDescription getBindingDescription() {
@@ -55,8 +55,9 @@ static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions
         return attributeDescriptions;
     }
 
-    VkBuffer getVertexBuffer() { return vertexBuffer; }
-    VkBuffer getIndexBuffer() { return indexBuffer; }
+    VkBuffer getVertexBuffer() { return vertexBuffer._buffer; }
+    VkBuffer getIndexBuffer() { return indexBuffer._buffer; }
+
     size_t getIndexSize() { return model.indicesSize(); }
 
     const VkDescriptorSetLayout &  getDescriptorSetLayout() const { return descriptorSetLayout; }
@@ -79,16 +80,14 @@ private:
     VulkanUbo &ubo;
     VulkanImage &vulkanimage;
 
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    AllocatedBuffer  vertexBuffer;
+    AllocatedBuffer  indexBuffer;
 
+    Model &model;
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    Model model{};
 
 
     //                  Coordinate system:
