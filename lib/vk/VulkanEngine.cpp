@@ -1,4 +1,5 @@
 #include "VulkanEngine.hpp"
+#include "vk_initializers.h"
 //std
 #include <vector>
 
@@ -52,7 +53,7 @@ void VulkanEngine::run()
 // device.getPresentQueue()
 void VulkanEngine::drawFrame() 
 {   
-    vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    VK_CHECK(vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX) );
     
     // Acquiring an image from the swap chain
     //
@@ -72,7 +73,7 @@ void VulkanEngine::drawFrame()
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
-        vkWaitForFences(device.getDevice(), 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+        VK_CHECK(vkWaitForFences(device.getDevice(), 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX) );
     }
 
     // Mark the image as now being in use by this frame
@@ -97,11 +98,9 @@ void VulkanEngine::drawFrame()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
     
-    vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]);
+    VK_CHECK(vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]) );
 
-    if (vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to submit draw command buffer!");
-    }
+    VK_CHECK(vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) );
 
     // Presentation
     VkPresentInfoKHR presentInfo{};
@@ -154,13 +153,9 @@ void VulkanEngine::createSyncObjects()
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-
-            throw std::runtime_error("failed to create synchronization objects for a frame!");
-        }
-    
+        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) );
+        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) );
+        VK_CHECK(vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) ); 
     }
 }
 
@@ -230,30 +225,19 @@ void VulkanEngine::createCommandBuffers()
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = device.getCommadPool();
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+    VkCommandPool commandPool = device.getCommadPool();
+    uint32_t commandBufferCount = (uint32_t) commandBuffers.size();
+    VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(commandPool, commandBufferCount);
 
-    if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
+    VK_CHECK( vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, commandBuffers.data()) );
 
     for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info() ;
 
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
+        VK_CHECK(vkBeginCommandBuffer(commandBuffers[i], &beginInfo) );
 
-            VkRenderPassBeginInfo renderPassInfo{};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = swapchain.getRenderpass();
-            renderPassInfo.framebuffer = swapchain.getFramebuffer(i);
-            renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = swapchain.getExtent(); 
+            VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(
+                swapchain.getRenderpass(), swapchain.getExtent(), swapchain.getFramebuffer(i));
 
             // set the background color
             float r = Engine::background.red;

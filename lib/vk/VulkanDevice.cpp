@@ -1,4 +1,5 @@
 #include "VulkanDevice.hpp"
+#include "vk_initializers.h"
 
 //std
 #include <set>
@@ -469,20 +470,13 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     
 }
 
-
-
 void VulkanDevice::createCommandPool() 
 {
-    QueueFamilyIndices queueFamilyIndices = findPhysicalQueueFamilies();
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-    poolInfo.flags = 0; // Optional  
-
-    if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
-    }
+    uint32_t queueFamilyIndex = findPhysicalQueueFamilies().graphicsFamily.value();
+    VkCommandPoolCreateInfo poolInfo = vkinit::command_pool_create_info(
+        queueFamilyIndex,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+      
+    VK_CHECK(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) );
 }
 
 

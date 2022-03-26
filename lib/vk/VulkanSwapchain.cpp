@@ -1,4 +1,5 @@
 #include "VulkanSwapchain.hpp"
+#include "vk_initializers.h"
 
 // std
 #include <cstdint> // Necessary for UINT32_MAX
@@ -340,10 +341,7 @@ void VulkanSwapchain::createRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass!");
-    }
-
+    VK_CHECK(vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) );
 }
 
 void VulkanSwapchain::createFramebuffers() 
@@ -368,9 +366,7 @@ void VulkanSwapchain::createFramebuffers()
         framebufferInfo.height = swapChainExtent.height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
+        VK_CHECK(vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) );
     }
 }
 

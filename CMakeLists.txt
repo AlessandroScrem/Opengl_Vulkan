@@ -16,9 +16,11 @@ find_package(Vulkan REQUIRED)
 find_package(shaderc REQUIRED)
 find_package(spdlog REQUIRED)
 
+add_subdirectory(third_party)
 add_subdirectory(lib)
 add_subdirectory(test)
 add_subdirectory(src)
+
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

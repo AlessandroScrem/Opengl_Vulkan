@@ -2,6 +2,7 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanShader.hpp"
+#include "vk_initializers.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, 
                                 VulkanVertexBuffer &vertexbuffer, VulkanShader &vulkanshader) 
@@ -34,33 +35,45 @@ void VulkanPipeline::cleanupPipeline()
 // swapchain.getRenderpass()
 // vulkanshader.get()
 void VulkanPipeline::createPipeline() 
-{   
+{ 
+
+    //build the pipeline layout that controls the inputs/outputs of the shader
+	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &vertexbuffer.getDescriptorSetLayout();
+
+    VK_CHECK(vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) );  
+
+    //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
+	PipelineBuilder pipelineBuilder;
+
+    //use the default shaders
+    pipelineBuilder._shaderStages = vulkanshader.get();
+    
+    //use the default layout we created
+    pipelineBuilder._pipelineLayout = pipelineLayout;
+  
     // Fixed functions
     // Vertex input
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 
     //*** get data from Vertex here
     //***
     auto bindingDescription = VulkanVertexBuffer::getBindingDescription();
     auto attributeDescriptions = VulkanVertexBuffer::getAttributeDescriptions();
 
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = 1;
+    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
     //***
-
-    
+  
     // Input assembly
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
     //Viewports and scissors 
     VkExtent2D swapChainExtent = swapchain.getExtent();
-    VkViewport viewport{};
     float height = (float) swapChainExtent.height;
     float width = (float) swapChainExtent.width;
     float offsetx = 0.f;
@@ -73,107 +86,88 @@ void VulkanPipeline::createPipeline()
         height  = -height;
     }
     
-    viewport.y = offsety;
-    viewport.x = offsetx;
-    viewport.height = height;
-    viewport.width  = width;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    pipelineBuilder._viewport.y = offsety;
+    pipelineBuilder._viewport.x = offsetx;
+    pipelineBuilder._viewport.height = height;
+    pipelineBuilder._viewport.width  = width;
+    pipelineBuilder._viewport.minDepth = 0.0f;
+    pipelineBuilder._viewport.maxDepth = 1.0f;
 
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-
-    VkPipelineViewportStateCreateInfo viewportState{};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
-    viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
+    pipelineBuilder._scissor.offset = {0, 0};
+    pipelineBuilder._scissor.extent = swapChainExtent;
 
     // Rasterizer
-    VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    //rasterizer.cullMode = VK_CULL_MODE_NONE;
+    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, Opengl_compatible_viewport);
 
-    // Opengl compatible Viewport (SashaWillems)
-    if(Opengl_compatible_viewport)
-    {
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    }else{
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    }
-    rasterizer.depthBiasEnable = VK_FALSE;
-
-    // Multisampling
-    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
-    
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = msaaSamples;
-
+    // Multisampling 
+    pipelineBuilder._multisampling = vkinit::multisampling_state_create_info(device.getMsaaSamples());
+  
     // Depth and stencil state
-    VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.stencilTestEnable = VK_FALSE;
+    pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
 
     // Color blending
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
+    pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
 
-    VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
     // end 
     // Fixed functions
 
-    // Pipeline layout
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &vertexbuffer.getDescriptorSetLayout();
+    graphicsPipeline = pipelineBuilder.build_pipeline(device.getDevice(), swapchain.getRenderpass()); 
+}
 
-    if (vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
+VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass) {
 
-    VkGraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = vulkanshader.size();
-    pipelineInfo.pStages = vulkanshader.data();
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.pColorBlendState = &colorBlending;
+	//make viewport state from our stored viewport and scissor.
+		//at the moment we wont support multiple viewports or scissors
+	VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.pNext = nullptr;
 
-    pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = swapchain.getRenderpass();
-    pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = &_viewport;
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = &_scissor;
 
-    if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+	//setup dummy color blending. We arent using transparent objects yet
+	//the blending is just "no blend", but we do write to the color attachment
+	VkPipelineColorBlendStateCreateInfo colorBlending = {};
+	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlending.pNext = nullptr;
+
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	colorBlending.attachmentCount = 1;
+	colorBlending.pAttachments = &_colorBlendAttachment;
+
+	//build the actual pipeline
+	//we now use all of the info structs we have been writing into into this one to create the pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.pNext = nullptr;
+
+	pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages->size());
+	pipelineInfo.pStages = _shaderStages->data();
+	pipelineInfo.pVertexInputState = &_vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &_inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &_rasterizer;
+	pipelineInfo.pMultisampleState = &_multisampling;
+    pipelineInfo.pDepthStencilState = &_depthStencil;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.layout = _pipelineLayout;
+	pipelineInfo.renderPass = pass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+	//it's easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
+	VkPipeline newPipeline;
+	if (vkCreateGraphicsPipelines(
+		device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
+		spdlog::error("failed to create pipeline");
+		return VK_NULL_HANDLE; // failed to create graphics pipeline
+	}
+	else
+	{
+		return newPipeline;
+	}
 }
 

@@ -64,6 +64,8 @@ public:
 
     uint32_t size() {return static_cast<uint32_t>( shaderStages.size() );}
     VkPipelineShaderStageCreateInfo* data() {return shaderStages.data();}
+    std::vector<VkPipelineShaderStageCreateInfo> * get() {return &shaderStages;}
+
     
 private:
 
