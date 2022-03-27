@@ -1,6 +1,7 @@
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "vk_initializers.h"
 
 
 
@@ -44,35 +45,29 @@ void VulkanVertexBuffer::cleanupDescriptorPool()
 
 void VulkanVertexBuffer::createVertexBuffer()
 {
-    //allocate vertex buffer
-    VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(Vertex) * model.verticesSize();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    //create bufferinfo
+    size_t buffersize = sizeof(Vertex) * model.verticesSize();
+    const void * bufferdata = model.verticesData();
+    VkBufferCreateInfo bufferInfo = vkinit::vertex_input_state_create_info(buffersize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
 	VmaAllocationCreateInfo vmaallocInfo = {};
 	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
 	//allocate the buffer
-    const void *bufferdata =  model.verticesData();
-    size_t buffersize = model.verticesSize() * sizeof(Vertex);
 	device.createVmaBuffer(bufferInfo, vmaallocInfo, vertexBuffer._buffer, vertexBuffer._allocation, bufferdata, buffersize);
 }
 
 void VulkanVertexBuffer::createIndexBuffer()
 {
-   //allocate vertex buffer
-    VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(Index) * model.indicesSize();
-	bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    //create bufferinfo
+    size_t buffersize = sizeof(Index) * model.indicesSize();
+    const void * bufferdata = model.indicesData();
+    VkBufferCreateInfo bufferInfo = vkinit::vertex_input_state_create_info(buffersize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 	VmaAllocationCreateInfo vmaallocInfo = {};
 	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
 	//allocate the buffer
-    const void *bufferdata =  model.indicesData();
-    size_t buffersize = model.indicesSize() * sizeof(Index);
 	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
 }
  

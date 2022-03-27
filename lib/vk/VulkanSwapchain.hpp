@@ -60,8 +60,7 @@ private:
     VkDeviceMemory colorImageMemory;
     VkImageView colorImageView;
 
-    VkImage depthImage;
-    VkDeviceMemory depthImageMemory;
+    AllocatedImage depthImage;
     VkImageView depthImageView;    
 };
 

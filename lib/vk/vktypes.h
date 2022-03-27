@@ -8,6 +8,10 @@ struct AllocatedBuffer {
 	VmaAllocation _allocation;
 };
 
+struct AllocatedImage {
+    VkImage _image;
+    VmaAllocation _allocation;
+};
 
 //we want to immediately abort when there is an error. 
 //In normal engines this would give an error message to the user, or perform a dump of state.

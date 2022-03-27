@@ -55,11 +55,13 @@ public:
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    void createVmaBuffer(VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, VkBuffer &buffer,VmaAllocation &allocation, const void *bufferdata, size_t buffersize);
+    void createVmaBuffer(        
+        VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
+        VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
     void destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation);
-    VmaAllocator getAllocator(){return _allocator;}
 
-
+    void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
+    void destroyVmaImage(VkImage &image, VmaAllocation &allocation);
 
     // used by VulkanEngine , VulkanImage
     VkCommandPool getCommadPool() { return commandPool; }

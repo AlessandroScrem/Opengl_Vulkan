@@ -542,15 +542,17 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
 }
 
-void VulkanDevice::createVmaBuffer(VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, VkBuffer &buffer,VmaAllocation &allocation, const void *bufferdata, size_t buffersize)
+void VulkanDevice::createVmaBuffer(
+        VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
+        VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize)
 {
-    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &buffer, &allocation, nullptr) );
+    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &dest_buffer, &allocation, nullptr) );
 
     //copy  data
     void* data;
 	vmaMapMemory(_allocator, allocation, &data);
 
-	memcpy(data, bufferdata, buffersize);
+	    memcpy(data, src_buffer, buffersize);
 
 	vmaUnmapMemory(_allocator, allocation);
 }
@@ -588,19 +590,10 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory) 
 {
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
+    VkExtent3D extent = {width, height, 1} ;
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(format, usage, extent, numSamples, mipLevels);
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = numSamples;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateImage(logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -620,6 +613,17 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
     }
 
     vkBindImageMemory(logicalDevice, image, imageMemory, 0);
+}
+
+// kind of helper function
+void VulkanDevice::createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation)   
+{
+    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &vmaallocInfo, &dest_image, &allocation, nullptr) );
+}
+
+void VulkanDevice::destroyVmaImage(VkImage &image, VmaAllocation &allocation)
+{
+    vmaDestroyImage(_allocator, image, allocation);
 }
 
 VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() {

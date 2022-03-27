@@ -34,4 +34,11 @@ namespace vkinit {
     VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
+
+    VkBufferCreateInfo vertex_input_state_create_info(VkDeviceSize size, VkBufferUsageFlags usage);
+
+    VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT,  uint32_t mipLevels = 1);
+
+    VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags, uint32_t mipLevels = 1);
+
 }

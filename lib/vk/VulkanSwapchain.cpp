@@ -46,10 +46,9 @@ void VulkanSwapchain::cleanupSwapChain()
     vkDestroyImage(device.getDevice(), colorImage, nullptr);
     vkFreeMemory(device.getDevice(), colorImageMemory, nullptr);
     SPDLOG_TRACE("vkDestroy ColorResources");
-
+ 
     vkDestroyImageView(device.getDevice(), depthImageView, nullptr);
-    vkDestroyImage(device.getDevice(), depthImage, nullptr);
-    vkFreeMemory(device.getDevice(), depthImageMemory, nullptr);
+	device.destroyVmaImage(depthImage._image, depthImage._allocation);
     SPDLOG_TRACE("vkDestroy DepthResources");
 
 
@@ -217,26 +216,16 @@ VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
     }
 }
 
-
+ 
 VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = mipLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(format, image, aspectFlags, mipLevels);
 
     VkImageView imageView;
-    if (vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture image view!");
-    }
+    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &imageView) );
 
     return imageView;
 }
+
 
 void VulkanSwapchain::createImageViews() 
 {
@@ -248,7 +237,7 @@ void VulkanSwapchain::createImageViews()
     for (uint32_t i = 0; i < swapChainImages.size(); i++) {
                 swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
             }    
-}
+} 
 
 void VulkanSwapchain::createRenderPass() 
 {
@@ -397,16 +386,21 @@ void VulkanSwapchain::createDepthResources()
     VkFormat depthFormat = device.findDepthFormat();
     const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
     const uint32_t mipmap_one = 1;
+    VkExtent3D extent = {swapChainExtent.width, swapChainExtent.height, 1};
 
-    device.createImage(swapChainExtent.width,  swapChainExtent.height, mipmap_one,
-                msaaSamples, 
-                depthFormat, 
-                VK_IMAGE_TILING_OPTIMAL, 
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                depthImage, 
-                depthImageMemory
-                );
-    depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mipmap_one);
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(
+        depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+        extent, msaaSamples, mipmap_one);
+
+    //for the depth image, we want to allocate it from gpu local memory
+	VmaAllocationCreateInfo allocinfo = {};
+    allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    //allocate and create the image
+    device.createVmaImage(imageInfo, allocinfo, depthImage._image, depthImage._allocation );
+
+	//build a image-view for the depth image to use for rendering
+    depthImageView = createImageView(depthImage._image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mipmap_one);
 }
 

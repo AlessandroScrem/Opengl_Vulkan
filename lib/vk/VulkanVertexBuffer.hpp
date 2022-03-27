@@ -22,15 +22,15 @@ public:
     VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage, Model &model);
     ~VulkanVertexBuffer();
 
-static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    std::array<VkVertexInputBindingDescription, 1> getBindingDescription() {
+        std::array<VkVertexInputBindingDescription, 1> bindingDescription{};
+        bindingDescription[0].binding = 0;
+        bindingDescription[0].stride = sizeof(Vertex);
+        bindingDescription[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         return bindingDescription;
     }
-static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+    std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].binding = 0;

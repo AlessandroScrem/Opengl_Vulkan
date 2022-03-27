@@ -58,16 +58,11 @@ void VulkanPipeline::createPipeline()
     // Vertex input
     pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 
-    //*** get data from Vertex here
-    //***
-    auto bindingDescription = VulkanVertexBuffer::getBindingDescription();
-    auto attributeDescriptions = VulkanVertexBuffer::getAttributeDescriptions();
-
-    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = 1;
-    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-    //***
+    //connect the pipeline builder vertex input info to the one we get from Vertex
+    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = vertexbuffer.getAttributeDescriptions().data();
+    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( vertexbuffer.getAttributeDescriptions().size() );
+    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = vertexbuffer.getBindingDescription().data();
+    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>( vertexbuffer.getBindingDescription().size() );
   
     // Input assembly
     pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
