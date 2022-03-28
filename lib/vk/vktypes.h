@@ -13,6 +13,7 @@ struct AllocatedImage {
     VmaAllocation _allocation;
 };
 
+
 //we want to immediately abort when there is an error. 
 //In normal engines this would give an error message to the user, or perform a dump of state.
  #define VK_CHECK(x)                                                 \

@@ -48,6 +48,7 @@ public:
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
+    
     const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
 
     // used by VulkanVertexBuffer
@@ -65,6 +66,8 @@ public:
 
     // used by VulkanEngine , VulkanImage
     VkCommandPool getCommadPool() { return commandPool; }
+
+
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
     VkFormat findDepthFormat();
