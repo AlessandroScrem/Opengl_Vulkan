@@ -59,10 +59,13 @@ void VulkanPipeline::createPipeline()
     pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 
     //connect the pipeline builder vertex input info to the one we get from Vertex
-    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = vertexbuffer.getAttributeDescriptions().data();
-    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( vertexbuffer.getAttributeDescriptions().size() );
-    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = vertexbuffer.getBindingDescription().data();
-    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>( vertexbuffer.getBindingDescription().size() );
+    auto bindingDescription = vertexbuffer.getBindingDescription();
+    auto attributeDescriptions = vertexbuffer.getAttributeDescriptions();
+
+    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescription.size());
+    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
+    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
   
     // Input assembly
     pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -71,7 +74,7 @@ void VulkanPipeline::createPipeline()
     VkExtent2D swapChainExtent = swapchain.getExtent();
     float height = (float) swapChainExtent.height;
     float width = (float) swapChainExtent.width;
-    float offsetx = 0.f;
+    float offsetx = 0.f; 
     float offsety = 0.f;
 
     // Opengl compatible Viewport (SashaWillems)
@@ -80,7 +83,7 @@ void VulkanPipeline::createPipeline()
         offsety =  height;
         height  = -height;
     }
-    
+  
     pipelineBuilder._viewport.y = offsety;
     pipelineBuilder._viewport.x = offsetx;
     pipelineBuilder._viewport.height = height;

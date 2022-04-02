@@ -7,16 +7,24 @@ VulkanEngine::VulkanEngine()
 {  
     SPDLOG_TRACE("constructor");
 
+    shaders.emplace_back(std::make_unique<VulkanShader>(device, Engine::phong_glslShader) );
+    shaders.emplace_back(std::make_unique<VulkanShader>(device, Engine::tex_glslShader) );
+    SPDLOG_TRACE("fine costruzione shaders");    
+
+    auto  &sh0 = *shaders.at(0);
+    auto  &sh1 = *shaders.at(1);
+
+    pipelines.emplace_back( std::make_unique<VulkanPipeline>(device, swapchain, vertexbuffer, sh0) );
+    pipelines.emplace_back( std::make_unique<VulkanPipeline>(device, swapchain, vertexbuffer, sh1) );
+    SPDLOG_TRACE("fine costruzione pipelines");    
+
+
     init_commands();
+    SPDLOG_TRACE("createCommandBuffers");
 
-	init_sync_structures();
+	init_sync_structures();  
+    SPDLOG_TRACE("createSyncObjects");
 
-
-    // createCommandBuffers();
-    // SPDLOG_TRACE("createCommandBuffers");
-
-    // createSyncObjects();
-    // SPDLOG_TRACE("createSyncObjects");
 }
 
 VulkanEngine::~VulkanEngine() 
@@ -24,16 +32,6 @@ VulkanEngine::~VulkanEngine()
     SPDLOG_TRACE("destructor");
 
     _mainDeletionQueue.flush();
-
-    // cleanupCommandBuffers();
-    // SPDLOG_TRACE("cleanupCommandBuffers");
-
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //     vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i], nullptr);
-    //     vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i], nullptr);
-    //     vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
-    // }
-    // SPDLOG_TRACE("destroySyncObjects");
 }
 
 void VulkanEngine::run() 
@@ -46,8 +44,6 @@ void VulkanEngine::run()
         window.update();
         updateUbo();
         draw();
-        //drawFrame();
-        //glfwWaitEvents();
     }
     vkDeviceWaitIdle(device.getDevice()); 
 
@@ -207,8 +203,9 @@ void VulkanEngine::recreateSwapChain()
     vkDeviceWaitIdle(device.getDevice());
 
 // destroy
-    //cleanupCommandBuffers();
-    pipeline.cleanupPipeline();
+    for (auto  & element : pipelines)
+    { element->cleanupPipeline ();}
+
     ubo.cleanupUniformBuffers();
     vertexbuffer.cleanupDescriptorPool();
     swapchain.cleanupSwapChain();
@@ -218,8 +215,8 @@ void VulkanEngine::recreateSwapChain()
     ubo.createUniformBuffers();
     vertexbuffer.createDescriptorPool();
     vertexbuffer.createDescriptorSets();
-    pipeline.createPipeline();
-    //createCommandBuffers();
+        for (auto & element : pipelines)
+    { element->createPipeline ();}
 }
 
 
@@ -241,8 +238,7 @@ void VulkanEngine::recreateSwapChain()
 // vertexbuffer.getVertexBuffer()
 // vertexbuffer.getIndexBuffer()
 // vertexbuffer.getDescriptorSet
-/*
-void VulkanEngine::createCommandBuffers() 
+/*void VulkanEngine::createCommandBuffers() 
 {
     commandBuffers.resize(swapchain.getFramebuffersSize());
 
@@ -299,8 +295,7 @@ void VulkanEngine::createCommandBuffers()
 }
 */
 
-/*
-void VulkanEngine::cleanupCommandBuffers()
+/*void VulkanEngine::cleanupCommandBuffers()
 {
     vkFreeCommandBuffers(device.getDevice(), 
                         device.getCommadPool(), 
@@ -309,8 +304,7 @@ void VulkanEngine::cleanupCommandBuffers()
 }
 */
 
-/* 
-Material* VulkanEngine::create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, ShaderType type, std::string& name)
+/* Material* VulkanEngine::create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, ShaderType type, std::string& name)
 {
     Material mat;
     VulkanShader sh{device, type};
@@ -377,10 +371,7 @@ void VulkanEngine::init_sync_structures()
 void VulkanEngine::init_commands()
 {
  	//create a command pool for commands submitted to the graphics queue.
-	//we also want the pool to allow for resetting of individual command buffers
-	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(device.findPhysicalQueueFamilies().graphicsFamily.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-	VK_CHECK(vkCreateCommandPool(device.getDevice(), &commandPoolInfo, nullptr, &_commandPool));
+    device.createCommandPool(&_commandPool);
 
 	//allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
@@ -442,6 +433,7 @@ void VulkanEngine::draw()
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        VulkanPipeline &pipeline = *pipelines.at(_selectedShader);
 
 	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
 

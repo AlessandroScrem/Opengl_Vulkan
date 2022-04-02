@@ -41,8 +41,8 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
     createVulkanAllocator();
     SPDLOG_TRACE("createVulkanAllocator");
 
-    createCommandPool();
-    SPDLOG_TRACE("createCommandPool");
+    createDefaultCommandPool();
+    SPDLOG_TRACE("createDefaultCommandPool");
 
     setMsaaValue(VK_SAMPLE_COUNT_2_BIT);
 }
@@ -54,7 +54,7 @@ VulkanDevice::~VulkanDevice()
     //make sure the gpu has stopped doing its things
 	vkDeviceWaitIdle(logicalDevice);
 
-    vkDestroyCommandPool(logicalDevice, commandPool, nullptr); 
+    vkDestroyCommandPool(logicalDevice, defaultcommandPool, nullptr); 
     SPDLOG_TRACE("vkDestroyCommandPool");
 
     vmaDestroyAllocator(_allocator);
@@ -492,13 +492,19 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     
 }
 
-void VulkanDevice::createCommandPool() 
+void VulkanDevice::createCommandPool(VkCommandPool *pool) 
 {
     uint32_t queueFamilyIndex = findPhysicalQueueFamilies().graphicsFamily.value();
     VkCommandPoolCreateInfo poolInfo = vkinit::command_pool_create_info(
         queueFamilyIndex,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
       
-    VK_CHECK(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) );
+    VK_CHECK(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, pool) );
+
+}
+
+void VulkanDevice::createDefaultCommandPool()
+{
+    createCommandPool(&defaultcommandPool);   
 }
 
 
@@ -514,7 +520,7 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = defaultcommandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -539,7 +545,7 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
-    vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(logicalDevice, defaultcommandPool, 1, &commandBuffer);
 }
 
 void VulkanDevice::createVmaBuffer(

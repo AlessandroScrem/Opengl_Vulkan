@@ -50,6 +50,9 @@ namespace ngn
                 return InputKey::KEY_UP;
             case GLFW_KEY_DOWN:
                 return InputKey::KEY_DOWN;
+            case GLFW_KEY_SPACE:
+                return InputKey::KEY_SPACE;
+
            default:
                 return InputKey::UNKNOWN;
         }

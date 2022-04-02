@@ -20,6 +20,7 @@ namespace ngn
         KEY_Z,
         KEY_UP,
         KEY_DOWN,
+        KEY_SPACE,
         GAMEPAD_L_THUMB_X,
         GAMEPAD_L_THUMB_Y,
         GAMEPAD_R_THUMB_X,

@@ -108,6 +108,10 @@ void Engine::MapActions()
         .actionName = "cam fov",
         .scale = 1.f
     });
+    inputManager_->MapInputToAction(InputKey::KEY_SPACE, InputAction {
+        .actionName = "toggle shader",
+        .scale = 1.f
+    });
     inputManager_->MapInputToAction(InputKey::MOUSE_LEFT, InputAction {
         .actionName = "leftclick",
         .scale = 1.f
@@ -120,6 +124,7 @@ void Engine::MapActions()
         .actionName = "rightclick",
         .scale = 1.f
     });
+
 
     inputManager_->RegisterActionCallback("orbit left/right", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
@@ -225,6 +230,21 @@ void Engine::MapActions()
             return true;
         }
     });
+    inputManager_->RegisterActionCallback("toggle shader", InputManager::ActionCallback {
+        .Ref = "YoutubeGame",
+        .Func = [this](InputSource source, int sourceIndex, float value) {
+
+            if (value){
+                _selectedShader += 1;
+                if(_selectedShader > 1) _selectedShader = 0;
+                shouldupdate = true;               
+            }else{                     
+                shouldupdate = false;
+            }
+            return true;
+        }
+    });
+    
     
 }
 

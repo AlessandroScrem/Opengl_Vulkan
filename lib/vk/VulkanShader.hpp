@@ -54,17 +54,23 @@ public:
         : device{device}
         , shaderType{type} 
     {
-        SPDLOG_TRACE("constructor"); 
+        SPDLOG_TRACE("VulkanShader constructor"); 
         buildShaders();
     }
 
     ~VulkanShader(){
-        SPDLOG_TRACE("destructor"); 
+        SPDLOG_TRACE("VulkanShader destructor"); 
     }
+
+    // Not copyable or movable
+    // VulkanShader(const VulkanShader &) = delete;
+    //void operator=(const VulkanShader &) = delete;
+    // VulkanShader(VulkanDevice &&) = delete;
+    // VulkanShader &operator=(VulkanShader &&) = delete;
 
     uint32_t size() {return static_cast<uint32_t>( shaderStages.size() );}
     VkPipelineShaderStageCreateInfo* data() {return shaderStages.data();}
-    std::vector<VkPipelineShaderStageCreateInfo> * get() {return &shaderStages;}
+    std::vector<VkPipelineShaderStageCreateInfo>  * get() {return  &shaderStages;}
 
     
 private:

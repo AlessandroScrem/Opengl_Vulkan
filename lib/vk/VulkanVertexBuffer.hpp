@@ -22,7 +22,7 @@ public:
     VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage, Model &model);
     ~VulkanVertexBuffer();
 
-    std::array<VkVertexInputBindingDescription, 1> getBindingDescription() {
+    const std::array<VkVertexInputBindingDescription, 1> getBindingDescription() {
         std::array<VkVertexInputBindingDescription, 1> bindingDescription{};
         bindingDescription[0].binding = 0;
         bindingDescription[0].stride = sizeof(Vertex);
@@ -30,7 +30,7 @@ public:
 
         return bindingDescription;
     }
-    std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+    const std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].binding = 0;

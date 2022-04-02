@@ -64,9 +64,10 @@ public:
     void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
     void destroyVmaImage(VkImage &image, VmaAllocation &allocation);
 
-    // used by VulkanEngine , VulkanImage
-    VkCommandPool getCommadPool() { return commandPool; }
+    // used by VulkanImage
+    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }
 
+    void createCommandPool(VkCommandPool *pool);
 
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
@@ -92,7 +93,8 @@ private:
     void createLogicalDevice();
     void createVulkanAllocator();
 
-    void createCommandPool();
+    void createDefaultCommandPool();
+
     
 
     std::vector<const char*> getRequiredExtensions();
@@ -124,7 +126,7 @@ private:
 
     VmaAllocator _allocator; //vma lib allocator
 
-    VkCommandPool commandPool;
+    VkCommandPool defaultcommandPool;
     
     VkQueue graphicsQueue;
     VkQueue presentQueue;

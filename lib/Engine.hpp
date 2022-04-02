@@ -34,11 +34,14 @@ protected:
     ngn::MultiplatformInput input_{};
     void updateEvents();
     EngineType engine_type{};
-    const  ShaderType &glslShader = GLSL::PHONG_SHADER;
+    const  ShaderType &phong_glslShader = GLSL::PHONG_SHADER;
+    const  ShaderType &tex_glslShader = GLSL::TEXTURE_SHADER;
     
     Model model{};
     Color background{};
     Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)}; 
+
+    int _selectedShader{0};
 
 private:
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};

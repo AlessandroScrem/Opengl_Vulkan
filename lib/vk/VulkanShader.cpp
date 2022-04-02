@@ -10,8 +10,9 @@ std::vector<uint32_t> compileGlslToSvp(const char *source, shaderc_shader_kind k
     shaderc::CompileOptions options;
     options.SetOptimizationLevel(shaderc_optimization_level_size);
 
-    const auto svCompilationResult =
-    compiler.CompileGlslToSpv(source, kind, "shaderc_s", options);
+    SPDLOG_TRACE("START compileGlslToSvp"); 
+    const auto svCompilationResult = compiler.CompileGlslToSpv(source, kind, "shaderc_s", options);
+    SPDLOG_TRACE("END compileGlslToSvp"); 
     if (svCompilationResult.GetCompilationStatus() != shaderc_compilation_status_success)
     {   
         std::string shadertype;
@@ -33,7 +34,6 @@ std::vector<uint32_t> compileGlslToSvp(const char *source, shaderc_shader_kind k
         spdlog::error("failed to compile shader {} {}", shadertype, svCompilationResult.GetErrorMessage());
         throw std::runtime_error("failed to compile shader ");
     }
-
     return {svCompilationResult.cbegin(), svCompilationResult.cend()};
 }
 

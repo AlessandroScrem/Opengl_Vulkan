@@ -78,7 +78,6 @@ private:
     // -----------------------
     // -----------------------
     void drawFrame();
-
     void init_commands();
     void init_sync_structures();
 
@@ -109,10 +108,17 @@ private:
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
     VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage, Engine::model};
-    VulkanShader vulkanshader{device, Engine::glslShader};
-    VulkanPipeline pipeline{device, swapchain, vertexbuffer, vulkanshader};
+    
+    // VulkanShader vulkanshader0{device, Engine::phong_glslShader};
+    // VulkanShader vulkanshader1{device, Engine::tex_glslShader};
 
-    std::vector<VkCommandBuffer> commandBuffers;
+    // VulkanPipeline pipeline0{device, swapchain, vertexbuffer, &vulkanshader0};
+    // VulkanPipeline pipeline1{device, swapchain, vertexbuffer, &vulkanshader1};
+
+    //std::vector<VkCommandBuffer> commandBuffers;
+
+    std::vector<std::unique_ptr<VulkanShader>> shaders;
+    std::vector<std::unique_ptr<VulkanPipeline>> pipelines;
 
     //  GPU-GPU synchronization
     // std::vector<VkSemaphore> imageAvailableSemaphores;
