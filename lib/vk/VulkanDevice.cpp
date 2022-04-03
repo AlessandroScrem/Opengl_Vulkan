@@ -300,7 +300,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
     for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
-        SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
+        //SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
     }
 
     return requiredExtensions.empty();
@@ -325,9 +325,9 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice dev
         details.formats.resize(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
         #ifndef NDEBUG
-            SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
+            //SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
             for(const auto sfmt : details.formats ){
-                SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
+                //SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
             }
         #endif
     }

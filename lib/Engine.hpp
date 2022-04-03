@@ -18,6 +18,9 @@ struct Color
     float alpha = 1.0f;
 };
 
+constexpr char  viking_room[] = "data/models/viking_room.obj";
+constexpr char  monkey[] = "data/models/monkey_smooth.obj";
+
 class Engine
 {    
 public:
@@ -27,25 +30,33 @@ public:
     virtual void run() = 0;
     virtual void setWindowMessage(std::string msg) =0;
 
-
    static std::unique_ptr<Engine> create(EngineType type);
 
 protected:
-    ngn::MultiplatformInput input_{};
     void updateEvents();
+
+    ngn::MultiplatformInput input_{};
     EngineType engine_type{};
     const  ShaderType &phong_glslShader = GLSL::PHONG_SHADER;
     const  ShaderType &tex_glslShader = GLSL::TEXTURE_SHADER;
+
     
-    Model model{};
+    std::array<Model, 2> _models{
+        Model(viking_room),
+        Model(monkey)
+    };
+
+    Model &model = _models[0];
+    
     Color background{};
     Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)}; 
 
-    int _selectedShader{0};
+    int _model_index{0};
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     void MapActions();
+    
+    std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;
 
 

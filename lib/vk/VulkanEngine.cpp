@@ -7,17 +7,8 @@ VulkanEngine::VulkanEngine()
 {  
     SPDLOG_TRACE("constructor");
 
-    shaders.emplace_back(std::make_unique<VulkanShader>(device, Engine::phong_glslShader) );
-    shaders.emplace_back(std::make_unique<VulkanShader>(device, Engine::tex_glslShader) );
-    SPDLOG_TRACE("fine costruzione shaders");    
-
-    auto  &sh0 = *shaders.at(0);
-    auto  &sh1 = *shaders.at(1);
-
-    pipelines.emplace_back( std::make_unique<VulkanPipeline>(device, swapchain, vertexbuffer, sh0) );
-    pipelines.emplace_back( std::make_unique<VulkanPipeline>(device, swapchain, vertexbuffer, sh1) );
-    SPDLOG_TRACE("fine costruzione pipelines");    
-
+    init_renderables();
+    SPDLOG_TRACE("init_randerables");    
 
     init_commands();
     SPDLOG_TRACE("createCommandBuffers");
@@ -50,23 +41,26 @@ void VulkanEngine::run()
     SPDLOG_TRACE("*******           END             ************");  
 }
 
-// void VulkanEngine::upload_models()
-// {
-//     VulkanVertexBuffer vb{device, swapchain, ubo, vulkanimage, Engine::model};
-//     _vertexbuffers["vikingroom"] = &vb;  
-// }
+void VulkanEngine::init_renderables()
+{
+    _shaders.emplace_back(std::make_unique<VulkanShader>(device, Engine::phong_glslShader) );  
+    auto  &sh = *_shaders.at(0);
 
-// void VulkanEngine::create_defaultPipeline()
-// {
-//     VulkanVertexBuffer &vb = *get_vertexBuffer("vikingroom");
-// }
+    for(auto & mod : _models)
+    {
+        std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(device, swapchain, ubo, vulkanimage, mod);
+        std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(device, swapchain, *vb, sh);
+    
+        _renderables.emplace_back(
+            std::move(vb),
+            std::move(pip), 
+            ubo
+        ); 
+    }
+}
 
-// Necessita:
-// swapchain.getSwapchain
-// device getGraphicsQueue
-// device.getPresentQueue()
-/* 
-void VulkanEngine::drawFrame() 
+
+/* void VulkanEngine::drawFrame() 
 {   
     VK_CHECK(vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX) );
     
@@ -152,47 +146,6 @@ void VulkanEngine::updateUbo()
 } 
 
 
-/* 
-// Necessita:
-// swapchain.getSwapchianImageSize()
-void VulkanEngine::createSyncObjects()
-{
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapchain.getSwapchianImageSize(), VK_NULL_HANDLE);
-
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) );
-        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) );
-        VK_CHECK(vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) ); 
-    }
-}
-
- */
-// TODO
-//  
-// The disadvantage of this approach is that we need to stop all rendering before creating the new swap chain.
-// 
-// It is possible to create a new swap chain while drawing commands 
-// on an image from the old swap chain are still in-flight. 
-// You need to pass the previous swap chain to the oldSwapChain field 
-// in the VkSwapchainCreateInfoKHR struct and destroy the old swap chain as soon as you’ve finished using it.
-
-// Necessita:
-// window.GetWindowExtents()
-// pipeline.cleanupPipeline();
-// pipeline.createPipeline();
-// swapchain.cleanupSwapChain();
-// swapchain.createAllSwapchian();
 void VulkanEngine::recreateSwapChain() 
 {  
      while (window.waitforSize()) {
@@ -203,143 +156,25 @@ void VulkanEngine::recreateSwapChain()
     vkDeviceWaitIdle(device.getDevice());
 
 // destroy
-    for (auto  & element : pipelines)
-    { element->cleanupPipeline ();}
-
+    for (auto  & element : _renderables)
+    { 
+        element.pipeline->cleanupPipeline ();
+        element.vertexbuffer->cleanupDescriptorPool();
+    }
     ubo.cleanupUniformBuffers();
-    vertexbuffer.cleanupDescriptorPool();
     swapchain.cleanupSwapChain();
 
 // create
     swapchain.createAllSwapchian();
     ubo.createUniformBuffers();
-    vertexbuffer.createDescriptorPool();
-    vertexbuffer.createDescriptorSets();
-        for (auto & element : pipelines)
-    { element->createPipeline ();}
-}
-
-
-// Basic drawing commands
-
-// Parameters, aside from the command buffer:
-//
-// vertexCount: Even though we don’t have a vertex buffer, we technically still have 3 vertices to draw.
-// instanceCount: Used for instanced rendering, use 1 if you’re not doing that.
-// firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
-// firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
-// 
-// Necessita:
-// swapchain.getFramebuffersSize
-// swapchain.getRenderpass
-// swapchain.getFramebuffer
-// swapchain.getExtent
-// pipeline.getGraphicsPipeline
-// vertexbuffer.getVertexBuffer()
-// vertexbuffer.getIndexBuffer()
-// vertexbuffer.getDescriptorSet
-/*void VulkanEngine::createCommandBuffers() 
-{
-    commandBuffers.resize(swapchain.getFramebuffersSize());
-
-    VkCommandPool commandPool = device.getCommadPool();
-    uint32_t commandBufferCount = (uint32_t) commandBuffers.size();
-    VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(commandPool, commandBufferCount);
-
-    VK_CHECK( vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, commandBuffers.data()) );
-
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info() ;
-
-        VK_CHECK(vkBeginCommandBuffer(commandBuffers[i], &beginInfo) );
-
-            VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(
-                swapchain.getRenderpass(), swapchain.getExtent(), swapchain.getFramebuffer(i));
-
-            // set the background color
-            float r = Engine::background.red;
-            float g = Engine::background.green;
-            float b = Engine::background.blue;
-            float a = Engine::background.alpha;
-
-            std::array<VkClearValue, 2> clearValues{};
-            clearValues[0].color = {{r, g, b, a}};
-            clearValues[1].depthStencil = {1.0f, 0};
-
-            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-            renderPassInfo.pClearValues = clearValues.data();
-
-
-            vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
-                
-                //TODO modify call to vertexbuffer and offset
-                VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-                VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
-                size_t indexsize = vertexbuffer.getIndexSize();
-                VkDeviceSize offsets[] = {0};
-                VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(i);
-                VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
-
-                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                
-                vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-
-                vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
-            vkCmdEndRenderPass(commandBuffers[i]);
-
-        VK_CHECK(vkEndCommandBuffer(commandBuffers[i]));
+    for (auto & element : _renderables)
+    { 
+        element.vertexbuffer->createDescriptorPool();
+        element.vertexbuffer->createDescriptorSets();
+        element.pipeline->createPipeline();
     }
 }
-*/
 
-/*void VulkanEngine::cleanupCommandBuffers()
-{
-    vkFreeCommandBuffers(device.getDevice(), 
-                        device.getCommadPool(), 
-                        static_cast<uint32_t>(commandBuffers.size()), 
-                        commandBuffers.data());    
-}
-*/
-
-/* Material* VulkanEngine::create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, ShaderType type, std::string& name)
-{
-    Material mat;
-    VulkanShader sh{device, type};
-
-	mat.shader = &sh;
-	mat.pipeline = pipeline;
-	mat.pipelineLayout = pipelineLayout;
-	_materials[name] = mat;
-	return &_materials[name];
-}
-
-Material* VulkanEngine::get_material(const std::string& name)
-{
-	//search for the object, and return nullptr if not found
-	auto it = _materials.find(name);
-	if (it == _materials.end()) {
-		return nullptr;
-	}
-	else {
-		return &(*it).second;
-	}
-}
-
-VulkanVertexBuffer* VulkanEngine::get_vertexBuffer(const std::string& name)
-{
-	auto it = _vertexbuffers.find(name);
-	if (it == _vertexbuffers.end()) {
-		return nullptr;
-	}
-	else {
-		return (*it).second;
-	}
-}
-
- */
 
 
 void VulkanEngine::init_sync_structures()
@@ -433,11 +268,14 @@ void VulkanEngine::draw()
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        VulkanPipeline &pipeline = *pipelines.at(_selectedShader);
+        RenderObject & ro = _renderables.at(_model_index);
+
+        VulkanPipeline &pipeline = *ro.pipeline;
+        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
 
 	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
 
-        ubo.bind(0);
+        ro.ubo.bind(0);
 
         VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
         VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();

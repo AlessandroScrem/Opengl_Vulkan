@@ -235,8 +235,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                _selectedShader += 1;
-                if(_selectedShader > 1) _selectedShader = 0;
+                _model_index += 1;
+                if(_model_index >= _models.size()) _model_index = 0;
                 shouldupdate = true;               
             }else{                     
                 shouldupdate = false;

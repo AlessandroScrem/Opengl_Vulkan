@@ -32,31 +32,12 @@ struct DeletionQueue
     }
 };
 
-struct FrameData {
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
 
-	DeletionQueue _frameDeletionQueue;
-
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
-
-	AllocatedBuffer cameraBuffer;
-	VkDescriptorSet globalDescriptor;
-
-	AllocatedBuffer objectBuffer;
-	VkDescriptorSet objectDescriptor;
-};
-
-struct Material{
-    VulkanShader *shader;
-    VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
-};
-
-struct RenderObject{
-    VulkanVertexBuffer *vertexBuffer;
-    Material *material;
+struct RenderObject {
+	
+    std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
+	std::unique_ptr<VulkanPipeline>  pipeline;
+	VulkanUbo &ubo;
 };
 
 const unsigned int MAX_FRAMES_IN_FLIGHT = 2;    
@@ -68,38 +49,20 @@ public:
     ~VulkanEngine();
 
     void run() override;
-    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);};
-
+    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);}
 
 private:
-    // void upload_models();
-    // void create_defaultPipeline();
 
     // -----------------------
     // -----------------------
-    void drawFrame();
+    void init_renderables();
     void init_commands();
     void init_sync_structures();
 
     void draw();
     void draw_objects(VkCommandBuffer cmd,RenderObject* first, int count);  
-    // -----------------------
-    // -----------------------
-    
     void updateUbo();
-
-    void createSyncObjects();
-    void recreateSwapChain();
-    void createCommandBuffers();
-    void cleanupCommandBuffers();
-
-    Material* create_material(VkPipeline pipeline, VkPipelineLayout layout, ShaderType type, std::string& name);
-    Material* get_material(const std::string& name);
-    VulkanVertexBuffer* get_vertexBuffer(const std::string& name);
-
-    std::vector<RenderObject> _renderables;
-    std::unordered_map<std::string, Material> _materials;
-    std::unordered_map<std::string, VulkanVertexBuffer*> _vertexbuffers;
+    void recreateSwapChain();   
 
     Window window{EngineType::Vulkan, Engine::input_};
     
@@ -107,29 +70,12 @@ private:
     VulkanSwapchain swapchain{device, window};
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
-    VulkanVertexBuffer vertexbuffer{device, swapchain, ubo, vulkanimage, Engine::model};
-    
-    // VulkanShader vulkanshader0{device, Engine::phong_glslShader};
-    // VulkanShader vulkanshader1{device, Engine::tex_glslShader};
 
-    // VulkanPipeline pipeline0{device, swapchain, vertexbuffer, &vulkanshader0};
-    // VulkanPipeline pipeline1{device, swapchain, vertexbuffer, &vulkanshader1};
-
-    //std::vector<VkCommandBuffer> commandBuffers;
-
-    std::vector<std::unique_ptr<VulkanShader>> shaders;
-    std::vector<std::unique_ptr<VulkanPipeline>> pipelines;
-
-    //  GPU-GPU synchronization
-    // std::vector<VkSemaphore> imageAvailableSemaphores;
-    // std::vector<VkSemaphore> renderFinishedSemaphores;
-
-    // //  CPU-GPU synchronization
-    // std::vector<VkFence> inFlightFences;
-    // std::vector<VkFence> imagesInFlight;
-
-    // size_t currentFrame = 0;
-
+    std::vector<RenderObject> _renderables;
+    std::vector<std::unique_ptr<VulkanShader>> _shaders;
+    std::vector<std::unique_ptr<VulkanVertexBuffer>> _vertexbuffers;
+    std::vector<std::unique_ptr<VulkanPipeline>> _pipelines;
+ 
 
     //------------------------------------
     //------------------------------------
