@@ -7,7 +7,7 @@ VulkanImage::VulkanImage(VulkanDevice &device, VulkanSwapchain &swapchain)
     : device{device}
     ,swapchain{swapchain}   
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
     createTexture();
     createTextureImageView();   
     createTextureSampler();
@@ -15,7 +15,7 @@ VulkanImage::VulkanImage(VulkanDevice &device, VulkanSwapchain &swapchain)
 
 VulkanImage::~VulkanImage() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
     vkDestroySampler(device.getDevice(), textureSampler, nullptr);
     SPDLOG_TRACE("vkDestroy textureSampler");
     vkDestroyImageView(device.getDevice(), textureImageView, nullptr);

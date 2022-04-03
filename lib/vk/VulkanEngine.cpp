@@ -5,7 +5,7 @@
 
 VulkanEngine::VulkanEngine()
 {  
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     init_renderables();
     SPDLOG_TRACE("init_randerables");    
@@ -20,14 +20,14 @@ VulkanEngine::VulkanEngine()
 
 VulkanEngine::~VulkanEngine() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
     _mainDeletionQueue.flush();
 }
 
 void VulkanEngine::run() 
 {
-    SPDLOG_TRACE("*******           START           ************");  
+    spdlog::info("*******           START           ************");  
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
@@ -38,7 +38,7 @@ void VulkanEngine::run()
     }
     vkDeviceWaitIdle(device.getDevice()); 
 
-    SPDLOG_TRACE("*******           END             ************");  
+    spdlog::info("*******           END             ************");  
 }
 
 void VulkanEngine::init_renderables()
@@ -148,6 +148,8 @@ void VulkanEngine::updateUbo()
 
 void VulkanEngine::recreateSwapChain() 
 {  
+    SPDLOG_DEBUG("recreateSwapChain");
+
      while (window.waitforSize()) {
         window.GetWindowExtents();
         glfwWaitEvents();

@@ -22,7 +22,7 @@ namespace std {
 
 void Model::load(const char *modelpath)
 {
-   SPDLOG_TRACE("loadModel");
+   SPDLOG_DEBUG("loadModel");
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -35,7 +35,7 @@ void Model::load(const char *modelpath)
 
     std::unordered_map<Vertex, Index> uniqueVertices{};
 
-    SPDLOG_INFO("size_of shapes = {}", shapes.size());   
+    SPDLOG_DEBUG("size_of shapes = {}", shapes.size());   
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {

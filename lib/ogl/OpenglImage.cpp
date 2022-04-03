@@ -13,7 +13,7 @@
 
 OpenglImage::OpenglImage(const std::string  &filename)
 {
-    SPDLOG_TRACE("constructor"); 
+    SPDLOG_DEBUG("constructor"); 
 
     unsigned int textureID;
     glGenTextures(1, &textureID);

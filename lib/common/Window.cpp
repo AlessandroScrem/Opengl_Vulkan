@@ -18,7 +18,7 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
 : engineType{type} 
 , input_{input}
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     switch (type)
     {
@@ -38,7 +38,7 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
 }
 
 Window::~Window() {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
     glfwDestroyWindow(window_);
     glfwTerminate();

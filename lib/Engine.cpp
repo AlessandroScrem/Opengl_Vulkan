@@ -5,7 +5,7 @@
 #include <memory>
 
 Engine::Engine(){
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     // provide input manager
     ngn::ServiceLocator::Provide();
@@ -13,7 +13,7 @@ Engine::Engine(){
 }
 
 Engine::~Engine(){
-    SPDLOG_TRACE("destructor");    
+    SPDLOG_DEBUG("destructor");    
 }
 
 std::unique_ptr<Engine>

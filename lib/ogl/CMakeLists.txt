@@ -22,7 +22,6 @@ target_link_libraries(ogl_lib
         glew::glew
         Vulkan::Vulkan
         stb_image
-#    PUBLIC 
         common_lib
         glm::glm
         spdlog::spdlog

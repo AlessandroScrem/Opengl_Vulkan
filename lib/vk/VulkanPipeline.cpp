@@ -11,7 +11,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain,
     , vertexbuffer{vertexbuffer}
     , vulkanshader{vulkanshader}
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
     
     createPipeline();
     SPDLOG_TRACE("createPipeline");
@@ -19,7 +19,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain,
 
 VulkanPipeline::~VulkanPipeline()
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
     cleanupPipeline();
 }

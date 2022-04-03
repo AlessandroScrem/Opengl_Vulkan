@@ -25,7 +25,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 VulkanDevice::VulkanDevice(Window &window) : window{window}
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     createInstance();
     SPDLOG_TRACE("createInstance");
@@ -49,7 +49,7 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
 
 VulkanDevice::~VulkanDevice() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
     //make sure the gpu has stopped doing its things
 	vkDeviceWaitIdle(logicalDevice);

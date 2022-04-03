@@ -8,6 +8,7 @@
 #include <glsl_constants.h>
 #include <multiplatform_input.hpp>
 //std
+#include <array>
 #include <memory>
 
 struct Color

@@ -5,13 +5,13 @@
 
 VulkanUbo::VulkanUbo(VulkanDevice &device, VulkanSwapchain &swapchain) : device{device}, swapchain{swapchain}
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
     createUniformBuffers();
 }
 
 VulkanUbo::~VulkanUbo()
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
     cleanupUniformBuffers();
 }
 

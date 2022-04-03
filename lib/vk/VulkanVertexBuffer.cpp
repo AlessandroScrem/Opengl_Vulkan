@@ -12,7 +12,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &sw
     , vulkanimage{vulkanimage}
     , model{model}
 { 
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
     createIndexBuffer();   
     createVertexBuffer();   
     createDescriptorSetLayout();
@@ -22,7 +22,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &sw
 
 VulkanVertexBuffer::~VulkanVertexBuffer() 
 {   
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
     device.destroyVmaBuffer(vertexBuffer._buffer, vertexBuffer._allocation);
     SPDLOG_TRACE("Vertex vmaDestroyBuffer");

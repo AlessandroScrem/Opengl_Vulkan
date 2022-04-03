@@ -66,13 +66,13 @@ private:
 
 public:
     OpenglShader(ShaderType type = GLSL::DUMMY_SHADER){
-        SPDLOG_TRACE("constructor"); 
+        SPDLOG_DEBUG("constructor"); 
         buildShaders(type);
         createUniformBlockBinding();
     }
 
     ~OpenglShader(){
-        SPDLOG_TRACE("destructor"); 
+        SPDLOG_DEBUG("destructor"); 
         glDeleteProgram(shaderProgram);
     }
     

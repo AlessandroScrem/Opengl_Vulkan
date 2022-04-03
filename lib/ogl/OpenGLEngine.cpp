@@ -9,13 +9,13 @@
 
 OpenGLEngine::OpenGLEngine()
 {    
-    SPDLOG_TRACE("constructor"); 
+    SPDLOG_DEBUG("constructor"); 
     initOpenglGlobalStates(); 
 }
 
 OpenGLEngine::~OpenGLEngine() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
     cleanup();
 }
 
@@ -52,7 +52,7 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 void OpenGLEngine::run() 
 {  
-    SPDLOG_TRACE("*******           START           ************");  
+    spdlog::info("*******           START           ************");  
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
@@ -63,7 +63,7 @@ void OpenGLEngine::run()
         //glfwWaitEvents();
     }
     
-    SPDLOG_TRACE("*******           END             ************");  
+    spdlog::info("*******           END             ************");  
 }
 
 void OpenGLEngine::drawFrame()

@@ -11,7 +11,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
     : device{device}
     , window{window}
 { 
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     createAllSwapchian();
 }
@@ -19,7 +19,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
 
 VulkanSwapchain::~VulkanSwapchain()
 {  
-    SPDLOG_TRACE("destructor"); 
+    SPDLOG_DEBUG("destructor"); 
     cleanupSwapChain();
     SPDLOG_TRACE("cleanupSwapChain");
 }  
