@@ -51,10 +51,10 @@ void VulkanEngine::init_renderables()
         std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(device, swapchain, ubo, vulkanimage, mod);
         std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(device, swapchain, *vb, sh);
     
-        _renderables.emplace_back(
+        _renderables.push_back(RenderObject{
             std::move(vb),
             std::move(pip), 
-            ubo
+            ubo}
         ); 
     }
 }
@@ -268,26 +268,7 @@ void VulkanEngine::draw()
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        RenderObject & ro = _renderables.at(_model_index);
-
-        VulkanPipeline &pipeline = *ro.pipeline;
-        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
-
-	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
-
-        ro.ubo.bind(0);
-
-        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
-        size_t indexsize = vertexbuffer.getIndexSize();
-        VkDeviceSize offsets[] = {0};
-        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
-        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
-
-        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
+        draw_objects(cmd);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -339,8 +320,27 @@ void VulkanEngine::draw()
 	_frameNumber++;    
 }
 
-void VulkanEngine::draw_objects(VkCommandBuffer cmd,RenderObject* first, int count)
+void VulkanEngine::draw_objects(VkCommandBuffer cmd)
 {
-    
+        RenderObject & ro = _renderables.at(_model_index);
+
+        VulkanPipeline &pipeline = *ro.pipeline;
+        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
+
+	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
+
+        ro.ubo.bind(0);
+
+        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
+        size_t indexsize = vertexbuffer.getIndexSize();
+        VkDeviceSize offsets[] = {0};
+        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
+        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
 }
 

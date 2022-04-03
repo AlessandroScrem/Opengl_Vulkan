@@ -29,5 +29,5 @@ private:
     OpenglShader shader{Engine::phong_glslShader};
 
     OpenglUbo ubo{};
-    OpenglVertexBuffer vertexBuffer{Engine::model};
+    OpenglVertexBuffer vertexBuffer{Engine::_models.front()};
 };

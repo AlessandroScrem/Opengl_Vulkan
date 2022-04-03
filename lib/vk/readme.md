@@ -46,12 +46,16 @@
   - graphicsPipeline
 
 - VulkanEngine()
-  - createCommandBuffer()
-  - createSemaphores()
+  - create _shaders
+  - init_renderables()
+  - init_commands()
+  - init_sync_structures()
 
  ## Destruction order:
 
 - VulkanEngine
+  - destroy _shaders
+  - destroy _renderables
   - vkDestroyBuffer();
   - vkFreeCommandBuffers()
   - vkDestroySemaphores()

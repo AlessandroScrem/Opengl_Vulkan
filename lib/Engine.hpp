@@ -45,13 +45,11 @@ protected:
         Model(viking_room),
         Model(monkey)
     };
-
-    Model &model = _models[0];
     
     Color background{};
     Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)}; 
 
-    int _model_index{0};
+    size_t _model_index{0};
 
 private:
     void MapActions();

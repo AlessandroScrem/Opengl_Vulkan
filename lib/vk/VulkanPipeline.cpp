@@ -12,7 +12,9 @@ VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain,
     , vulkanshader{vulkanshader}
 {
     SPDLOG_TRACE("constructor");
+    
     createPipeline();
+    SPDLOG_TRACE("createPipeline");
 }
 
 VulkanPipeline::~VulkanPipeline()

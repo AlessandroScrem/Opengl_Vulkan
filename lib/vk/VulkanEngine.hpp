@@ -60,7 +60,7 @@ private:
     void init_sync_structures();
 
     void draw();
-    void draw_objects(VkCommandBuffer cmd,RenderObject* first, int count);  
+    void draw_objects(VkCommandBuffer cmd);  
     void updateUbo();
     void recreateSwapChain();   
 
@@ -73,8 +73,6 @@ private:
 
     std::vector<RenderObject> _renderables;
     std::vector<std::unique_ptr<VulkanShader>> _shaders;
-    std::vector<std::unique_ptr<VulkanVertexBuffer>> _vertexbuffers;
-    std::vector<std::unique_ptr<VulkanPipeline>> _pipelines;
  
 
     //------------------------------------
