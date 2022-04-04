@@ -41,9 +41,9 @@ protected:
     const  ShaderType &phong_glslShader = GLSL::PHONG_SHADER;
     const  ShaderType &tex_glslShader = GLSL::TEXTURE_SHADER;
 
-    
+    // default model space is Yup   
     std::array<Model, 2> _models{
-        Model(viking_room),
+        Model(viking_room, Model::UP::ZUP),
         Model(monkey)
     };
     

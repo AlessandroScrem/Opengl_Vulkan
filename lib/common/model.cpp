@@ -4,6 +4,7 @@
 #include <tiny_obj_loader.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 // std
 #include <unordered_map>
@@ -19,6 +20,19 @@ namespace std {
     };
 }
 
+Model::Model(const char * modelpath /*  = defmodel */, UP up /* = UP::YUP */ ) 
+{    
+    if(up == UP::ZUP) 
+    {   
+        // rotate model to y up
+        tranform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+    load(modelpath); 
+}
+
+Model::~Model(){
+
+}
 
 void Model::load(const char *modelpath)
 {

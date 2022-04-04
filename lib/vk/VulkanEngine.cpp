@@ -54,7 +54,7 @@ void VulkanEngine::init_renderables()
         _renderables.push_back(RenderObject{
             std::move(vb),
             std::move(pip), 
-            ubo}
+            mod.get_tranform() }
         ); 
     }
 }
@@ -136,8 +136,6 @@ void VulkanEngine::init_renderables()
  
 void VulkanEngine::updateUbo()
 {
-    // rotate model to y up
-    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
@@ -330,8 +328,8 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
         VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
 
 	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
-
-        ro.ubo.bind(0);
+        ubo.model = ro.obj_trasform; 
+        ubo.bind(0);
 
         VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
         VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();

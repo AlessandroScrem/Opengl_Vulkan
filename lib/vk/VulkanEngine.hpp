@@ -37,7 +37,7 @@ struct RenderObject {
 	
     std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
 	std::unique_ptr<VulkanPipeline>  pipeline;
-	VulkanUbo &ubo;
+	glm::mat4 obj_trasform;
 };
 
 const unsigned int MAX_FRAMES_IN_FLIGHT = 2;    
