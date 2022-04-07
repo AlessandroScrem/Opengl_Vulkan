@@ -7,6 +7,14 @@
 // common
 #include <Window.hpp>
 
+struct RenderObject {
+	
+    std::unique_ptr<OpenglVertexBuffer> vertexbuffer;
+	OpenglShader&  shader;
+	glm::mat4 obj_trasform;
+};
+
+
 class OpenGLEngine : public Engine
 {    
 public:
@@ -18,16 +26,17 @@ public:
 
 private:
     void initOpenglGlobalStates();
+    void init_renderables();
     void cleanup();
-    void drawFrame();
+    void draw();
+    void draw_objects();
     void updateUbo();
  
     void clearBackground();
     
     Window window{EngineType::Opengl, Engine::input_};
-
-    OpenglShader shader{Engine::phong_glslShader};
-
     OpenglUbo ubo{};
-    OpenglVertexBuffer vertexBuffer{Engine::_models.front()};
+
+    std::vector<std::unique_ptr<OpenglShader>> _shaders;
+    std::vector<RenderObject> _renderables;
 };

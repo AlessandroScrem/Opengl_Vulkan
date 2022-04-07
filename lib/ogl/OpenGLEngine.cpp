@@ -11,6 +11,9 @@ OpenGLEngine::OpenGLEngine()
 {    
     SPDLOG_DEBUG("constructor"); 
     initOpenglGlobalStates(); 
+
+    init_renderables();
+
 }
 
 OpenGLEngine::~OpenGLEngine() 
@@ -50,6 +53,23 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 }
 
+void OpenGLEngine::init_renderables()
+{
+    _shaders.emplace_back(std::make_unique<OpenglShader>(Engine::phong_glslShader) );  
+    auto  &shader = *_shaders.at(0);
+
+    for(auto & mod : _models)
+    {
+        std::unique_ptr<OpenglVertexBuffer> vb = std::make_unique<OpenglVertexBuffer>(mod);
+    
+        _renderables.push_back(RenderObject{
+            std::move(vb),
+            shader, 
+            mod.get_tranform() }
+        ); 
+    }   
+}
+
 void OpenGLEngine::run() 
 {  
     spdlog::info("*******           START           ************");  
@@ -59,26 +79,34 @@ void OpenGLEngine::run()
         Engine::updateEvents();
         window.update();
         updateUbo();
-        drawFrame();
+        draw();
         //glfwWaitEvents();
     }
     
     spdlog::info("*******           END             ************");  
 }
 
-void OpenGLEngine::drawFrame()
+void OpenGLEngine::draw()
 {
         // init frame
         clearBackground();
-
-        // render
-        ubo.bind();
-        shader.use();
-        vertexBuffer.draw();
-
+        draw_objects();
+ 
         // end frame
         window.updateframebuffersize();
         window.swapBuffers();  
+}
+
+void OpenGLEngine::draw_objects()
+{
+        RenderObject & ro = _renderables.at(_model_index);
+        OpenglVertexBuffer &vertexBuffer = *ro.vertexbuffer;
+        // render
+        ubo.model = ro.obj_trasform;      
+        ubo.bind();
+
+        ro.shader.use();
+        vertexBuffer.draw();
 }
 
 void OpenGLEngine::clearBackground()
@@ -94,8 +122,8 @@ void OpenGLEngine::clearBackground()
 
 void OpenGLEngine::updateUbo()
 {
-    // rotate camera to y up
-    ubo.view = glm::rotate(ourCamera.GetViewMatrix(), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+    ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.viewPos = ourCamera.GetPosition();
 }
