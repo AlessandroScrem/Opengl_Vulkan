@@ -9,11 +9,26 @@ Engine::Engine(){
 
     // provide input manager
     ngn::ServiceLocator::Provide();
-    MapActions();       
+    MapActions();
+
+    loadModels();
 }
 
 Engine::~Engine(){
     SPDLOG_DEBUG("destructor");    
+}
+
+void Engine::loadModels()
+{
+    constexpr char  viking_room[] = "data/models/viking_room.obj";
+    constexpr char  monkey[] = "data/models/monkey_smooth.obj";
+
+    Model vr(viking_room, Model::UP::ZUP);
+    glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    vr.set_transform(trasf);
+
+    _models.push_back( vr);
+    _models.push_back(Model(monkey, Model::UP::YUP));
 }
 
 std::unique_ptr<Engine>

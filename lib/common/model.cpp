@@ -25,7 +25,7 @@ Model::Model(const char * modelpath /*  = defmodel */, UP up /* = UP::YUP */ )
     if(up == UP::ZUP) 
     {   
         // rotate model to y up
-        tranform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     }
     load(modelpath); 
 }
@@ -36,7 +36,7 @@ Model::~Model(){
 
 void Model::load(const char *modelpath)
 {
-   SPDLOG_DEBUG("loadModel");
+    spdlog::info("loading {} ... ", modelpath);
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;

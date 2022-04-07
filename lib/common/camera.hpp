@@ -61,7 +61,7 @@ private:
 public:
     
     /**
-     * @brief Construct a new Camera object
+     * @brief Construct a new Camera object default Yup
      * 
      * @param position
      * @param target 
@@ -71,14 +71,7 @@ public:
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 5.0f),
             glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), 
             glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
-            float fov = 45.0f) 
-            : Position{position}
-            , Target{target}
-            , WorldUp{up}
-    {
-        Fov.set(fov);
-        updateCameraVectors();
-    }
+            float fov = 45.0f);
 
 
     float GetFov() {return Fov.get();}

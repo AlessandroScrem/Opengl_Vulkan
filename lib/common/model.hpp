@@ -24,13 +24,15 @@ public:
 
     const Vertex* verticesData() const {return vertices.data(); }
     const uint32_t* indicesData()  const {return indices.data(); }
-    const glm::mat4 get_tranform() const {return tranform; }
+
+    void set_transform(glm::mat4 t)  {transform = transform * t ; }
+    const glm::mat4 get_tranform() const {return transform; }
 
 
 private:
 
     std::vector<Vertex> vertices{};
     std::vector<Index> indices{};
-    glm::mat4 tranform = glm::mat4(1.0);
+    glm::mat4 transform = glm::mat4(1.0);
 };
 

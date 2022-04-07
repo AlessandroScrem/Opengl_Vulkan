@@ -19,9 +19,6 @@ struct Color
     float alpha = 1.0f;
 };
 
-constexpr char  viking_room[] = "data/models/viking_room.obj";
-constexpr char  monkey[] = "data/models/monkey_smooth.obj";
-
 class Engine
 {    
 public:
@@ -42,18 +39,17 @@ protected:
     const  ShaderType &tex_glslShader = GLSL::TEXTURE_SHADER;
 
     // default model space is Yup   
-    std::array<Model, 2> _models{
-        Model(viking_room, Model::UP::ZUP),
-        Model(monkey)
-    };
+    std::vector<Model> _models{};
+
     
     Color background{};
-    Camera ourCamera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)}; 
+    Camera ourCamera{};
 
     size_t _model_index{0};
 
 private:
     void MapActions();
+    void loadModels();
     
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;

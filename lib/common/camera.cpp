@@ -3,6 +3,17 @@
 #include "camera.hpp"
 //libs
 
+
+Camera::Camera(glm::vec3 position , glm::vec3 target , glm::vec3 up ,float fov ) 
+    : Position{position}
+    , Target{target}
+    , WorldUp{up}
+{
+    Fov.set(fov);
+    updateCameraVectors();
+}
+
+
 /**
  * @brief Update camera position from fontroller
  * 
