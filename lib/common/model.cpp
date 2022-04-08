@@ -76,11 +76,13 @@ void Model::load(const char *modelpath)
                     attrib.normals[3 * index.normal_index + 2],
                 };
             }
-
-            vertex.texCoord = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                attrib.texcoords[2 * index.texcoord_index + 1]
-            };
+            
+            if (index.texcoord_index >= 0) {
+                vertex.texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+            }
 
 
             if (uniqueVertices.count(vertex) == 0) {

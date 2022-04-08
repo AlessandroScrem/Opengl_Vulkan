@@ -5,10 +5,9 @@
 #include <mytypes.hpp>
 #include <camera.hpp>
 #include <model.hpp>
-#include <glsl_constants.h>
 #include <multiplatform_input.hpp>
 //std
-#include <array>
+#include <vector>
 #include <memory>
 
 struct Color
@@ -35,8 +34,6 @@ protected:
 
     ngn::MultiplatformInput input_{};
     EngineType engine_type{};
-    const  ShaderType &phong_glslShader = GLSL::PHONG_SHADER;
-    const  ShaderType &tex_glslShader = GLSL::TEXTURE_SHADER;
 
     // default model space is Yup   
     std::vector<Model> _models{};

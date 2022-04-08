@@ -21,7 +21,7 @@ Engine::~Engine(){
 void Engine::loadModels()
 {
     constexpr char  viking_room[] = "data/models/viking_room.obj";
-    constexpr char  monkey[] = "data/models/monkey_smooth.obj";
+    constexpr char  monkey[] = "data/models/suzanne.obj";
 
     Model vr(viking_room, Model::UP::ZUP);
     glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
