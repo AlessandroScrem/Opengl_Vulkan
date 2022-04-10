@@ -6,12 +6,13 @@
 #include "OpenglUbo.hpp"
 // common
 #include <Window.hpp>
+namespace ogl{
 
 struct RenderObject {
-	
+    
     std::unique_ptr<OpenglVertexBuffer> vertexbuffer;
-	OpenglShader&  shader;
-	glm::mat4 obj_trasform;
+    OpenglShader&  shader;
+    glm::mat4 obj_trasform;
 };
 
 
@@ -31,7 +32,7 @@ private:
     void draw();
     void draw_objects();
     void updateUbo();
- 
+
     void clearBackground();
     
     Window window{EngineType::Opengl, Engine::input_};
@@ -40,3 +41,5 @@ private:
     std::vector<std::unique_ptr<OpenglShader>> _shaders;
     std::vector<RenderObject> _renderables;
 };
+
+}// namespace ogl

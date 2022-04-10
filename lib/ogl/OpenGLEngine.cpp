@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 
 //std
+namespace ogl
+{
 
 OpenGLEngine::OpenGLEngine()
 {    
@@ -128,5 +130,8 @@ void OpenGLEngine::updateUbo()
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.viewPos = ourCamera.GetPosition();
 }
+
+}//namespace ogl
+
 
 
