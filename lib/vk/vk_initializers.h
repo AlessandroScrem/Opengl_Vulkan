@@ -25,7 +25,7 @@ namespace vkinit {
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info(VkPrimitiveTopology topology);
 
-    VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, bool opengl_compatibility = true);
+    VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, bool opengl_compatibility = false);
 
     VkPipelineMultisampleStateCreateInfo multisampling_state_create_info(VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT);
 

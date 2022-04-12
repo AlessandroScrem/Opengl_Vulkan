@@ -145,7 +145,7 @@ namespace vkinit
 		return info;
 	}
 	
-	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, bool opengl_compatibility /*= true*/)
+	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, bool opengl_compatibility /*= false*/)
 	{
 		VkPipelineRasterizationStateCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -196,8 +196,10 @@ namespace vkinit
 	VkPipelineColorBlendAttachmentState color_blend_attachment_state()
 	{
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-			VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+											  VK_COLOR_COMPONENT_G_BIT |
+											  VK_COLOR_COMPONENT_B_BIT | 
+											  VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable = VK_FALSE;
 		return colorBlendAttachment;
 	}
@@ -274,6 +276,10 @@ namespace vkinit
 		info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		info.image = image;
 		info.format = format;
+		info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 		info.subresourceRange.baseMipLevel = 0;
 		info.subresourceRange.levelCount = mipLevels;
 		info.subresourceRange.baseArrayLayer = 0;
