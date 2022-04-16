@@ -57,9 +57,9 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 void OpenGLEngine::init_renderables()
 {
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::PHONG_SHADER) );  
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::NORMALMAP_SHADER) );  
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::TEXTURE_SHADER) );  
+    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::PHONG) );  
+    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::NORMALMAP) );  
+    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::TEXTURE) );  
     auto  &shader = *_shaders.at(1);
 
     for(auto & mod : _models)

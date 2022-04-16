@@ -18,9 +18,9 @@ private:
 
     class ShaderSource{
     public:
-        ShaderSource(const char *source , ShaderSourceType type ) : source{source}, type{type}{ 
+        ShaderSource(GLSL::ShaderType shaderType, ShaderSourceType type ) : type{type}{ 
             SPDLOG_TRACE("{} shader constructor", shadername); 
-            compile();
+            compile(shaderType);
         }
 
         ~ShaderSource(){
@@ -31,20 +31,27 @@ private:
         unsigned int get() const {return shader;}
 
     private:
-        void compile(){       
+        void compile(GLSL::ShaderType shaderType){ 
+
+            std::string source;     
 
             if(type == ShaderSourceType::VertexShader){
+                auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".vert");
+                source = std::string(glsl.begin(), glsl.end());
                 shader = glCreateShader(GL_VERTEX_SHADER);
                 shadername = "VERTEX";
             }
 
             if(type == ShaderSourceType::FragmentShader){
+                auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".frag");
+                source = std::string(glsl.begin(), glsl.end());
                 shader = glCreateShader(GL_FRAGMENT_SHADER);
                 shadername = "FRAGMENT";
             }
 
             // build and compile our shader program
-            glShaderSource(shader, 1, &source, NULL);
+            const char * ShaderCode = source.c_str();
+            glShaderSource(shader, 1, &ShaderCode, NULL);
             glCompileShader(shader);
 
             // check for shader compile errors
@@ -59,13 +66,12 @@ private:
         }
 
         unsigned int shader;
-        const char *source;
         ShaderSourceType type;
         std::string shadername; 
     };
 
 public:
-    OpenglShader(ShaderType type = GLSL::DUMMY_SHADER){
+    OpenglShader(GLSL::ShaderType type = GLSL::PHONG){
         SPDLOG_DEBUG("constructor"); 
         buildShaders(type);
         createUniformBlockBinding();
@@ -107,11 +113,11 @@ private:
         }
     }
 
-    void buildShaders(ShaderType shader){
+    void buildShaders(GLSL::ShaderType shaderType){
 
         std::array<ShaderSource, 2> shaders{ {
-            ShaderSource(shader.vshader, ShaderSourceType::VertexShader),
-            ShaderSource(shader.fshader, ShaderSourceType::FragmentShader)
+            ShaderSource(shaderType, ShaderSourceType::VertexShader),
+            ShaderSource(shaderType, ShaderSourceType::FragmentShader)
         } };
 
         shaderProgram = glCreateProgram();  

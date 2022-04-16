@@ -19,12 +19,11 @@ private:
 
     class ShaderSource{
     public:
-        ShaderSource(VulkanDevice &device, const char *source , ShaderSourceType type )
+        ShaderSource(VulkanDevice &device, GLSL::ShaderType shaderType, ShaderSourceType type )
             : device{device}
-            , source{source}
             , type{type}
         { 
-            create();
+            create(shaderType);
             SPDLOG_TRACE("{} shader constructor", shadername); 
         }
 
@@ -36,21 +35,23 @@ private:
         VkPipelineShaderStageCreateInfo get()  {return vertShaderStageInfo;}
 
     private:
-        VkShaderModule createShaderModule(const std::vector<uint32_t>& code);
-        void create();
+        VkShaderModule createShaderModule(const std::vector<char>& code);
+        void create( GLSL::ShaderType shadertype);
+        void create_from_spv(GLSL::ShaderType shaderType);
+        void create_from_glsl(GLSL::ShaderType shaderType);
 
         VulkanDevice &device;
 
         VkShaderModule shaderModule;
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 
-        const char *source;
         std::string shadername{};
         ShaderSourceType type;
+        bool precompiled = true;
     };
 
 public:
-    VulkanShader(VulkanDevice &device, ShaderType type = GLSL::DUMMY_SHADER)
+    VulkanShader(VulkanDevice &device, GLSL::ShaderType type = GLSL::PHONG)
         : device{device}
         , shaderType{type} 
     {
@@ -62,30 +63,24 @@ public:
         SPDLOG_TRACE("VulkanShader destructor"); 
     }
 
-    // Not copyable or movable
-    // VulkanShader(const VulkanShader &) = delete;
-    //void operator=(const VulkanShader &) = delete;
-    // VulkanShader(VulkanDevice &&) = delete;
-    // VulkanShader &operator=(VulkanShader &&) = delete;
-
     uint32_t size() {return static_cast<uint32_t>( shaderStages.size() );}
     VkPipelineShaderStageCreateInfo* data() {return shaderStages.data();}
     std::vector<VkPipelineShaderStageCreateInfo>  * get() {return  &shaderStages;}
-
-    
+   
 private:
 
     void buildShaders()
-    {  
+    { 
         shaderStages.push_back(vertex_shader.get());
         shaderStages.push_back(fragment_shader.get());
     }
 
     VulkanDevice &device;
 
-    ShaderType shaderType;
-    ShaderSource vertex_shader = ShaderSource(device, shaderType.vshader, ShaderSourceType::VertexShader);
-    ShaderSource fragment_shader = ShaderSource(device, shaderType.fshader, ShaderSourceType::FragmentShader);
+    GLSL::ShaderType shaderType;
+
+    ShaderSource vertex_shader = ShaderSource(device, shaderType, ShaderSourceType::VertexShader);
+    ShaderSource fragment_shader = ShaderSource(device, shaderType, ShaderSourceType::FragmentShader);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages{};
 

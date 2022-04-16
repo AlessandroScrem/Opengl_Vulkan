@@ -36,12 +36,51 @@ if( ${TEST_APP})
     )
 endif()
 
-   
-set (data_dir "data")
+
+# SHADER COMPILATION TO SPIRV
+
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+  set(GLSL_VALIDATOR "$ENV{VULKAN_SDK}/Bin/glslangValidator.exe")
+else()
+  set(GLSL_VALIDATOR "$ENV{VULKAN_SDK}/Bin32/glslangValidator.exe")
+endif()
+
+
+set (DATA_REL_DIR "../data")
+get_filename_component(DATA_DIR
+                       "${CMAKE_CURRENT_LIST_DIR}/${DATA_REL_DIR}"
+                       ABSOLUTE)
+
+set (SHADERS_DIR "${DATA_DIR}/shaders")
+                       
+file(GLOB_RECURSE GLSL_SOURCE_FILES
+    "${SHADERS_DIR}/*.vert"
+    "${SHADERS_DIR}/*.frag"
+    )
+
+foreach(GLSL ${GLSL_SOURCE_FILES})
+  get_filename_component(FILE_NAME  ${GLSL} NAME)
+  set(SPIRV "${SHADERS_DIR}/${FILE_NAME}.spv")
+  message(NOTICE ${SPIRV})
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
+    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+    Shaders 
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
+add_dependencies(app Shaders)
+
 # LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${data_dir}/
-COMMAND ${CMAKE_COMMAND} -E copy_directory 
-${CMAKE_CURRENT_SOURCE_DIR}/../${data_dir}/
-$<TARGET_FILE_DIR:${PROJECT_NAME}>/${data_dir}
+
+add_custom_command(TARGET app POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -Rf "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+        "${DATA_DIR}/"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data"
 )

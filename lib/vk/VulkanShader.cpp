@@ -4,7 +4,7 @@
 // std
 #include <string>
 
-std::vector<uint32_t> compileGlslToSvp(const char *source, shaderc_shader_kind kind)
+std::vector<char> compileGlslToSvp(std::string &source, shaderc_shader_kind kind)
 {
     const shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -32,41 +32,88 @@ std::vector<uint32_t> compileGlslToSvp(const char *source, shaderc_shader_kind k
         spdlog::error("failed to compile shader {} {}", shadertype, svCompilationResult.GetErrorMessage());
         throw std::runtime_error("failed to compile shader ");
     }
-    return {svCompilationResult.cbegin(), svCompilationResult.cend()};
+
+    //convert vector<uin32_t> to vector<char> 
+    std::vector<char> data;
+    for (const auto s : svCompilationResult)
+    { 
+        char c[4];
+        memcpy(c, (void*)&s, sizeof(uint32_t));
+        for(int i = 0; i<sizeof(uint32_t); ++i)
+            data.push_back(c[i]); 
+    }
+
+    return {data.cbegin(), data.cend()};
 }
 
-void VulkanShader::ShaderSource::create()
-{
-    std::vector<uint32_t> fragmentCodeCompiled;
+void VulkanShader::ShaderSource::create_from_glsl(GLSL::ShaderType shaderType)
+{ 
+    std::vector<char> glsl;
+    std::vector<char> spv;
 
     if(type == ShaderSourceType::VertexShader){
-        fragmentCodeCompiled = compileGlslToSvp(source, shaderc_glsl_vertex_shader);
+        auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".vert");
+        auto glsl_str = std::string(begin(glsl), end(glsl));
+        spv = compileGlslToSvp(glsl_str, shaderc_glsl_vertex_shader);
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         shadername = "VERTEX";
     }
-
+    
     if(type == ShaderSourceType::FragmentShader){
-        fragmentCodeCompiled = compileGlslToSvp(source, shaderc_glsl_fragment_shader);
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".frag");
+        auto glsl_str = std::string(begin(glsl), end(glsl));
+        spv = compileGlslToSvp(glsl_str, shaderc_glsl_fragment_shader);
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;   
         shadername = "FRAGMENT";
     }
 
-    shaderModule = createShaderModule(fragmentCodeCompiled);
+    shaderModule = createShaderModule(spv);
 
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.module = shaderModule;
     vertShaderStageInfo.pName = "main";
 }
 
-VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<uint32_t>& code) {
+void VulkanShader::ShaderSource::create_from_spv(GLSL::ShaderType shaderType)
+{ 
+    std::vector<char> spv;
+    if(type == ShaderSourceType::VertexShader){
+        spv = GLSL::readFile(GLSL::getname(shaderType) + ".vert.spv");
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        shadername = "VERTEX";
+    }
+    
+    if(type == ShaderSourceType::FragmentShader){
+        spv = GLSL::readFile(GLSL::getname(shaderType) + ".frag.spv");
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        shadername = "FRAGMENT";
+    }
+
+    shaderModule = createShaderModule(spv);
+
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.module = shaderModule;
+    vertShaderStageInfo.pName = "main";
+}
+
+VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<char>& code) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size()*sizeof(uint32_t);
-    createInfo.pCode = code.data();
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 return shaderModule;
+}
+
+void VulkanShader::ShaderSource::create( GLSL::ShaderType shaderType)
+{
+    if(precompiled){
+        create_from_spv(shaderType);
+    }else{
+        create_from_glsl(shaderType);
+    }
 }

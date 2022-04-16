@@ -43,9 +43,9 @@ void VulkanEngine::run()
 
 void VulkanEngine::init_renderables()
 {
-    _shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::PHONG_SHADER) );  
-    _shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::NORMALMAP_SHADER) );  
-    auto  &sh = *_shaders.at(1);
+    //_shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
+    _shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
+    auto  &sh = *_shaders.at(0);
 
     for(auto & mod : _models)
     {
