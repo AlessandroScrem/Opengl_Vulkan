@@ -1,4 +1,5 @@
 #include "VulkanShader.hpp"
+#include "vk_initializers.h"
 // lib
 #include <shaderc/shaderc.hpp>
 // std
@@ -46,57 +47,17 @@ std::vector<char> compileGlslToSvp(std::string &source, shaderc_shader_kind kind
     return {data.cbegin(), data.cend()};
 }
 
-void VulkanShader::ShaderSource::create_from_glsl(GLSL::ShaderType shaderType)
-{ 
-    std::vector<char> glsl;
-    std::vector<char> spv;
+VulkanShader::~VulkanShader(){
+    SPDLOG_TRACE("VulkanShader destructor"); 
 
-    if(type == ShaderSourceType::VertexShader){
-        auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".vert");
-        auto glsl_str = std::string(begin(glsl), end(glsl));
-        spv = compileGlslToSvp(glsl_str, shaderc_glsl_vertex_shader);
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        shadername = "VERTEX";
-    }
-    
-    if(type == ShaderSourceType::FragmentShader){
-        auto glsl = GLSL::readFile(GLSL::getname(shaderType) + ".frag");
-        auto glsl_str = std::string(begin(glsl), end(glsl));
-        spv = compileGlslToSvp(glsl_str, shaderc_glsl_fragment_shader);
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;   
-        shadername = "FRAGMENT";
-    }
-
-    shaderModule = createShaderModule(spv);
-
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.module = shaderModule;
-    vertShaderStageInfo.pName = "main";
+    vkDestroyShaderModule(device.getDevice(), vertModule, nullptr);
+    vkDestroyShaderModule(device.getDevice(), fragModule, nullptr);
 }
 
-void VulkanShader::ShaderSource::create_from_spv(GLSL::ShaderType shaderType)
-{ 
-    std::vector<char> spv;
-    if(type == ShaderSourceType::VertexShader){
-        spv = GLSL::readFile(GLSL::getname(shaderType) + ".vert.spv");
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        shadername = "VERTEX";
-    }
-    
-    if(type == ShaderSourceType::FragmentShader){
-        spv = GLSL::readFile(GLSL::getname(shaderType) + ".frag.spv");
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        shadername = "FRAGMENT";
-    }
 
-    shaderModule = createShaderModule(spv);
 
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.module = shaderModule;
-    vertShaderStageInfo.pName = "main";
-}
 
-VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<char>& code) {
+VkShaderModule VulkanShader::createShaderModule(const std::vector<char>& code) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
@@ -109,11 +70,39 @@ VkShaderModule VulkanShader::ShaderSource::createShaderModule(const std::vector<
 return shaderModule;
 }
 
-void VulkanShader::ShaderSource::create( GLSL::ShaderType shaderType)
-{
-    if(precompiled){
-        create_from_spv(shaderType);
-    }else{
-        create_from_glsl(shaderType);
+
+void VulkanShader::buildShaders(){ 
+
+    std::vector<char> vertshader_spv{};
+    std::vector<char> fragshader_spv{};
+    
+    if(precompiled)
+    {
+        vertshader_spv = GLSL::readFile(GLSL::getname(shaderType) + ".vert.spv");
+        fragshader_spv = GLSL::readFile(GLSL::getname(shaderType) + ".frag.spv");
+    }else
+    {
+        auto glsl_vertshader = GLSL::readFile(GLSL::getname(shaderType) + ".vert");
+        auto vsh_str = std::string(begin(glsl_vertshader), end(glsl_vertshader));
+        auto vspv = compileGlslToSvp(vsh_str, shaderc_glsl_vertex_shader);
+        vertshader_spv.assign(vspv.begin(), vspv.end());
+
+        auto glsl_fragshader = GLSL::readFile(GLSL::getname(shaderType) + ".frag");
+        auto frag_str = std::string(begin(glsl_fragshader), end(glsl_fragshader));
+        auto fspv = compileGlslToSvp(frag_str, shaderc_glsl_fragment_shader);
+        fragshader_spv.assign(fspv.begin(), fspv.end());
     }
+
+
+    vertModule = createShaderModule(vertshader_spv);
+    fragModule = createShaderModule(fragshader_spv);
+
+    
+    shaderStages.push_back(
+        vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertModule));
+        
+    shaderStages.push_back(
+        vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule));
+
 }
+
