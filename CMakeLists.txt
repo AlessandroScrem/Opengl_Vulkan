@@ -4,6 +4,7 @@ project(Opengl_Vulkan VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 20)
 set (CMAKE_MESSAGE_LOG_LEVEL NOTICE)
 
+set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/cmake")
 include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 
 include(CTest)
