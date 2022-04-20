@@ -1,8 +1,10 @@
 #version 450
 
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 fragTexCoord;
-layout(location = 2) in vec3 Normal;
+layout(location = 0) in VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec2 TexCoords;
+} fs_in;
 
 layout(location = 0) out vec4 outColor;
 
@@ -16,10 +18,18 @@ vec3 vec3ToSrgb(vec3 value){
     return vec3(floatToSrgb(value.x), floatToSrgb(value.y), floatToSrgb(value.z));
 }
 
-void main(){
+vec3 gamma(vec3 color){
+
     #ifdef VULKAN
-        outColor = vec4(vec3ToSrgb(Normal), 1.0);
-    #else
-        outColor = vec4(Normal, 1.0);
+        color = vec3ToSrgb(color);
     #endif
+    return color;   
+}
+void main(){
+    // use normal as color
+    vec3 color = fs_in.Normal;
+    color = gamma(color);
+
+    outColor = vec4(color, 1.0);
+
 }
