@@ -22,4 +22,4 @@ void main(){
     #else
         outColor = vec4(Normal, 1.0);
     #endif
-    }
+}

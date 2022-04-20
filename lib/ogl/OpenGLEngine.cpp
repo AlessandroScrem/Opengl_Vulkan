@@ -59,8 +59,7 @@ void OpenGLEngine::init_renderables()
 {
     _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::PHONG) );  
     _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::NORMALMAP) );  
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::TEXTURE) );  
-    auto  &shader = *_shaders.at(1);
+    auto  &shader = *_shaders.at(0);
 
     for(auto & mod : _models)
     {
