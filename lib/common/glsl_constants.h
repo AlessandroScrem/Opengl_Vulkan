@@ -23,6 +23,7 @@ static std::vector<char> readFile(const std::string& filename) {
     return buffer;
 }
 enum ShaderType{
+    AXIS,
     PHONG,
     TEXTURE,
     NORMALMAP
@@ -33,6 +34,9 @@ static std::string getname(ShaderType type){
     std::string name{};
         switch (type)
         {
+        case AXIS:
+            name =  "axis";
+            break;
         case PHONG:
             name =  "phong";
             break;

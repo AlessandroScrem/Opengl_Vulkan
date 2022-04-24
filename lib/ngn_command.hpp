@@ -69,6 +69,20 @@ namespace ngn
                 cam_.cameraPan(offset_.x, offset_.y);
             }
         }
+    };
+
+    class CmdDolly : public Command
+    {
+        private:
+        Camera &cam_;
+
+        public:
+        CmdDolly(Camera &cam, glm::vec2 offset) : cam_(cam) , Command(offset){}
+
+        void Execute() const override{
+            // x axis only
+            cam_.cameraDolly(offset_.x, offset_.y);
+        }
     }; 
 
     class CmdRoll : public Command

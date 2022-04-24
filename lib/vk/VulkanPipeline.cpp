@@ -5,11 +5,13 @@
 #include "vk_initializers.h"
 
 VulkanPipeline::VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, 
-                                VulkanVertexBuffer &vertexbuffer, VulkanShader &vulkanshader) 
+                                VulkanVertexBuffer &vertexbuffer, VulkanShader &vulkanshader,
+                                VkPrimitiveTopology topology /* = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) */) 
     : device{device}
     , swapchain{swapchain}
     , vertexbuffer{vertexbuffer}
     , vulkanshader{vulkanshader}
+    , topology{topology}
 {
     SPDLOG_DEBUG("constructor");
     
@@ -70,7 +72,8 @@ void VulkanPipeline::createPipeline()
     pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
   
     // Input assembly
-    pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(topology);
 
     //Viewports and scissors 
     VkExtent2D swapChainExtent = swapchain.getExtent();

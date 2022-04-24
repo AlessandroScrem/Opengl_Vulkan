@@ -15,6 +15,8 @@ namespace ngn
         KEY_D,
         KEY_E,
         KEY_S,
+        KEY_O,
+        KEY_L,
         KEY_W,
         KEY_X,
         KEY_Z,

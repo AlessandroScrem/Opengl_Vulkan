@@ -26,6 +26,10 @@ public:
     
     void use(){glUseProgram(shaderProgram);}
     
+    void setVec1(const std::string &name, const float value) const
+    { 
+        glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()),  value); 
+    }
     void setVec3(const std::string &name, const glm::vec3 &value) const
     { 
         glUniform3fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, &value[0]); 

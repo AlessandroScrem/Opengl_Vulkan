@@ -9,6 +9,7 @@
 // std
 #include <unordered_map>
 
+constexpr char  defmodel[] = "data/models/viking_room.obj";
 
 namespace std {
     template<> struct hash<Vertex> {
@@ -18,20 +19,66 @@ namespace std {
                    (hash<glm::vec2>()(vertex.texCoord) << 1);
         }
     };
+}  
+
+Model & Model::axis(){
+
+    glm::vec3 origin{0.0f};
+    glm::vec3 x{1.0f, 0.0f, 0.0f};
+    glm::vec3 y{0.0f, 1.0f, 0.0f};
+    glm::vec3 z{0.0f, 0.0f, 1.0f};
+
+    glm::vec3 red{1.0f, 0.0f, 0.0f};
+    glm::vec3 green{0.0f, 1.0f, 0.0f};
+    glm::vec3 blue{0.2f, 0.2f, 1.0f};
+
+    static Model axis{}; 
+    std::vector<Vertex>vertices{};
+    axis.vertices.push_back( Vertex(origin,  blue,  glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex(x,       blue,  glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex(origin,  green, glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex(y,       green, glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex(origin,  red,   glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex(z,       red,   glm::vec3{0.f}, glm::vec3{0.f} ));
+
+    axis.indices.push_back(0); axis.indices.push_back(1);
+    axis.indices.push_back(2); axis.indices.push_back(3);
+    axis.indices.push_back(4); axis.indices.push_back(5);
+
+    return axis;
+}
+
+Model::Model(UP up /* = UP::YUP */ ) 
+{    
+    init_tranform(up);
 }
 
 Model::Model(const char * modelpath /*  = defmodel */, UP up /* = UP::YUP */ ) 
+    : Model(up)
 {    
-    if(up == UP::ZUP) 
-    {   
-        // rotate model to y up
-        transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    }
+
     load(modelpath); 
 }
 
-Model::~Model(){
+Model::Model(const std::vector<Vertex> &vertices, std::vector<uint16_t> &indices,  UP up /* = UP::YUP */ ) 
+    : Model(up)
+{
 
+    this->vertices.resize(vertices.size());
+    this->vertices.assign(vertices.begin(), vertices.end());
+
+    this->indices.resize(indices.size());
+    this->indices.assign(indices.begin(), indices.end());
+}
+
+Model::~Model(){}
+
+void Model::init_tranform(UP up){
+   if(up == UP::ZUP) 
+    {   
+        // rotate model to y up
+        transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    }    
 }
 
 void Model::load(const char *modelpath)

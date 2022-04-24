@@ -166,7 +166,8 @@ namespace vkinit
 		info.polygonMode = polygonMode;
 		info.lineWidth = 1.0f;
 		//no backface cull
-		info.cullMode = VK_CULL_MODE_BACK_BIT;
+		//info.cullMode = VK_CULL_MODE_BACK_BIT;
+		info.cullMode = VK_CULL_MODE_NONE ;
 		//no depth bias
 		info.depthBiasEnable = VK_FALSE;
 		info.depthBiasConstantFactor = 0.0f;

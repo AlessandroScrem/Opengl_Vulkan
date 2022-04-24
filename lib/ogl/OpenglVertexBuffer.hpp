@@ -109,10 +109,10 @@ public:
         glDeleteBuffers(1, &EBO);
     }
 
-    void draw(){
+    void draw(GLenum mode){
         glBindVertexArray(VAO); 
         glBindTexture(GL_TEXTURE_2D, texture.getId());
-        glDrawElements(GL_TRIANGLES, (GLsizei) model.indicesSize() , GL_UNSIGNED_INT, 0);
+        glDrawElements(mode, (GLsizei) model.indicesSize() , GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE1);
     }
 

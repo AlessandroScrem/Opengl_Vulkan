@@ -55,12 +55,15 @@ private:
 
     // -----------------------
     // -----------------------
+    void init_shaders();
+    void init_fixed();
     void init_renderables();
     void init_commands();
     void init_sync_structures();
 
     void draw();
     void draw_objects(VkCommandBuffer cmd);  
+    void draw_fixed(VkCommandBuffer cmd);  
     void updateUbo();
     void recreateSwapChain();   
 
@@ -71,8 +74,9 @@ private:
     VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
 
+    std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;
+    std::unordered_map< std::string, RenderObject > _fixed_objects;
     std::vector<RenderObject> _renderables;
-    std::vector<std::unique_ptr<VulkanShader>> _shaders;
  
 
     //------------------------------------

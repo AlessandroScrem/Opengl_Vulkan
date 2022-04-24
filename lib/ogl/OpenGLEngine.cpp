@@ -12,9 +12,11 @@ namespace ogl
 OpenGLEngine::OpenGLEngine()
 {    
     SPDLOG_DEBUG("constructor"); 
-    initOpenglGlobalStates(); 
+    initOpenglGlobalStates();
 
+    init_shaders();
     init_renderables();
+    init_fixed();
 
 }
 
@@ -35,11 +37,7 @@ void OpenGLEngine::initOpenglGlobalStates()
 
     // configure global opengl state
     // -----------------------------
-    //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     glEnable(GL_CULL_FACE); 
-    glCullFace(GL_BACK); 
-    //glFrontFace(GL_CW); // revert winding order as Vulkan default
-    glFrontFace(GL_CCW ); // default 
     glEnable(GL_DEPTH_TEST);
 
   // using multisample
@@ -53,21 +51,34 @@ void OpenGLEngine::initOpenglGlobalStates()
     //enable vsync
     glfwSwapInterval(1);
 
+
+}
+void OpenGLEngine::init_shaders()
+{
+    _shaders.emplace("phong", std::make_unique<OpenglShader>(GLSL::PHONG) );  
+    _shaders.emplace("normalmap", std::make_unique<OpenglShader>(GLSL::NORMALMAP) );  
+    _shaders.emplace("axis", std::make_unique<OpenglShader>(GLSL::AXIS) );  
+}
+
+void OpenGLEngine::init_fixed()
+{ 
+    _fixed_objects.emplace("axis", 
+        RenderObject{
+            std::make_unique<OpenglVertexBuffer>(Model::axis()),
+            "axis", 
+            Model::axis().get_tranform() 
+        }
+    );  
 }
 
 void OpenGLEngine::init_renderables()
 {
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::PHONG) );  
-    _shaders.emplace_back(std::make_unique<OpenglShader>(GLSL::NORMALMAP) );  
-    auto  &shader = *_shaders.at(0);
 
     for(auto & mod : _models)
-    {
-        std::unique_ptr<OpenglVertexBuffer> vb = std::make_unique<OpenglVertexBuffer>(mod);
-    
+    {   
         _renderables.push_back(RenderObject{
-            std::move(vb),
-            shader, 
+            std::move(std::make_unique<OpenglVertexBuffer>(mod)),
+            "normalmap", 
             mod.get_tranform() }
         ); 
     }   
@@ -93,6 +104,7 @@ void OpenGLEngine::draw()
 {
         // init frame
         clearBackground();
+        draw_fixed();
         draw_objects();
  
         // end frame
@@ -100,16 +112,44 @@ void OpenGLEngine::draw()
         window.swapBuffers();  
 }
 
+void OpenGLEngine::draw_fixed()
+{
+    RenderObject & ro = _fixed_objects.at("axis");
+    OpenglVertexBuffer & vb = *ro.vertexbuffer;
+    OpenglShader & shader = *_shaders.at(ro.shader);
+
+    int x, y;
+    window.extents(x, y);
+
+    // set new world origin to bottom left + offset
+    float offset = 50; 
+    float left   = -offset;
+    float right  = x-offset;
+    float bottom = -offset;
+    float top    = y-offset;
+ 
+    ubo.proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
+
+    ubo.bind();
+
+    shader.use();
+    vb.draw(GL_LINES);
+
+    updateUbo();
+    
+}
+
 void OpenGLEngine::draw_objects()
 {
         RenderObject & ro = _renderables.at(_model_index);
         OpenglVertexBuffer &vertexBuffer = *ro.vertexbuffer;
+        OpenglShader & shader = *_shaders.at(ro.shader);
         // render
         ubo.model = ro.obj_trasform;      
         ubo.bind();
 
-        ro.shader.use();
-        vertexBuffer.draw();
+        shader.use();
+        vertexBuffer.draw(GL_TRIANGLES);
 }
 
 void OpenGLEngine::clearBackground()
@@ -125,7 +165,6 @@ void OpenGLEngine::clearBackground()
 
 void OpenGLEngine::updateUbo()
 {
-
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
     ubo.viewPos = ourCamera.GetPosition();

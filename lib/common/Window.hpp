@@ -33,6 +33,8 @@ public:
         return (float) width_ / height_; 
     }
 
+    void extents(int &x, int &y ){ x = width_; y = height_;}
+
     void swapBuffers();
 
 private:

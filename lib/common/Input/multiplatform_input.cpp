@@ -40,6 +40,10 @@ namespace ngn
                 return InputKey::KEY_E;
             case GLFW_KEY_S:
                 return InputKey::KEY_S;
+            case GLFW_KEY_O:
+                return InputKey::KEY_O;
+            case GLFW_KEY_L:
+                return InputKey::KEY_L;
             case GLFW_KEY_W:
                 return InputKey::KEY_W;
            case GLFW_KEY_X:

@@ -29,7 +29,8 @@ public:
     VulkanPipeline(VulkanDevice &device, 
             VulkanSwapchain &swapchain, 
             VulkanVertexBuffer &vertexbuffer,
-            VulkanShader &vulkanshader);
+            VulkanShader &vulkanshader,
+            VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     ~VulkanPipeline();
 
 
@@ -48,6 +49,7 @@ private:
     VulkanVertexBuffer &vertexbuffer;
     VulkanShader &vulkanshader;
 
+    VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;  
     

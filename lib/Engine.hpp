@@ -10,11 +10,12 @@
 #include <vector>
 #include <memory>
 
+
 struct Color
 {
-    float red = 0.f;;
-    float green = 0.f;;
-    float blue = 0.f;
+    float red = 0.2f;;
+    float green = 0.3f;;
+    float blue = 0.3f;
     float alpha = 1.0f;
 };
 
@@ -37,7 +38,6 @@ protected:
 
     // default model space is Yup   
     std::vector<Model> _models{};
-
     
     Color background{};
     Camera ourCamera{};

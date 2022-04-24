@@ -6,12 +6,15 @@
 #include "OpenglUbo.hpp"
 // common
 #include <Window.hpp>
+// std
+#include <unordered_map>
+
 namespace ogl{
 
 struct RenderObject {
     
     std::unique_ptr<OpenglVertexBuffer> vertexbuffer;
-    OpenglShader&  shader;
+    std::string  shader;
     glm::mat4 obj_trasform;
 };
 
@@ -27,9 +30,12 @@ public:
 
 private:
     void initOpenglGlobalStates();
+    void init_shaders();
+    void init_fixed();
     void init_renderables();
     void cleanup();
     void draw();
+    void draw_fixed();
     void draw_objects();
     void updateUbo();
 
@@ -38,8 +44,9 @@ private:
     Window window{EngineType::Opengl, Engine::input_};
     OpenglUbo ubo{};
 
-    std::vector<std::unique_ptr<OpenglShader>> _shaders;
+    std::unordered_map< std::string, std::unique_ptr<OpenglShader> > _shaders;
     std::vector<RenderObject> _renderables;
+    std::unordered_map<std::string, RenderObject> _fixed_objects;
 };
 
 }// namespace ogl

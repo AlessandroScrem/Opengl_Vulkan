@@ -4,7 +4,6 @@
 // std
 #include <vector>
 
-constexpr char  defmodel[] = "data/models/viking_room.obj";
 
 class Model
 { 
@@ -13,9 +12,13 @@ public:
         YUP,
         ZUP
     };
-
-    Model(const char * modelpath  = defmodel, UP up = UP::YUP );
+    
+    Model( UP up = UP::YUP );
+    Model(const char * modelpath, UP up = UP::YUP );
+    Model(const std::vector<Vertex> &vertices, std::vector<uint16_t> &indices,  UP up = UP::YUP );
     ~Model();
+
+    static Model& axis();
 
     void load(const char * modelpath);
 
@@ -30,6 +33,8 @@ public:
 
 
 private:
+
+    void init_tranform(UP up);
 
     std::vector<Vertex> vertices{};
     std::vector<Index> indices{};

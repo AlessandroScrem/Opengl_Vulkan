@@ -111,6 +111,14 @@ void Engine::MapActions()
         .actionName = "orbit up/down",
         .scale = -1.f
     });    
+    inputManager_->MapInputToAction(InputKey::KEY_O, InputAction {
+        .actionName = "dolly in/out",
+        .scale = 1.f
+    });
+    inputManager_->MapInputToAction(InputKey::KEY_L, InputAction {
+        .actionName = "dolly in/out",
+        .scale = -1.f
+    });
     inputManager_->MapInputToAction(InputKey::KEY_S, InputAction {
         .actionName = "orbit up/down",
         .scale = 1.f
@@ -188,6 +196,24 @@ void Engine::MapActions()
                 shouldupdate = true;
             }else{
                 commands_.erase("cam fov"); 
+                shouldupdate = false;
+            }
+            return true;
+        }
+    });
+
+    inputManager_->RegisterActionCallback("dolly in/out", InputManager::ActionCallback {
+        .Ref = "YoutubeGame",
+        .Func = [this](InputSource source, int sourceIndex, float value) {
+
+            if (value){
+                // step = 10 / sec
+                float step = 2.0f * Time::getFrameTime();
+                value *= step;
+                commands_.emplace("dolly in/out", std::make_unique<CmdDolly>(ourCamera, glm::vec2(value)) ); 
+                shouldupdate = true;
+            }else{
+                commands_.erase("dolly in/out"); 
                 shouldupdate = false;
             }
             return true;

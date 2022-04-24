@@ -11,6 +11,9 @@ namespace ngn
         case InputKey::KEY_C:
         case InputKey::KEY_D:
         case InputKey::KEY_E:
+        case InputKey::KEY_S:
+        case InputKey::KEY_O:
+        case InputKey::KEY_L:
         case InputKey::KEY_UP:
         case InputKey::KEY_DOWN:
         case InputKey::KEY_X:

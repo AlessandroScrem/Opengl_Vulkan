@@ -7,6 +7,12 @@ VulkanEngine::VulkanEngine()
 {  
     SPDLOG_DEBUG("constructor");
 
+    init_shaders();
+    SPDLOG_TRACE("init_shaders");
+
+    init_fixed();
+    SPDLOG_TRACE("init_fixed");    
+
     init_renderables();
     SPDLOG_TRACE("init_randerables");    
 
@@ -41,11 +47,45 @@ void VulkanEngine::run()
     spdlog::info("*******           END             ************");  
 }
 
-void VulkanEngine::init_renderables()
+void VulkanEngine::init_shaders()
 {
-    _shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
-    _shaders.emplace_back(std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
-    auto  &sh = *_shaders.at(0);
+    _shaders.emplace("phong", std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
+    _shaders.emplace("normalmap", std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
+    _shaders.emplace("axis", std::make_unique<VulkanShader>(device, GLSL::AXIS) );      
+}
+
+void VulkanEngine::init_fixed()
+{
+    auto  &sh = *_shaders.at("axis");
+/*     std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(
+        device, 
+        swapchain,
+        ubo, 
+        vulkanimage, 
+        Model::axis()
+    ); */
+    Model & mod = _models.at(1);
+    std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(device, swapchain, ubo, vulkanimage, mod);
+
+    std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(
+        device, 
+        swapchain, 
+        *vb, 
+        sh,
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+    );
+
+   _fixed_objects.emplace("axis", 
+        RenderObject{
+            std::move(vb),
+            std::move(pip), 
+            Model::axis().get_tranform()}
+    );   
+}
+
+void VulkanEngine::init_renderables()
+{ 
+    auto  &sh = *_shaders.at("normalmap");
 
     for(auto & mod : _models)
     {
@@ -59,7 +99,6 @@ void VulkanEngine::init_renderables()
         ); 
     }
 }
-
 
 /* void VulkanEngine::drawFrame() 
 {   
@@ -137,8 +176,9 @@ void VulkanEngine::init_renderables()
  
 void VulkanEngine::updateUbo()
 {
+
     ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
+    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 1.0f, 11.0f);
     ubo.proj[1][1] *= -1;
 
     ubo.viewPos = ourCamera.GetPosition();
@@ -250,7 +290,12 @@ void VulkanEngine::draw()
 
 	//make a clear-color.
 	VkClearValue clearValue;
-	clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    // set the background color
+    float r = Engine::background.red;
+    float g = Engine::background.green;
+    float b = Engine::background.blue;
+    float a = Engine::background.alpha;
+	clearValue.color = { { r, g, b, a } };
 
 	//clear depth at 1
 	VkClearValue depthClear;
@@ -270,6 +315,7 @@ void VulkanEngine::draw()
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         draw_objects(cmd);
+        //draw_fixed(cmd);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -343,5 +389,43 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
         vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
         vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
+}
+
+void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
+{
+        
+        RenderObject & ro = _fixed_objects.at("axis");
+
+        VulkanPipeline &pipeline = *ro.pipeline;
+        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
+        
+        int x, y;
+        window.extents(x, y);
+        // set new world origin to bottom left + offset
+        float offset = 50; 
+        float left   = -offset;
+        float right  = x-offset;
+        float bottom = y-offset;
+        float top    = -offset;
+   
+
+        ubo.proj = glm::orthoLH_ZO(left, right, bottom, top, -1000.0f, 1000.0f);
+
+	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
+        ubo.model = ro.obj_trasform; 
+        ubo.bind(0);
+
+        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
+        size_t indexsize = vertexbuffer.getIndexSize();
+        VkDeviceSize offsets[] = {0};
+        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
+        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0); 
+        
 }
 
