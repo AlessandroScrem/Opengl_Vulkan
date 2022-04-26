@@ -12,13 +12,18 @@
   - createSurface();
   - pickPhysicalDevice();
   - createLogicalDevice();
+  - createVulkanAllocator()
   - createCommandPool()
 
 - VulkanSwapchain
   - createSwapChain();
   - createImageViews();
   - createRenderPass();
+  - createColorResources();
+  - createDepthResources();
   - createFramebuffers();
+- VulkanUbo
+  - createUniformBuffers()
 
 - VulkanImage
   - createTextureImage();
@@ -29,9 +34,11 @@
   - createVertexBuffer();
   - createIndexBuffer();
   - createDescpriptorSetLayout()
-  - createUniformBuffers()
   - createDescriptorPool()
   - createDescriptorSets()
+
+- VulkanShader
+  - buildShaders()
 
 - VulkanPipeline
   - createPipeline()
@@ -39,12 +46,16 @@
   - graphicsPipeline
 
 - VulkanEngine()
-  - createCommandBuffer()
-  - createSemaphores()
+  - create _shaders
+  - init_renderables()
+  - init_commands()
+  - init_sync_structures()
 
  ## Destruction order:
 
 - VulkanEngine
+  - destroy _shaders
+  - destroy _renderables
   - vkDestroyBuffer();
   - vkFreeCommandBuffers()
   - vkDestroySemaphores()
@@ -53,12 +64,15 @@
   - vkDestroyPipeline(graphicsPipeline)
   - vkDestroyPipelineLayout(pipeLineLayout)
 
+- VulkanShader
+  - vkDestroyShaderModule(vertexmodule)
+  - vkDestroyShaderModule(fragmentexmodule)
+
 - VulkanVertexBuffer
   - Index destroyBuffer()
   - Index FreeMemory();
   - Vertex destroyBuffer()
   - Vertex FreeMemory();
-  - cleanupUniformBuffers()
   - cleanupDescriptorPool()
   - destroyDescpriptorSetLayout()
 
@@ -68,8 +82,13 @@
   - vkDestroy textureImage
   - vkFree textureImageMemory
 
+- VulkanUbo
+  - cleanupUniformBuffers()
+
 - VulkanSwapchian
   - vkDestroyFramebuffer()
+  - vkDestroy ColorResources()
+  - vkDestroy DepthResources()
   - vkDestroyImageView()
   - vkDestroyRenderPass()
   - vkDestroySwapchainKHR()
@@ -77,6 +96,7 @@
 
 - VulkanDevice       
   - vkDestroyCommandPool()
+  - vmaDestroyAllocator()
   - vkDestroyDevice();
   - DestroyDebugUtilsMessengerEXT();
   - vkDestroySurfaceKHR();

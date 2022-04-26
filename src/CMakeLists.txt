@@ -1,15 +1,12 @@
-project(app)
-
 add_executable(app main.cpp)
 
 target_link_libraries(app 
     PRIVATE  
-        mylib
+        engine_lib
 )
 
-
 target_compile_definitions(app PUBLIC ${ENGINE})
-message(STATUS "ENGINE = " ${ENGINE})
+message(NOTICE "ENGINE = " ${ENGINE})
 
 # fix bin target directory to project/buld/debug|release
 set_target_properties( app
@@ -17,45 +14,30 @@ set_target_properties( app
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-add_test(
-         NAME vulkan 
-     COMMAND $<TARGET_FILE:app> --vulkan
-     WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
-     )
+# add test suite 
+if( ${TEST_APP})
+    add_test(
+            NAME vulkan 
+        COMMAND $<TARGET_FILE:app> --vulkan
+        WORKING_DIRECTORY $<TARGET_FILE_DIR:app>
+        )
 
-add_test(
-         NAME opengl 
-     COMMAND $<TARGET_FILE:app> --opengl
-     WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>
-     )   
+    add_test(
+            NAME opengl 
+        COMMAND $<TARGET_FILE:app> --opengl
+        WORKING_DIRECTORY $<TARGET_FILE_DIR:app>
+        )   
+        
+    set_tests_properties(vulkan PROPERTIES FAIL_REGULAR_EXPRESSION "[^a-z]Error;ERROR;Failed")
+    set_tests_properties(opengl PROPERTIES FAIL_REGULAR_EXPRESSION "[^a-z]Error;ERROR;Failed")
+endif()
 
-set_tests_properties(vulkan PROPERTIES
-     FAIL_REGULAR_EXPRESSION "[^a-z]Error;ERROR;Failed"
-   )
-
-
-   
-set (sh_dir "shaders")
-# LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${sh_dir}/
-COMMAND ${CMAKE_COMMAND} -E copy_directory 
-${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${sh_dir}/
-$<TARGET_FILE_DIR:${PROJECT_NAME}>/${sh_dir}
-)
-set (tex_dir "textures")
-# LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${tex_dir}/
-    COMMAND ${CMAKE_COMMAND} -E copy_directory 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${tex_dir}/
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/${tex_dir}
-)
-set (mod_dir "models")
-# LOCAL DATA COPY
-add_custom_command(TARGET app PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -Rf $<TARGET_FILE_DIR:${PROJECT_NAME}>/${mod_dir}/
-    COMMAND ${CMAKE_COMMAND} -E copy_directory 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/vk/${mod_dir}/
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/${mod_dir}
+# copy local data to target app dir
+set(DATA_SRC  "${CMAKE_CURRENT_LIST_DIR}/../data/")
+set(DATA_DEST "$<TARGET_FILE_DIR:app>/data")
+add_custom_command(TARGET app POST_BUILD
+    COMMENT "Copying data to bin dir ..."
+    COMMAND ${CMAKE_COMMAND} -E rm -Rf ${DATA_DEST}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SRC} ${DATA_DEST}
+    VERBATIM
 )

@@ -1,16 +1,36 @@
 #pragma once
-
 #include "VulkanDevice.hpp"
-// #include "VulkanSwapchain.hpp"
-// #include "VulkanVertexBuffer.hpp"
 
 class VulkanSwapchain;
 class VulkanVertexBuffer;
+class VulkanShader;
+
+class PipelineBuilder {
+public:
+
+	std::vector<VkPipelineShaderStageCreateInfo> *_shaderStages;
+	VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
+	VkViewport _viewport;
+	VkRect2D _scissor;
+	VkPipelineRasterizationStateCreateInfo _rasterizer;
+	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo _multisampling;
+	VkPipelineLayout _pipelineLayout;
+    VkPipelineDepthStencilStateCreateInfo _depthStencil;
+
+	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+};
+
 
 class VulkanPipeline
 {
 public:
-    VulkanPipeline(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanVertexBuffer &vertexbuffer);
+    VulkanPipeline(VulkanDevice &device, 
+            VulkanSwapchain &swapchain, 
+            VulkanVertexBuffer &vertexbuffer,
+            VulkanShader &vulkanshader,
+            VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     ~VulkanPipeline();
 
 
@@ -22,21 +42,16 @@ public:
     void cleanupPipeline();
     void createPipeline();
     
-
 private: 
-
-    VkShaderModule createShaderModule(const std::vector<char>& code);
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
     VulkanVertexBuffer &vertexbuffer;
+    VulkanShader &vulkanshader;
 
+    VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
     VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
-    
-    const std::string vertshader{"shaders/vert.spv"};
-    const std::string fragshader{"shaders/frag.spv"};
-    
+    VkPipeline graphicsPipeline;  
     
     // Opengl compatible Viewport (SashaWillems)
     // require: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension support for passing negative viewport heights: 

@@ -1,36 +1,57 @@
 #pragma once
 
-#include "mytypes.hpp"
-
+#include "ngn_command.hpp"
+//common lib
+#include <mytypes.hpp>
+#include <camera.hpp>
+#include <model.hpp>
+#include <multiplatform_input.hpp>
 //std
+#include <vector>
 #include <memory>
-#include <iostream>
+
 
 struct Color
 {
-    float red = 0.f;;
-    float green = 0.f;;
-    float blue = 0.f;
+    float red = 0.2f;;
+    float green = 0.3f;;
+    float blue = 0.3f;
     float alpha = 1.0f;
 };
-
-
 
 class Engine
 {    
 public:
-    Engine(){ SPDLOG_TRACE("constructor");     
-    }
-    virtual ~Engine(){SPDLOG_TRACE("destructor");}
+    Engine();
+    virtual ~Engine();
        
     virtual void run() = 0;
+    virtual void setWindowMessage(std::string msg) =0;
 
    static std::unique_ptr<Engine> create(EngineType type);
 
 protected:
+    void updateEvents();
+
+    ngn::MultiplatformInput input_{};
+    EngineType engine_type{};
+
+    // default model space is Yup   
+    std::vector<Model> _models{};
+    
     Color background{};
+    Camera ourCamera{};
+
+    size_t _model_index{0};
 
 private:
+    void MapActions();
+    void loadModels();
+    
+    std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
+    bool shouldupdate = false;
+
+
     static std::unique_ptr<Engine> makeVulkan();
     static std::unique_ptr<Engine> makeOpengl();
 };

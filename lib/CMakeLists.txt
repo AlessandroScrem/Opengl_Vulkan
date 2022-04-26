@@ -1,67 +1,38 @@
 
-set(VK_SRC
-    vk/VulkanEngine.hpp
-    vk/makeVulkan.cpp
-    vk/VulkanEngine.cpp
-    vk/VulkanDevice.hpp
-    vk/VulkanDevice.cpp
-    vk/VulkanSwapchain.hpp
-    vk/VulkanSwapchain.cpp
-    vk/VulkanPipeline.hpp
-    vk/VulkanPipeline.cpp
-    vk/VulkanVertexBuffer.hpp
-    vk/VulkanVertexBuffer.cpp
-    vk/VulkanImage.hpp
-    vk/VulkanImage.cpp
-)
-    
-set(OGL_SRC
-    ogl/OpenGLEngine.hpp
-    ogl/makeOpengl.cpp
-    ogl/OpenGLEngine.cpp
-    ogl/InitOpengl.cpp
-    ogl/OpenglVertexBuffer.hpp
-    ogl/OpenglVertexBuffer.hpp
-    ogl/OpenglImage.hpp
-    ogl/OpenglImage.cpp
-)
-    
-set(COMMON_SRC
-    common/Window.hpp
-    common/Window.cpp
-    common/vertex.h
-    common/shader.hpp
-    common/mesh.hpp
-    common/model.hpp
-    common/model.cpp
-)
-set(PUB_SRC
-    Engine.hpp
-    Engine.cpp
-    mytypes.hpp
-)
 
-add_library(mylib  ${COMMON_SRC} ${PUB_SRC} ${OGL_SRC} ${VK_SRC})
+add_subdirectory(common)
+add_subdirectory(ogl)
+add_subdirectory(vk)
 
-target_link_libraries(mylib
+add_library(engine_lib  "")
+
+target_sources(engine_lib 
     PRIVATE 
-        glfw::glfw
-        glew::glew
-        Vulkan::Vulkan
+        Engine.hpp
+        Engine.cpp
+        ngn_command.hpp
+)
+
+target_link_libraries(engine_lib
+    PRIVATE 
+        stb_image
     PUBLIC 
+        common_lib
+        vk_lib
+        ogl_lib
         glm::glm
         spdlog::spdlog
     )
+# remove warning LNK4099: impossibile trovare il PDB 'glfw.pdb 
+target_link_options(engine_lib INTERFACE "/ignore:4099")
 
-target_link_options(mylib INTERFACE "/ignore:4099")
-
-target_include_directories(mylib
+target_include_directories(engine_lib
      PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        stb
-        tinyobjloader  
  )
+
+
+
 
 
 

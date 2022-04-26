@@ -1,7 +1,10 @@
 #include "VulkanDevice.hpp"
+#include "vk_initializers.h"
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 
 //std
-#include <iostream>
 #include <set>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -22,7 +25,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 VulkanDevice::VulkanDevice(Window &window) : window{window}
 {
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     createInstance();
     SPDLOG_TRACE("createInstance");
@@ -35,16 +38,27 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
     createLogicalDevice();
     SPDLOG_TRACE("createLogicalDevice");
 
-    createCommandPool();
-    SPDLOG_TRACE("createCommandPool");
+    createVulkanAllocator();
+    SPDLOG_TRACE("createVulkanAllocator");
+
+    createDefaultCommandPool();
+    SPDLOG_TRACE("createDefaultCommandPool");
+
+    setMsaaValue(VK_SAMPLE_COUNT_2_BIT);
 }
 
 VulkanDevice::~VulkanDevice() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
-    vkDestroyCommandPool(logicalDevice, commandPool, nullptr); 
+    //make sure the gpu has stopped doing its things
+	vkDeviceWaitIdle(logicalDevice);
+
+    vkDestroyCommandPool(logicalDevice, defaultcommandPool, nullptr); 
     SPDLOG_TRACE("vkDestroyCommandPool");
+
+    vmaDestroyAllocator(_allocator);
+    SPDLOG_TRACE("vmaDestroyAllocator");
 
     vkDestroyDevice(logicalDevice, nullptr);
     SPDLOG_TRACE("vkDestroyDevice");
@@ -148,6 +162,16 @@ void VulkanDevice::createLogicalDevice()
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 }
 
+void VulkanDevice::createVulkanAllocator()
+{
+    //initialize the memory allocator
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = logicalDevice;
+    allocatorInfo.instance = instance;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+}
+
 void VulkanDevice::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
@@ -163,18 +187,25 @@ void VulkanDevice::pickPhysicalDevice()
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
             physicalDevice = device;
+            msaaSamples = maxMsaaSamples = getMaxUsableSampleCount();
+            setMsaaValue(maxMsaaSamples); // set to max
             break;
         }
     }
 
     if (physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
-    }      
+    } 
 }
 
 void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties) 
 {
     vkGetPhysicalDeviceProperties(physicalDevice, &properties); 
+}
+
+void VulkanDevice::GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties)   
+{
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);   
 }
 
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) 
@@ -269,7 +300,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
     for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
-        SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
+        //SPDLOG_TRACE("availableExtension = {}", extension.extensionName);
     }
 
     return requiredExtensions.empty();
@@ -294,9 +325,9 @@ SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice dev
         details.formats.resize(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
         #ifndef NDEBUG
-            SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
+            //SPDLOG_TRACE(" Found # {} SurfaceFormats", formatCount);
             for(const auto sfmt : details.formats ){
-                SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
+                //SPDLOG_TRACE(" Format {} Colorspace {} ", sfmt.format , sfmt.colorSpace) ;
             }
         #endif
     }
@@ -340,6 +371,7 @@ void VulkanDevice::setupDebugMessenger()
     }  
 }
 
+
 void VulkanDevice::createSurface() 
 {
      if (glfwCreateWindowSurface(instance, window.getWindowPtr(), nullptr, &surface) != VK_SUCCESS) {
@@ -366,7 +398,7 @@ VulkanDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeveri
     void* pUserData) 
 {
     if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT){
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        spdlog::error("validation layer: {}" ,pCallbackData->pMessage);
     }
     return VK_FALSE;
 }
@@ -460,20 +492,19 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     
 }
 
-
-
-void VulkanDevice::createCommandPool() 
+void VulkanDevice::createCommandPool(VkCommandPool *pool) 
 {
-    QueueFamilyIndices queueFamilyIndices = findPhysicalQueueFamilies();
+    uint32_t queueFamilyIndex = findPhysicalQueueFamilies().graphicsFamily.value();
+    VkCommandPoolCreateInfo poolInfo = vkinit::command_pool_create_info(
+        queueFamilyIndex,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+      
+    VK_CHECK(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, pool) );
 
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-    poolInfo.flags = 0; // Optional  
+}
 
-    if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
-    }
+void VulkanDevice::createDefaultCommandPool()
+{
+    createCommandPool(&defaultcommandPool);   
 }
 
 
@@ -489,7 +520,7 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = defaultcommandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -514,7 +545,27 @@ void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
-    vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(logicalDevice, defaultcommandPool, 1, &commandBuffer);
+}
+
+void VulkanDevice::createVmaBuffer(
+        VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
+        VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize)
+{
+    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &dest_buffer, &allocation, nullptr) );
+
+    //copy  data
+    void* data;
+	vmaMapMemory(_allocator, allocation, &data);
+
+	    memcpy(data, src_buffer, buffersize);
+
+	vmaUnmapMemory(_allocator, allocation);
+}
+
+void VulkanDevice::destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation)
+{
+    vmaDestroyBuffer(_allocator, buffer, allocation);
 }
 
 VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -540,24 +591,15 @@ VkFormat VulkanDevice::findDepthFormat() {
 }
 
 // kind of helper function
-void VulkanDevice::createImage(uint32_t width, uint32_t height, 
-                    VkFormat format, VkImageTiling tiling, 
+void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+                    VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory) 
 {
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
+    VkExtent3D extent = {width, height, 1} ;
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(format, usage, extent, numSamples, mipLevels);
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateImage(logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -577,4 +619,37 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height,
     }
 
     vkBindImageMemory(logicalDevice, image, imageMemory, 0);
+}
+
+// kind of helper function
+void VulkanDevice::createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation)   
+{
+    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &vmaallocInfo, &dest_image, &allocation, nullptr) );
+}
+
+void VulkanDevice::destroyVmaImage(VkImage &image, VmaAllocation &allocation)
+{
+    vmaDestroyImage(_allocator, image, allocation);
+}
+
+VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+void VulkanDevice::setMsaaValue(VkSampleCountFlagBits value){
+    if(value <= maxMsaaSamples){
+        msaaSamples = value;
+        spdlog::info("mssaaSamples = {}", msaaSamples);
+    }
 }

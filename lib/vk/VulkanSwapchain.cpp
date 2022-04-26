@@ -1,15 +1,17 @@
 #include "VulkanSwapchain.hpp"
+#include "vk_initializers.h"
 
 // std
 #include <cstdint> // Necessary for UINT32_MAX
 #include <algorithm> // Necessary for std::min/std::max
+#include <array>
 
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window) 
     : device{device}
     , window{window}
 { 
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
     createAllSwapchian();
 }
@@ -17,7 +19,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, Window &window)
 
 VulkanSwapchain::~VulkanSwapchain()
 {  
-    SPDLOG_TRACE("destructor"); 
+    SPDLOG_DEBUG("destructor"); 
     cleanupSwapChain();
     SPDLOG_TRACE("cleanupSwapChain");
 }  
@@ -28,6 +30,7 @@ void VulkanSwapchain::createAllSwapchian()
     createSwapchain();
     createImageViews();
     createRenderPass();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
 }
@@ -39,9 +42,13 @@ void VulkanSwapchain::cleanupSwapChain()
     }
     SPDLOG_TRACE("vkDestroyFramebuffer");
 
+    vkDestroyImageView(device.getDevice(), colorImageView, nullptr);
+    vkDestroyImage(device.getDevice(), colorImage, nullptr);
+    vkFreeMemory(device.getDevice(), colorImageMemory, nullptr);
+    SPDLOG_TRACE("vkDestroy ColorResources");
+ 
     vkDestroyImageView(device.getDevice(), depthImageView, nullptr);
-    vkDestroyImage(device.getDevice(), depthImage, nullptr);
-    vkFreeMemory(device.getDevice(), depthImageMemory, nullptr);
+	device.destroyVmaImage(depthImage._image, depthImage._allocation);
     SPDLOG_TRACE("vkDestroy DepthResources");
 
 
@@ -209,57 +216,75 @@ VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
     }
 }
 
-
-VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+ 
+VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(format, image, aspectFlags, mipLevels);
 
     VkImageView imageView;
-    if (vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture image view!");
-    }
+    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &imageView) );
 
     return imageView;
 }
+
 
 void VulkanSwapchain::createImageViews() 
 {
     SPDLOG_TRACE("createImageViews");
 
     swapChainImageViews.resize(swapChainImages.size());
+    const uint32_t mipmap_one = 1;
 
     for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-                swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+                swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
             }    
-}
+} 
 
 void VulkanSwapchain::createRenderPass() 
 {
     SPDLOG_TRACE("createRenderPass");
 
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+
     // color Attachment description
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.samples = msaaSamples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    //----------------- MSAA ----------------
+    // if msaaSamples > VK_SAMPLE_COUNT_1_BIT
+    // Change the finalLayout from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL. 
+    // That’s because multisampled images cannot be presented directly. We first need to resolve them to a regular image.
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Therefore we will have to add only one new attachment for color which is a so-called resolve attachment:
+
+    // color resolve Attachment description
+    VkAttachmentDescription colorAttachmentResolve{};
+    colorAttachmentResolve.format = swapChainImageFormat;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Set the colorAttachmentResolveRef in order 
+    // to pass to subpass.pResolveAttachments subpass  member 
+    VkAttachmentReference colorAttachmentResolveRef{};
+    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //----------------- MSAA ----------------
 
     // depth Attachment description
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = device.findDepthFormat();
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.samples = msaaSamples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -283,31 +308,43 @@ void VulkanSwapchain::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pResolveAttachments = &colorAttachmentResolveRef; // MSAA
 
-    // Subpass dependencies
+    //1 dependency, which is from "outside" into the subpass. And we can read or write color
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+    //2 dependency from outside to the subpass, making this subpass dependent on the previous renderpasses
+    VkSubpassDependency depth_dependency = {};
+    depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    depth_dependency.dstSubpass = 0;
+    depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    depth_dependency.srcAccessMask = 0;
+    depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    //array of 2 dependencies, for color and   depth
+	std::array<VkSubpassDependency, 2> dependencies = { dependency, depth_dependency };
+
+    //array of 3 attachements , for color, depth and colorresolve
+    std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
+    
     // Render pass
-    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass!");
-    }
-
+    VK_CHECK(vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) );
 }
 
 void VulkanSwapchain::createFramebuffers() 
@@ -316,25 +353,40 @@ void VulkanSwapchain::createFramebuffers()
 
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
-    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            std::array<VkImageView, 2> attachments = {
-                swapChainImageViews[i],
-                depthImageView
-            };
+    VkFramebufferCreateInfo framebufferInfo = vkinit::framebuffer_create_info(renderPass, swapChainExtent);
 
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
+    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+        std::array<VkImageView, 3> attachments = {
+                colorImageView,
+                depthImageView,
+                swapChainImageViews[i]
+        };
+
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapChainExtent.width;
-        framebufferInfo.height = swapChainExtent.height;
-        framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
+        VK_CHECK(vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) );
     }
+}
+
+void VulkanSwapchain::createColorResources() 
+{
+   SPDLOG_TRACE("createColorResources");
+
+    VkFormat colorFormat = swapChainImageFormat;
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+    const uint32_t mipmap_one = 1;
+
+    device.createImage(swapChainExtent.width, swapChainExtent.height, mipmap_one, 
+                msaaSamples, 
+                colorFormat, 
+                VK_IMAGE_TILING_OPTIMAL, 
+                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+                colorImage, 
+                colorImageMemory);
+
+    colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
 }
 
 void VulkanSwapchain::createDepthResources() 
@@ -342,14 +394,23 @@ void VulkanSwapchain::createDepthResources()
     SPDLOG_TRACE("createDepthResources");
 
     VkFormat depthFormat = device.findDepthFormat();
-    device.createImage(swapChainExtent.width,  swapChainExtent.height, 
-                depthFormat, 
-                VK_IMAGE_TILING_OPTIMAL, 
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                depthImage, 
-                depthImageMemory
-                );
-    depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+    const uint32_t mipmap_one = 1;
+    VkExtent3D extent = {swapChainExtent.width, swapChainExtent.height, 1};
+
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(
+        depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+        extent, msaaSamples, mipmap_one);
+
+    //for the depth image, we want to allocate it from gpu local memory
+	VmaAllocationCreateInfo allocinfo = {};
+    allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    //allocate and create the image
+    device.createVmaImage(imageInfo, allocinfo, depthImage._image, depthImage._allocation );
+
+	//build a image-view for the depth image to use for rendering
+    depthImageView = createImageView(depthImage._image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mipmap_one);
 }
 

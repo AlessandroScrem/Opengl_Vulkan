@@ -1,16 +1,13 @@
 #pragma once
-#include "common/Window.hpp"
-
-
+//common lib
+#include <Window.hpp>
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
+#include "vktypes.h"
 //std
 #include <vector>
 #include <optional>
-
-
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -51,29 +48,42 @@ public:
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
+    
+    const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
 
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    
-    // used by VulkanEngine , VulkanImage
-    VkCommandPool getCommadPool() { return commandPool; }
+
+    void createVmaBuffer(        
+        VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
+        VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
+    void destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation);
+
+    void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
+    void destroyVmaImage(VkImage &image, VmaAllocation &allocation);
+
+    // used by VulkanImage
+    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }
+
+    void createCommandPool(VkCommandPool *pool);
+
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; }
     VkFormat findDepthFormat();
-    void createImage(uint32_t width, uint32_t height, 
-                    VkFormat format, VkImageTiling tiling, 
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+                    VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
     
     // used by VulkanImage
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-    
-
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
-    
+    void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties); 
+
+
 
 private:
     void createInstance();
@@ -81,11 +91,15 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+    void createVulkanAllocator();
 
-    void createCommandPool();
+    void createDefaultCommandPool();
+
     
 
     std::vector<const char*> getRequiredExtensions();
+    VkSampleCountFlagBits getMaxUsableSampleCount(); 
+    void setMsaaValue(VkSampleCountFlagBits value); 
 
     bool isDeviceSuitable(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
@@ -107,9 +121,12 @@ private:
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkSampleCountFlagBits maxMsaaSamples, msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkDevice logicalDevice;
 
-    VkCommandPool commandPool;
+    VmaAllocator _allocator; //vma lib allocator
+
+    VkCommandPool defaultcommandPool;
     
     VkQueue graphicsQueue;
     VkQueue presentQueue;

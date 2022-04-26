@@ -1,55 +1,39 @@
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "vk_initializers.h"
 
 
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanImage &vulkanimage) 
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, VulkanSwapchain &swapchain, VulkanUbo &ubo, VulkanImage &vulkanimage, Model &model) 
     : device{device}
-    ,swapchain{swapchain}
-    ,vulkanimage{vulkanimage}
+    , swapchain{swapchain}
+    , ubo{ubo}
+    , vulkanimage{vulkanimage}
+    , model{model}
 { 
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
     createIndexBuffer();   
     createVertexBuffer();   
     createDescriptorSetLayout();
-    createUniformBuffers();
     createDescriptorPool();
     createDescriptorSets();
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() 
 {   
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
-    vkDestroyBuffer(device.getDevice(), indexBuffer, nullptr);
-    SPDLOG_TRACE("Index vkDestroyBuffer");
-    vkFreeMemory(device.getDevice(), indexBufferMemory, nullptr);
-    SPDLOG_TRACE("Index vkFreeMemory");
-    vkDestroyBuffer(device.getDevice(), vertexBuffer, nullptr);
-    SPDLOG_TRACE("Vertex vkDestroyBuffer");
-    vkFreeMemory(device.getDevice(), vertexBufferMemory, nullptr);  
-    SPDLOG_TRACE("Vertex vkFreeMemory");
+    device.destroyVmaBuffer(vertexBuffer._buffer, vertexBuffer._allocation);
+    SPDLOG_TRACE("Vertex vmaDestroyBuffer");
+    device.destroyVmaBuffer(indexBuffer._buffer, indexBuffer._allocation);
+    SPDLOG_TRACE("Index vmaDestroyBuffer");
 
-    cleanupUniformBuffers();
     cleanupDescriptorPool();
 
     vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
     SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
 } 
-
-// Necessita
-// swapchain.getSwapchianImageSize()
-void VulkanVertexBuffer::cleanupUniformBuffers() 
-{   
-    SPDLOG_TRACE("cleanupUniformBuffers");
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    for (size_t i = 0; i < swapchainImages ; i++) {
-        vkDestroyBuffer(device.getDevice(), uniformBuffers[i], nullptr);
-        vkFreeMemory(device.getDevice(), uniformBuffersMemory[i], nullptr);
-    }
-}
 
 void VulkanVertexBuffer::cleanupDescriptorPool()
 {
@@ -59,98 +43,34 @@ void VulkanVertexBuffer::cleanupDescriptorPool()
 }
 
 
-/*
-    Unfortunately the driver may not immediately copy the data into the buffer memory, for example because of caching. 
-    It is also possible that writes to the buffer are not visible in the mapped memory yet. 
-    There are two ways to deal with that problem:
-    
-    - Use a memory heap that is host coherent, indicated with VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    
-    - Call vkFlushMappedMemoryRanges after writing to the mapped memory, 
-        and call vkInvalidateMappedMemoryRanges before reading from the mapped memory
-
-    Flushing memory ranges or using a coherent memory heap means that the driver will be aware of our writes to the buffer,
-    but it doesn’t mean that they are actually visible on the GPU yet. 
-    The transfer of data to the GPU is an operation that happens in the background and the specification 
-    simply tells us that it is guaranteed to be complete as of the next call to vkQueueSubmit.
-*/
-// Necessita
-// device.findMemoryType
-// device.copyBuffer
-void VulkanVertexBuffer::createVertexBuffer() 
+void VulkanVertexBuffer::createVertexBuffer()
 {
-    SPDLOG_TRACE("createVertexBuffer");
+    //create bufferinfo
+    size_t buffersize = sizeof(Vertex) * model.verticesSize();
+    const void * bufferdata = model.verticesData();
+    VkBufferCreateInfo bufferInfo = vkinit::vertex_input_state_create_info(buffersize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    VkDeviceSize bufferSize = sizeof(Vertex) * model.verticesSize();
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-
-    // Using a staging buffer
-    // We’re now going to change createVertexBuffer to only use a host visible buffer 
-    // as temporary buffer and use a device local one as actual vertex buffer.
-    // Vertex data will be loaded from high performance memory
-    device.createBuffer(bufferSize, 
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        stagingBuffer, 
-                        stagingBufferMemory
-    );
-
-    // For filling the vertices data to the memory
-    // we need a pointer to the buffer which the memory is associated to
-    // at the end we unmap a previously mapped memory object 
-    void* data;
-    vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, model.verticesData(), (size_t) bufferSize);
-    vkUnmapMemory(device.getDevice(), stagingBufferMemory);
-
-    // The vertexBuffer is now allocated from a memory type that is device local
-    // which generally means that we’re not able to use vkMapMemory. 
-    // However, we can copy data from the stagingBuffer to the vertexBuffer
-    device.createBuffer(bufferSize,
-                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        vertexBuffer, 
-                        vertexBufferMemory
-    );
-
-    device.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-    vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
+	//allocate the buffer
+	device.createVmaBuffer(bufferInfo, vmaallocInfo, vertexBuffer._buffer, vertexBuffer._allocation, bufferdata, buffersize);
 }
 
-void VulkanVertexBuffer::createIndexBuffer() 
+void VulkanVertexBuffer::createIndexBuffer()
 {
-    SPDLOG_TRACE("createIndexBuffer");
+    //create bufferinfo
+    size_t buffersize = sizeof(Index) * model.indicesSize();
+    const void * bufferdata = model.indicesData();
+    VkBufferCreateInfo bufferInfo = vkinit::vertex_input_state_create_info(buffersize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    VkDeviceSize bufferSize = sizeof(Index) * model.indicesSize();
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    device.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                        stagingBuffer, 
-                        stagingBufferMemory
-                        );
-
-    void* data;
-    vkMapMemory(device.getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, model.indicesData(), (size_t) bufferSize);
-    vkUnmapMemory(device.getDevice(), stagingBufferMemory);
-
-    device.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                        indexBuffer, 
-                        indexBufferMemory
-                        );
-
-    device.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-    vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
+	//allocate the buffer
+	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
 }
-
+ 
 // creare prima di createGraphicsPipeline();
 void VulkanVertexBuffer::createDescriptorSetLayout()
 {
@@ -179,27 +99,6 @@ void VulkanVertexBuffer::createDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
-}
-
-// Necessita
-// swapchain.getSwapchianImageSize()
-void VulkanVertexBuffer::createUniformBuffers() 
-{
-    SPDLOG_TRACE("createUniformBuffers");
-
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    uniformBuffers.resize(swapchainImages);
-    uniformBuffersMemory.resize(swapchainImages);
-
-    for (size_t i = 0; i < swapchainImages; i++) {
-        device.createBuffer(bufferSize, 
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            uniformBuffers[i], 
-            uniformBuffersMemory[i]);
-        }
 }
 
 void VulkanVertexBuffer::createDescriptorPool() 
@@ -232,12 +131,14 @@ void VulkanVertexBuffer::createDescriptorPool()
 // swapchain.getSwapchianImageSize();
 // vulkanimage.getTextureImageView();
 // vulkanimage.getTextureSampler();
+// vulkanubo.getUniformBuffers();
 void VulkanVertexBuffer::createDescriptorSets() 
 {
     SPDLOG_TRACE("createDescriptorSets");
 
 
     auto swapchainImages =  swapchain.getSwapchianImageSize();
+    auto& uniformBuffers = ubo.getUniformBuffers();
 
     std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -286,30 +187,4 @@ void VulkanVertexBuffer::createDescriptorSets()
                 descriptorWrites.data(), 
                 0, nullptr);
     }
-}
-
-void VulkanVertexBuffer::updateUniformBuffer(uint32_t currentImage) 
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-
-    UniformBufferObject ubo{};
-
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    auto extent = swapchain.getExtent();
-    ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / (float) extent.height, 0.1f, 10.0f);
-    ubo.proj[1][1] *= -1;
-
-    void* data;
-    vkMapMemory(device.getDevice(), uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-        memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device.getDevice(), uniformBuffersMemory[currentImage]);
 }

@@ -1,11 +1,46 @@
 #pragma once
-#include "Engine.hpp"
-#include "common/Window.hpp"
+
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanUbo.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanImage.hpp"
+#include "VulkanShader.hpp"
+#include "../Engine.hpp"
+//common lib
+#include <Window.hpp>
+#include <multiplatform_input.hpp>
+#include <unordered_map>
+#include <deque>
+
+struct DeletionQueue
+{
+    std::deque<std::function<void()>> deletors;
+
+    void push_function(std::function<void()>&& function) {
+        deletors.push_back(function);
+    }
+
+    void flush() {
+        // reverse iterate the deletion queue to execute all the functions
+        for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+            (*it)(); //call functors
+        }
+
+        deletors.clear();
+    }
+};
+
+
+struct RenderObject {
+	
+    std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
+	std::unique_ptr<VulkanPipeline>  pipeline;
+	glm::mat4 obj_trasform;
+};
+
+const unsigned int MAX_FRAMES_IN_FLIGHT = 2;    
 
 class VulkanEngine : public Engine
 {
@@ -14,39 +49,51 @@ public:
     ~VulkanEngine();
 
     void run() override;
-
+    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);}
 
 private:
-    void drawFrame();
 
-    void createSyncObjects();
+    // -----------------------
+    // -----------------------
+    void init_shaders();
+    void init_fixed();
+    void init_renderables();
+    void init_commands();
+    void init_sync_structures();
 
-    // const VkCommandBuffer & getCommandBuffer(size_t index) const { return (commandBuffers[index]);}
+    void draw();
+    void draw_objects(VkCommandBuffer cmd);  
+    void draw_fixed(VkCommandBuffer cmd);  
+    void updateUbo();
+    void recreateSwapChain();   
 
-    void recreateSwapChain();
-    void createCommandBuffers();
-    void cleanupCommandBuffers();
-
-    Window window{EngineType::Vulkan};
+    Window window{EngineType::Vulkan, Engine::input_};
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
+    VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
-    VulkanVertexBuffer vertexbuffer{device, swapchain, vulkanimage};
-    VulkanPipeline pipeline{device, swapchain, vertexbuffer};
 
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;
+    std::unordered_map< std::string, RenderObject > _fixed_objects;
+    std::vector<RenderObject> _renderables;
+ 
 
-    //  GPU-GPU synchronization
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
+    //------------------------------------
+    //------------------------------------
+    
+    VkSemaphore _presentSemaphore, _renderSemaphore;
+	VkFence _renderFence;
+    DeletionQueue _mainDeletionQueue;
 
-    //  CPU-GPU synchronization
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFence> imagesInFlight;
+    VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
 
-    size_t currentFrame = 0;
-    const int MAX_FRAMES_IN_FLIGHT = 2;
+    int _frameNumber {0};
+
+    //------------------------------------
+    //------------------------------------
+
 };
 
 

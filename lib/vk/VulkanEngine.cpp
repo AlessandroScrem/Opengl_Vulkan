@@ -1,63 +1,108 @@
 #include "VulkanEngine.hpp"
-
+#include "vk_initializers.h"
 //std
-#include <iostream>
 #include <vector>
-
-// lib
-
-   
 
 VulkanEngine::VulkanEngine()
 {  
-    SPDLOG_TRACE("constructor");
+    SPDLOG_DEBUG("constructor");
 
-    createCommandBuffers();
+    init_shaders();
+    SPDLOG_TRACE("init_shaders");
+
+    init_fixed();
+    SPDLOG_TRACE("init_fixed");    
+
+    init_renderables();
+    SPDLOG_TRACE("init_randerables");    
+
+    init_commands();
     SPDLOG_TRACE("createCommandBuffers");
 
-    createSyncObjects();
+	init_sync_structures();  
     SPDLOG_TRACE("createSyncObjects");
+
 }
 
 VulkanEngine::~VulkanEngine() 
 {
-    SPDLOG_TRACE("destructor");
+    SPDLOG_DEBUG("destructor");
 
-    cleanupCommandBuffers();
-    SPDLOG_TRACE("cleanupCommandBuffers");
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
-    }
-    SPDLOG_TRACE("destroySyncObjects");
+    _mainDeletionQueue.flush();
 }
 
 void VulkanEngine::run() 
 {
-    SPDLOG_TRACE("**********************************************");  
-    SPDLOG_TRACE("*******           START           ************");  
-    SPDLOG_TRACE("**********************************************");  
+    spdlog::info("*******           START           ************");  
 
     while(!window.shouldClose() ) {
         glfwPollEvents();
-        drawFrame();
+        Engine::updateEvents();
+        window.update();
+        updateUbo();
+        draw();
     }
     vkDeviceWaitIdle(device.getDevice()); 
 
-    SPDLOG_TRACE("**********************************************");  
-    SPDLOG_TRACE("*******           END             ************");  
-    SPDLOG_TRACE("**********************************************");  
+    spdlog::info("*******           END             ************");  
 }
 
-// Necessita:
-// swapchain.getSwapchain
-// device getGraphicsQueue
-// device.getPresentQueue()
-void VulkanEngine::drawFrame() 
+void VulkanEngine::init_shaders()
+{
+    _shaders.emplace("phong", std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
+    _shaders.emplace("normalmap", std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
+    _shaders.emplace("axis", std::make_unique<VulkanShader>(device, GLSL::AXIS) );      
+}
+
+void VulkanEngine::init_fixed()
+{
+    auto  &sh = *_shaders.at("axis");
+/*     std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(
+        device, 
+        swapchain,
+        ubo, 
+        vulkanimage, 
+        Model::axis()
+    ); */
+    Model & mod = _models.at(1);
+    std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(device, swapchain, ubo, vulkanimage, mod);
+
+    std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(
+        device, 
+        swapchain, 
+        *vb, 
+        sh,
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+    );
+
+   _fixed_objects.emplace("axis", 
+        RenderObject{
+            std::move(vb),
+            std::move(pip), 
+            Model::axis().get_tranform()}
+    );   
+}
+
+void VulkanEngine::init_renderables()
+{ 
+    auto  &sh = *_shaders.at("normalmap");
+
+    for(auto & mod : _models)
+    {
+        std::unique_ptr<VulkanVertexBuffer> vb = std::make_unique<VulkanVertexBuffer>(device, swapchain, ubo, vulkanimage, mod);
+        std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(device, swapchain, *vb, sh);
+    
+        _renderables.push_back(RenderObject{
+            std::move(vb),
+            std::move(pip), 
+            mod.get_tranform() }
+        ); 
+    }
+}
+
+/* void VulkanEngine::drawFrame() 
 {   
-    vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    VK_CHECK(vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX) );
     
     // Acquiring an image from the swap chain
     //
@@ -77,13 +122,13 @@ void VulkanEngine::drawFrame()
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
-        vkWaitForFences(device.getDevice(), 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+        VK_CHECK(vkWaitForFences(device.getDevice(), 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX) );
     }
 
     // Mark the image as now being in use by this frame
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
-    vertexbuffer.updateUniformBuffer(imageIndex);
+    ubo.bind(imageIndex);
  
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -102,11 +147,9 @@ void VulkanEngine::drawFrame()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
     
-    vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]);
+    VK_CHECK(vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]) );
 
-    if (vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to submit draw command buffer!");
-    }
+    VK_CHECK(vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) );
 
     // Presentation
     VkPresentInfoKHR presentInfo{};
@@ -129,172 +172,260 @@ void VulkanEngine::drawFrame()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
 }
-
-// Necessita:
-// swapchain.getSwapchianImageSize()
-void VulkanEngine::createSyncObjects()
+ */
+ 
+void VulkanEngine::updateUbo()
 {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapchain.getSwapchianImageSize(), VK_NULL_HANDLE);
+    ubo.view = ourCamera.GetViewMatrix();
+    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 1.0f, 11.0f);
+    ubo.proj[1][1] *= -1;
 
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-
-            throw std::runtime_error("failed to create synchronization objects for a frame!");
-        }
-    
-    }
-}
+    ubo.viewPos = ourCamera.GetPosition();
+} 
 
 
-// TODO
-//  
-// The disadvantage of this approach is that we need to stop all rendering before creating the new swap chain.
-// 
-// It is possible to create a new swap chain while drawing commands 
-// on an image from the old swap chain are still in-flight. 
-// You need to pass the previous swap chain to the oldSwapChain field 
-// in the VkSwapchainCreateInfoKHR struct and destroy the old swap chain as soon as you’ve finished using it.
-
-// Necessita:
-// window.iconified()
-// pipeline.cleanupPipeline();
-// pipeline.createPipeline();
-// swapchain.cleanupSwapChain();
-// swapchain.createAllSwapchian();
 void VulkanEngine::recreateSwapChain() 
 {  
+    SPDLOG_DEBUG("recreateSwapChain");
+
      while (window.waitforSize()) {
+        window.GetWindowExtents();
         glfwWaitEvents();
     }
+
     vkDeviceWaitIdle(device.getDevice());
 
 // destroy
-    cleanupCommandBuffers();
-    pipeline.cleanupPipeline();
-    vertexbuffer.cleanupUniformBuffers();
-    vertexbuffer.cleanupDescriptorPool();
+    for (auto  & element : _renderables)
+    { 
+        element.pipeline->cleanupPipeline ();
+        element.vertexbuffer->cleanupDescriptorPool();
+    }
+    ubo.cleanupUniformBuffers();
     swapchain.cleanupSwapChain();
 
 // create
     swapchain.createAllSwapchian();
-    vertexbuffer.createUniformBuffers();
-    vertexbuffer.createDescriptorPool();
-    vertexbuffer.createDescriptorSets();
-    pipeline.createPipeline();
-    createCommandBuffers();
-
+    ubo.createUniformBuffers();
+    for (auto & element : _renderables)
+    { 
+        element.vertexbuffer->createDescriptorPool();
+        element.vertexbuffer->createDescriptorSets();
+        element.pipeline->createPipeline();
+    }
 }
 
 
 
-// Basic drawing commands
-
-// Parameters, aside from the command buffer:
-//
-// vertexCount: Even though we don’t have a vertex buffer, we technically still have 3 vertices to draw.
-// instanceCount: Used for instanced rendering, use 1 if you’re not doing that.
-// firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
-// firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
-// 
-// Necessita:
-// swapchain.getFramebuffersSize
-// swapchain.getRenderpass
-// swapchain.getFramebuffer
-// swapchain.getExtent
-// pipeline.getGraphicsPipeline
-// vertexbuffer.getVertexBuffer()
-// vertexbuffer.getIndexBuffer()
-// vertexbuffer.getDescriptorSet
-void VulkanEngine::createCommandBuffers() 
+void VulkanEngine::init_sync_structures()
 {
-    commandBuffers.resize(swapchain.getFramebuffersSize());
+	//create syncronization structures
+	//one fence to control when the gpu has finished rendering the frame,
+	//and 2 semaphores to syncronize rendering with swapchain
+	//we want the fence to start signalled so we can wait on it on the first frame
+	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = device.getCommadPool();
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+	VK_CHECK(vkCreateFence(device.getDevice(), &fenceCreateInfo, nullptr, &_renderFence));
 
-    if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
+	//enqueue the destruction of the fence
+	_mainDeletionQueue.push_function([=]() {
+		vkDestroyFence(device.getDevice(), _renderFence, nullptr);
+		});
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+
+	VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore));
+	VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore));
+	
+	//enqueue the destruction of semaphores
+	_mainDeletionQueue.push_function([=]() {
+		vkDestroySemaphore(device.getDevice(), _presentSemaphore, nullptr);
+		vkDestroySemaphore(device.getDevice(), _renderSemaphore, nullptr);
+		});
+}
+
+void VulkanEngine::init_commands()
+{
+ 	//create a command pool for commands submitted to the graphics queue.
+    device.createCommandPool(&_commandPool);
+
+	//allocate the default command buffer that we will use for rendering
+	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+
+	VK_CHECK(vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, &_mainCommandBuffer));
+
+	_mainDeletionQueue.push_function([=]() {
+		vkDestroyCommandPool(device.getDevice(), _commandPool, nullptr);
+	});
+}
+
+
+void VulkanEngine::draw()
+{
+	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
+	VK_CHECK(vkWaitForFences(device.getDevice(), 1, &_renderFence, true, 1000000000));
+	VK_CHECK(vkResetFences(device.getDevice(), 1, &_renderFence));
+
+	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
+	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer, 0));
+
+	//request image from the swapchain
+	uint32_t swapchainImageIndex;
+	VkResult  result = vkAcquireNextImageKHR(device.getDevice(), swapchain.getSwapchain(), 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	//naming it cmd for shorter writing
+	VkCommandBuffer cmd = _mainCommandBuffer;
 
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
+	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
+	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-            VkRenderPassBeginInfo renderPassInfo{};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = swapchain.getRenderpass();
-            renderPassInfo.framebuffer = swapchain.getFramebuffer(i);
-            renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = swapchain.getExtent(); 
+	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
-            // set the background color
-            float r = Engine::background.red;
-            float g = Engine::background.green;
-            float b = Engine::background.blue;
-            float a = Engine::background.alpha;
+	//make a clear-color.
+	VkClearValue clearValue;
+    // set the background color
+    float r = Engine::background.red;
+    float g = Engine::background.green;
+    float b = Engine::background.blue;
+    float a = Engine::background.alpha;
+	clearValue.color = { { r, g, b, a } };
 
-            std::array<VkClearValue, 2> clearValues{};
-            clearValues[0].color = {{r, g, b, a}};
-            clearValues[1].depthStencil = {1.0f, 0};
+	//clear depth at 1
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = 1.f;
 
-            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-            renderPassInfo.pClearValues = clearValues.data();
+	//start the main renderpass. 
+	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(swapchain.getRenderpass(), swapchain.getExtent(), swapchain.getFramebuffer(swapchainImageIndex));
 
+	//connect clear values
+	rpInfo.clearValueCount = 2;
 
-            vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline() );
-                
-                //TODO modify call to vertexbuffer and offset
-                VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-                VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
-                size_t indexsize = vertexbuffer.getIndexSize();
-                VkDeviceSize offsets[] = {0};
-                VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(i);
-                VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+	VkClearValue clearValues[] = { clearValue, depthClear };
 
-                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+	rpInfo.pClearValues = &clearValues[0];
 
-                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                
-                vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
-            vkCmdEndRenderPass(commandBuffers[i]);
+        draw_objects(cmd);
+        //draw_fixed(cmd);
 
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
+	//finalize the render pass
+	vkCmdEndRenderPass(cmd);
+	//finalize the command buffer (we can no longer add commands, but it can now be executed)
+	VK_CHECK(vkEndCommandBuffer(cmd));
+
+	//prepare the submission to the queue. 
+	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+	//we will signal the _renderSemaphore, to signal that rendering has finished
+
+	VkSubmitInfo submit = vkinit::submit_info(&cmd);
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	submit.pWaitDstStageMask = &waitStage;
+
+	submit.waitSemaphoreCount = 1;
+	submit.pWaitSemaphores = &_presentSemaphore;
+
+	submit.signalSemaphoreCount = 1;
+	submit.pSignalSemaphores = &_renderSemaphore;
+
+	//submit command buffer to the queue and execute it.
+	// _renderFence will now block until the graphic commands finish execution
+	VK_CHECK(vkQueueSubmit(device.getPresentQueue(), 1, &submit, _renderFence));
+
+	//prepare present
+	// this will put the image we just rendered to into the visible window.
+	// we want to wait on the _renderSemaphore for that, 
+	// as its necessary that drawing commands have finished before the image is displayed to the user
+	VkPresentInfoKHR presentInfo = vkinit::present_info();
+
+    VkSwapchainKHR swapChains[] = {swapchain.getSwapchain()};
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.swapchainCount = 1;
+
+	presentInfo.pWaitSemaphores = &_renderSemaphore;
+	presentInfo.waitSemaphoreCount = 1;
+
+	presentInfo.pImageIndices = &swapchainImageIndex;
+
+    result = vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.framebufferResized()){
+        recreateSwapChain();
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
     }
 
+	//increase the number of frames drawn
+	_frameNumber++;    
 }
 
-
-void VulkanEngine::cleanupCommandBuffers()
+void VulkanEngine::draw_objects(VkCommandBuffer cmd)
 {
-    vkFreeCommandBuffers(device.getDevice(), 
-                        device.getCommadPool(), 
-                        static_cast<uint32_t>(commandBuffers.size()), 
-                        commandBuffers.data());    
+        RenderObject & ro = _renderables.at(_model_index);
+
+        VulkanPipeline &pipeline = *ro.pipeline;
+        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
+
+	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
+        ubo.model = ro.obj_trasform; 
+        ubo.bind(0);
+
+        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
+        size_t indexsize = vertexbuffer.getIndexSize();
+        VkDeviceSize offsets[] = {0};
+        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
+        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
 }
 
+void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
+{
+        
+        RenderObject & ro = _fixed_objects.at("axis");
+
+        VulkanPipeline &pipeline = *ro.pipeline;
+        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
+        
+        int x, y;
+        window.extents(x, y);
+        // set new world origin to bottom left + offset
+        float offset = 50; 
+        float left   = -offset;
+        float right  = x-offset;
+        float bottom = y-offset;
+        float top    = -offset;
+   
+
+        ubo.proj = glm::orthoLH_ZO(left, right, bottom, top, -1000.0f, 1000.0f);
+
+	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
+        ubo.model = ro.obj_trasform; 
+        ubo.bind(0);
+
+        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
+        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
+        size_t indexsize = vertexbuffer.getIndexSize();
+        VkDeviceSize offsets[] = {0};
+        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
+        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0); 
+        
+}
 

@@ -1,7 +1,5 @@
 #pragma once
 #include "VulkanDevice.hpp"
-//#include <vulkan/vulkan.hpp>
-
 
 class VulkanSwapchain
 {
@@ -22,7 +20,7 @@ public:
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
     
     // used by VulkanImage
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
     // used by VulkanEngine
     VkSwapchainKHR getSwapchain() { return swapChain; }
@@ -35,6 +33,7 @@ private:
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
+    void createColorResources();
     void createDepthResources();
 
 
@@ -57,8 +56,11 @@ private:
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
-    VkImage depthImage;
-    VkDeviceMemory depthImageMemory;
+    VkImage colorImage;
+    VkDeviceMemory colorImageMemory;
+    VkImageView colorImageView;
+
+    AllocatedImage depthImage;
     VkImageView depthImageView;    
 };
 

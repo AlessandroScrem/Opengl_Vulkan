@@ -1,21 +1,19 @@
-#include "OpenGLImage.hpp"
+#include "OpenglImage.hpp"
 
-// implementex on VulkanImage.cpp
-//#define STB_IMAGE_IMPLEMENTATION    
+// stb lib    
 #include <stb_image.h>
 
 // libs
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
-
 // std
 #include <string>
 #include <iostream>
 
 OpenglImage::OpenglImage(const std::string  &filename)
 {
+    SPDLOG_DEBUG("constructor"); 
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -28,7 +26,7 @@ OpenglImage::OpenglImage(const std::string  &filename)
         throw std::runtime_error("failed to load texture image!");
     }
     
-    GLenum format;
+    GLenum format{};
     if (nrComponents == 1)
         format = GL_RED;
     else if (nrComponents == 3)
@@ -38,6 +36,7 @@ OpenglImage::OpenglImage(const std::string  &filename)
 
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
+
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
