@@ -63,7 +63,9 @@ void Engine::updateEvents()
         offset = (command.second)->get_offset();
     }
     std::stringstream msg;
-    msg << " [ " <<  ngn::Time::getFrameTime() << " ms/frame ]" << " Focal = " << ourCamera.GetFocal() ;
+    msg << " [ " <<  ngn::Time::getFrameTime()*1000.0 << " ms/frame ]" ;
+    msg << " [ " <<  ( ngn::Time::getFrameTime() > 0  ? 1.0 / ngn::Time::getFrameTime() : 0.0f) << " FPS ]" ;
+    msg << " Focal = " << ourCamera.GetFocal() ;
     msg << " Cmd  " << cmd ;
     msg << " " << ngn::Mouse::getDirection_str();
     msg << " " << glm::to_string(offset);

@@ -46,13 +46,13 @@ public:
      * 
      */
     static void update() {
-        static int nbFrames = 0;
+        static uint32_t nbFrames = 0;
         static std::chrono::time_point<std::chrono::high_resolution_clock>  lastTime;
         auto newTime = std::chrono::high_resolution_clock::now();
-        float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - lastTime).count();
+        float deltaTime = (float)(std::chrono::duration<double, std::milli>(newTime - lastTime).count());
 
-        if (deltaTime >= 1.0 ){ // If more than 1 sec ago
-            frameTime = 0.001f * (float) nbFrames;
+        if (deltaTime >= 1000.0 ){ // If more than 1 sec ago
+            frameTime = 1.0f / (float) nbFrames;
             nbFrames = 0;
             lastTime = newTime;
         }

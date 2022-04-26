@@ -161,7 +161,11 @@ VkPresentModeKHR VulkanSwapchain::chooseSwapPresentMode(const std::vector<VkPres
 {
     // VK_PRESENT_MODE_IMMEDIATE_KHR: 
     //  Images submitted by your application are transferred to the screen right away, which may result in tearing.
-    
+    for (const auto& availablePresentMode : availablePresentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+            return availablePresentMode;
+        }
+    }   
     // VK_PRESENT_MODE_FIFO_KHR: 
     //  The swap chain is a queue where the display takes an image from the front of the queue when the display is refreshed and the program inserts rendered images at the back of the queue. 
     //  If the queue is full then the program has to wait. This is most similar to vertical sync as found in modern games. 
