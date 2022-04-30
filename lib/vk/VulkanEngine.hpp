@@ -37,7 +37,7 @@ struct RenderObject {
 	
     std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
 	std::unique_ptr<VulkanPipeline>  pipeline;
-	glm::mat4 obj_trasform;
+	std::unique_ptr<VulkanUbo> ubo;
 };
 
 const unsigned int MAX_FRAMES_IN_FLIGHT = 2;    
@@ -64,14 +64,14 @@ private:
     void draw();
     void draw_objects(VkCommandBuffer cmd);  
     void draw_fixed(VkCommandBuffer cmd);  
-    void updateUbo();
+    void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();   
 
     Window window{EngineType::Vulkan, Engine::input_};
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    VulkanUbo ubo{device, swapchain};
+    //VulkanUbo ubo{device, swapchain};
     VulkanImage vulkanimage{device, swapchain};
 
     std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;

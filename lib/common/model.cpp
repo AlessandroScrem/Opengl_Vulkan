@@ -30,16 +30,16 @@ Model & Model::axis(){
 
     glm::vec3 red{1.0f, 0.0f, 0.0f};
     glm::vec3 green{0.0f, 1.0f, 0.0f};
-    glm::vec3 blue{0.2f, 0.2f, 1.0f};
+    glm::vec3 blue{0.0f, 0.0f, 1.0f};
 
     static Model axis{}; 
     std::vector<Vertex>vertices{};
-    axis.vertices.push_back( Vertex(origin,  blue,  glm::vec3{0.f}, glm::vec3{0.f} ));
-    axis.vertices.push_back( Vertex(x,       blue,  glm::vec3{0.f}, glm::vec3{0.f} ));
-    axis.vertices.push_back( Vertex(origin,  green, glm::vec3{0.f}, glm::vec3{0.f} ));
-    axis.vertices.push_back( Vertex(y,       green, glm::vec3{0.f}, glm::vec3{0.f} ));
-    axis.vertices.push_back( Vertex(origin,  red,   glm::vec3{0.f}, glm::vec3{0.f} ));
-    axis.vertices.push_back( Vertex(z,       red,   glm::vec3{0.f}, glm::vec3{0.f} ));
+    axis.vertices.push_back( Vertex{origin,  blue,  glm::vec3{0.f}, glm::vec3{0.f} } );
+    axis.vertices.push_back( Vertex{x,       blue,  glm::vec3{0.f}, glm::vec3{0.f} } );
+    axis.vertices.push_back( Vertex{origin,  green, glm::vec3{0.f}, glm::vec3{0.f} } );
+    axis.vertices.push_back( Vertex{y,       green, glm::vec3{0.f}, glm::vec3{0.f} } );
+    axis.vertices.push_back( Vertex{origin,  red,   glm::vec3{0.f}, glm::vec3{0.f} } );
+    axis.vertices.push_back( Vertex{z,       red,   glm::vec3{0.f}, glm::vec3{0.f} } );
 
     axis.indices.push_back(0); axis.indices.push_back(1);
     axis.indices.push_back(2); axis.indices.push_back(3);
