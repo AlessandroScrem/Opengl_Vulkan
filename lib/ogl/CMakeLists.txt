@@ -25,6 +25,8 @@ target_link_libraries(ogl_lib
         common_lib
         glm::glm
         spdlog::spdlog
+        imgui::imgui
+        imgui_bindings
     )
 
 target_include_directories(ogl_lib 

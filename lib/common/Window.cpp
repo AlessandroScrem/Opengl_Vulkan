@@ -7,6 +7,7 @@
 #include <iostream>
 
 //libs
+#include <imgui.h>
 #include <GL/glew.h>
 //libs
 #define GLFW_INCLUDE_NONE
@@ -39,6 +40,11 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
 
 Window::~Window() {
     SPDLOG_DEBUG("destructor");
+    
+    // Cleanup ImGui
+    if (ImGui::GetCurrentContext()) {
+        ImGui::DestroyContext();
+    } 
 
     glfwDestroyWindow(window_);
     glfwTerminate();
@@ -83,6 +89,13 @@ void Window::createWindow()
         spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
     }
 
+    // Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+
+    is_initialized = true;
+
 }
 
 void Window::SetWindowTitle(std::string msg) {
@@ -102,7 +115,13 @@ void Window::registerCallbacks()
         // Get the input
         auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
 
-        if (input) {
+        
+        bool io_captured = (ImGui::GetCurrentContext() == nullptr) ? false : ImGui::GetIO().WantCaptureMouse ;
+        if(!input || io_captured){
+            return;
+        }else{
+
+            // ONLY forward keys data to your underlying app/game. 
             // set the new value for key
             float value = 0.f;
 
@@ -124,7 +143,16 @@ void Window::registerCallbacks()
         // Get the input
         auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
 
-        if (input) {
+        bool io_captured = (ImGui::GetCurrentContext() == nullptr) ? false : ImGui::GetIO().WantCaptureMouse ;
+        if(!input){
+            return;
+        }
+        
+        if(io_captured){
+            // (1) ALWAYS forward mouse data to ImGui! This is automatic with default backends. With your own backend:
+            ImGui::GetIO().AddMouseButtonEvent(button, action == GLFW_PRESS ? true : false);
+        }else{
+            // (2) ONLY forward mouse data to your underlying app/game.
             input->UpdateMouseState(button, action == GLFW_PRESS ? 1.f : 0.f);
         }
     });
@@ -184,5 +212,12 @@ std::pair<int, int> Window::GetWindowExtents()
 
     }
     return { width_, height_ };
+}
+
+GLFWwindow* Window::getWindowPtr() {
+    if(!is_initialized) {
+        throw std::runtime_error("glfw Window in not yet created!");
+    }
+    return window_; 
 }
 

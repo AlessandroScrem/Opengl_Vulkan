@@ -1,6 +1,9 @@
 #include "OpenGLEngine.hpp"
 
 //libs
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -12,7 +15,8 @@ namespace ogl
 OpenGLEngine::OpenGLEngine()
 {    
     SPDLOG_DEBUG("constructor"); 
-    initOpenglGlobalStates();
+    initOpenglGlobalStates();  
+    initGUI();
 
     init_shaders();
     init_renderables();
@@ -29,6 +33,11 @@ OpenGLEngine::~OpenGLEngine()
 void OpenGLEngine::cleanup() 
 {   
     SPDLOG_TRACE("cleanup");
+    
+    // Cleanup ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+
 }
 
 void OpenGLEngine::initOpenglGlobalStates() 
@@ -53,6 +62,22 @@ void OpenGLEngine::initOpenglGlobalStates()
 
 
 }
+
+void OpenGLEngine::initGUI()
+{
+	// Setup Platform/Renderer bindings
+    // TODO update glsl_version acconrdigly with opengl context creation
+	if(!ImGui_ImplGlfw_InitForOpenGL(window.getWindowPtr(), true)){
+        throw std::runtime_error("failed to initialize ImGui_ImplGlfw_InitForOpenGL!");
+    }
+
+    const char *glsl_version = "#version 450 core";
+	if(!ImGui_ImplOpenGL3_Init(glsl_version)){
+        throw std::runtime_error("failed to initialize ImGui_ImplOpenGL3_Init!");
+    }
+
+}
+
 void OpenGLEngine::init_shaders()
 {
     _shaders.emplace("phong", std::make_unique<OpenglShader>(GLSL::PHONG) );  
@@ -94,7 +119,6 @@ void OpenGLEngine::run()
         window.update();
         updateUbo();
         draw();
-        //glfwWaitEvents();
     }
     
     spdlog::info("*******           END             ************");  
@@ -104,12 +128,41 @@ void OpenGLEngine::draw()
 {
         // init frame
         clearBackground();
+        
         draw_fixed();
         draw_objects();
+
+        draw_overlay();
  
         // end frame
         window.updateframebuffersize();
         window.swapBuffers();  
+}
+
+void OpenGLEngine::draw_overlay()
+{
+        if(!_overlay){
+            return;
+        }
+
+        // feed inputs to dear imgui, start new frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+ 
+        // render your GUI
+		ImGui::Begin("Triangle Position/Color");
+		static float rotation = 0.0;
+		ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
+		static float translation[] = {0.0, 0.0};
+		ImGui::SliderFloat2("position", translation, -1.0, 1.0);
+        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
+         // color picker
+        ImGui::ColorEdit3("color", color);
+        ImGui::End();
+        
+        ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void OpenGLEngine::draw_fixed()
