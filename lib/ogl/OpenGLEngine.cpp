@@ -57,8 +57,8 @@ void OpenGLEngine::initOpenglGlobalStates()
     glGetIntegerv ( GL_SAMPLES, &samples );
     spdlog::info("Opengl maxSamples = {}", maxSamples);
     spdlog::info("Opengl samples = {}", samples);
-    //enable vsync
-    glfwSwapInterval(1);
+    //enable vsync glfwSwapInterval(1)
+    glfwSwapInterval(0);
 
 
 }
