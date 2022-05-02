@@ -25,8 +25,8 @@ public:
     void updateframebuffersize();
     void update();
     void setWindowMessage(std::string msg){SetWindowTitle(msg);}
+    GLFWwindow* getWindowPtr();
 
-    GLFWwindow* getWindowPtr() { return window_; }
     std::pair<int, int> GetWindowExtents();
     float getWindowAspect() { 
         if(is_zerosize) return 1.0;
@@ -53,6 +53,7 @@ private:
     bool is_framebufferResized = false;
     bool is_iconified = false;
     bool is_zerosize = false;
+    bool is_initialized = false;
 
     GLFWwindow* window_ = nullptr;
 };

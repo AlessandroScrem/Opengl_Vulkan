@@ -29,6 +29,7 @@ target_link_libraries(common_lib
         glew::glew 
         spdlog::spdlog
         tinyobjloader
+        imgui::imgui
     PUBLIC
         glm::glm
     )

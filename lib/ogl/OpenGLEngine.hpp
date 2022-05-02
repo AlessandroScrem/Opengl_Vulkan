@@ -8,6 +8,8 @@
 #include <Window.hpp>
 // std
 #include <unordered_map>
+//libs
+#include <imgui.h>
 
 namespace ogl{
 
@@ -30,11 +32,13 @@ public:
 
 private:
     void initOpenglGlobalStates();
+    void initGUI();
     void init_shaders();
     void init_fixed();
     void init_renderables();
     void cleanup();
     void draw();
+    void draw_overlay();
     void draw_fixed();
     void draw_objects();
     void updateUbo();
@@ -43,6 +47,8 @@ private:
     
     Window window{EngineType::Opengl, Engine::input_};
     OpenglUbo ubo{};
+
+    const bool _overlay = true;
 
     std::unordered_map< std::string, std::unique_ptr<OpenglShader> > _shaders;
     std::vector<RenderObject> _renderables;
