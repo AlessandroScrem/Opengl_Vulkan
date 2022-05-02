@@ -13,10 +13,6 @@ target_sources(ogl_lib
         OpenglShader.hpp
         OpenglShader.cpp
         OpenglUbo.hpp
-        ${imgui_RES_DIRS_DEBUG}/bindings/imgui_impl_glfw.cpp
-        ${imgui_RES_DIRS_DEBUG}/bindings/imgui_impl_opengl3.cpp
-        ${imgui_RES_DIRS_DEBUG}/bindings/imgui_impl_glfw.h
-        ${imgui_RES_DIRS_DEBUG}/bindings/imgui_impl_opengl3.h
 )
 
 
@@ -37,5 +33,4 @@ target_include_directories(ogl_lib
     PUBLIC 
         ${CMAKE_CURRENT_LIST_DIR}
     PRIVATE 
-        ${imgui_RES_DIRS_DEBUG}
 )
