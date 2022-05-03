@@ -18,8 +18,8 @@ struct OpenglUbo : UniformBufferObject{
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformBufferObject),glm::value_ptr(model), GL_STATIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, binding_point, ubo);       
-        glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, sizeof(UniformBufferObject));
-        // unbind buffe
+        glBindBufferRange(GL_UNIFORM_BUFFER, binding_point, ubo, 0, sizeof(UniformBufferObject));
+        // unbind buffer
         glBindBuffer(GL_UNIFORM_BUFFER, 0);  
     }
 
