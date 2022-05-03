@@ -39,7 +39,6 @@ void VulkanEngine::run()
         glfwPollEvents();
         Engine::updateEvents();
         window.update();
-        //updateUbo();
         draw();
     }
     vkDeviceWaitIdle(device.getDevice()); 

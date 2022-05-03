@@ -57,7 +57,7 @@ void OpenGLEngine::initOpenglGlobalStates()
     glGetIntegerv ( GL_SAMPLES, &samples );
     spdlog::info("Opengl maxSamples = {}", maxSamples);
     spdlog::info("Opengl samples = {}", samples);
-    //enable vsync glfwSwapInterval(1)
+    //enable vsync glfwSwapInterval(0)
     glfwSwapInterval(0);
 
 
@@ -87,12 +87,13 @@ void OpenGLEngine::init_shaders()
 
 void OpenGLEngine::init_fixed()
 { 
+    auto fixed_ubo   = std::make_unique<OpenglUbo>();
+    fixed_ubo->model = Model::axis().get_tranform();
     _fixed_objects.emplace("axis", 
         RenderObject{
             std::make_unique<OpenglVertexBuffer>(Model::axis()),
             "axis", 
-            Model::axis().get_tranform() 
-        }
+            std::move(fixed_ubo) }
     );  
 }
 
@@ -100,11 +101,13 @@ void OpenGLEngine::init_renderables()
 {
 
     for(auto & mod : _models)
-    {   
+    {  
+        auto obj_ubo = std::make_unique<OpenglUbo>();
+        obj_ubo->model = mod.get_tranform(); 
         _renderables.push_back(RenderObject{
             std::move(std::make_unique<OpenglVertexBuffer>(mod)),
             "normalmap", 
-            mod.get_tranform() }
+            std::move(obj_ubo) }
         ); 
     }   
 }
@@ -117,7 +120,6 @@ void OpenGLEngine::run()
         glfwPollEvents();
         Engine::updateEvents();
         window.update();
-        updateUbo();
         draw();
     }
     
@@ -181,14 +183,12 @@ void OpenGLEngine::draw_fixed()
     float bottom = -offset;
     float top    = y-offset;
  
-    ubo.proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
-
-    ubo.bind();
+    ro.ubo->view = ourCamera.GetViewMatrix();
+    ro.ubo->proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
+    ro.ubo->bind();
 
     shader.use();
     vb.draw(GL_LINES);
-
-    updateUbo();
     
 }
 
@@ -198,8 +198,9 @@ void OpenGLEngine::draw_objects()
         OpenglVertexBuffer &vertexBuffer = *ro.vertexbuffer;
         OpenglShader & shader = *_shaders.at(ro.shader);
         // render
-        ubo.model = ro.obj_trasform;      
-        ubo.bind();
+        updateUbo(*ro.ubo);
+    
+        ro.ubo->bind();
 
         shader.use();
         vertexBuffer.draw(GL_TRIANGLES);
@@ -216,7 +217,7 @@ void OpenGLEngine::clearBackground()
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
 }
 
-void OpenGLEngine::updateUbo()
+void OpenGLEngine::updateUbo(OpenglUbo &ubo)
 {
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);

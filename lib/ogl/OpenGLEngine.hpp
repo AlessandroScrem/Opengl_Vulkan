@@ -17,7 +17,7 @@ struct RenderObject {
     
     std::unique_ptr<OpenglVertexBuffer> vertexbuffer;
     std::string  shader;
-    glm::mat4 obj_trasform;
+    std::unique_ptr<OpenglUbo> ubo;
 };
 
 
@@ -41,12 +41,11 @@ private:
     void draw_overlay();
     void draw_fixed();
     void draw_objects();
-    void updateUbo();
+    void updateUbo(OpenglUbo &ubo);
 
     void clearBackground();
     
     Window window{EngineType::Opengl, Engine::input_};
-    OpenglUbo ubo{};
 
     const bool _overlay = true;
 
