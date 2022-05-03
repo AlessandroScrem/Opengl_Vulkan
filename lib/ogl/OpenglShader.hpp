@@ -16,7 +16,6 @@ public:
     {
         SPDLOG_DEBUG("constructor"); 
         buildShaders();
-        createUniformBlockBinding();
     }
 
     ~OpenglShader(){
@@ -44,13 +43,7 @@ private:
     void link();
     void buildShaders();
 
-    void createUniformBlockBinding(){
-        uniformBlockIndex    = glGetUniformBlockIndex(shaderProgram, "ubo");        
-        glUniformBlockBinding(shaderProgram,    uniformBlockIndex, 0);
-    }
-
     GLSL::ShaderType shaderType;
     unsigned int shaderProgram;
-    unsigned int uniformBlockIndex; 
 };
 

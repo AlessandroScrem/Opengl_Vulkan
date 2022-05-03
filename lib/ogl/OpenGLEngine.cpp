@@ -51,15 +51,23 @@ void OpenGLEngine::initOpenglGlobalStates()
 
   // using multisample
     glEnable(GL_MULTISAMPLE);
+
+    //check opengl internals
     GLint maxSamples;
     GLint samples;
+    GLint max_uniform_buffer_bindings;
+    GLint max_uniform_blocksize;
     glGetIntegerv ( GL_MAX_SAMPLES, &maxSamples );
     glGetIntegerv ( GL_SAMPLES, &samples );
-    spdlog::info("Opengl maxSamples = {}", maxSamples);
-    spdlog::info("Opengl samples = {}", samples);
+    glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &max_uniform_buffer_bindings);  
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &max_uniform_blocksize);  
+    spdlog::info("Opengl maxSamples = {} samples = {}", maxSamples, samples);
+    spdlog::info("Opengl GL_MAX_UNIFORM_BUFFER_BINDINGS = {} ", max_uniform_buffer_bindings);
+    spdlog::info("Opengl GL_MAX_UNIFORM_BLOCK_SIZE = {} ", max_uniform_blocksize);
+
+
     //enable vsync glfwSwapInterval(0)
     glfwSwapInterval(0);
-
 
 }
 
