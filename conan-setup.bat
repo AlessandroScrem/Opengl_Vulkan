@@ -1,4 +1,4 @@
 if not exist build mkdir build
 cd build
-conan install .. -s build_type=Release  
-conan install .. -s build_type=Debug 
+conan install .. -s build_type=Release  -pr:b=default
+conan install .. -s build_type=Debug  -pr:b=default

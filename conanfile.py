@@ -19,6 +19,8 @@ class App(ConanFile):
         self.copy("imgui_impl_opengl3.cpp", dst=dest, src="./res/bindings", root_package="imgui")
         self.copy("imgui_impl_opengl3.h", dst=dest, src="./res/bindings", root_package="imgui") 
         self.copy("imgui_impl_opengl3_loader.h", dst=dest, src="./res/bindings", root_package="imgui") 
+        self.copy("imgui_impl_vulkan.cpp", dst=dest, src="./res/bindings", root_package="imgui") 
+        self.copy("imgui_impl_vulkan.h", dst=dest, src="./res/bindings", root_package="imgui") 
 
 	
     def generate(self):
