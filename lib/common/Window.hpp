@@ -40,6 +40,7 @@ public:
 private:
     void initWindow();
     void createWindow();
+    void initGUI();
     void registerCallbacks();
     void SetWindowTitle(std::string msg = "");
 

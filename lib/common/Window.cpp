@@ -35,6 +35,7 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
 
     initWindow();
     createWindow();
+    initGUI();
     registerCallbacks();
 }
 
@@ -89,13 +90,18 @@ void Window::createWindow()
         spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
     }
 
+    is_initialized = true;
+}
+
+void Window::initGUI()
+{
     // Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
-
-    is_initialized = true;
-
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 }
 
 void Window::SetWindowTitle(std::string msg) {

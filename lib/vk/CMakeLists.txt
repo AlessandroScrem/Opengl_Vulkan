@@ -37,6 +37,8 @@ target_link_libraries(vk_lib
         glslang::SPIRV   #shader online compilation
         stb_image
         vma
+        imgui::imgui
+        imgui_bindings
 )
 
 target_include_directories(vk_lib 

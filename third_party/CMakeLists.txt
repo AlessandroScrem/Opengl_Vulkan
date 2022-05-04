@@ -6,12 +6,15 @@ target_sources(imgui_bindings PRIVATE
   imgui_bindings/imgui_impl_opengl3.cpp
   imgui_bindings/imgui_impl_opengl3.h
   imgui_bindings/imgui_impl_opengl3_loader.h
+  imgui_bindings/imgui_impl_vulkan.cpp
+  imgui_bindings/imgui_impl_vulkan.h
   )
 target_include_directories(imgui_bindings PUBLIC imgui_bindings)
 target_link_libraries(imgui_bindings 
   PRIVATE 
       imgui::imgui 
       glfw::glfw
+      Vulkan::Vulkan    
       )
 
 add_library(vma INTERFACE)

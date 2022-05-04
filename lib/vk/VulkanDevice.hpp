@@ -43,13 +43,19 @@ public:
     VulkanDevice(VulkanDevice &&) = delete;
     VulkanDevice &operator=(VulkanDevice &&) = delete;
 
-    // used by VulkanSwapchain , VulkanCommandBuffer
+    // some getters
     SwapChainSupportDetails getSwapChainSupport(){ return querySwapChainSupport(physicalDevice);}
     QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
-    
+    VkPhysicalDevice GetPhysicalDevice() {return physicalDevice; }
+    VkInstance getInstance() {return instance; }
+    VkQueue getGraphicsQueue() {return graphicsQueue; }
+    VkQueue getPresentQueue() {return presentQueue; } 
     const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
+
+    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }   
+
 
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -64,26 +70,18 @@ public:
     void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
     void destroyVmaImage(VkImage &image, VmaAllocation &allocation);
 
-    // used by VulkanImage
-    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }
-
     void createCommandPool(VkCommandPool *pool);
-
-    VkQueue getGraphicsQueue() {return graphicsQueue; }
-    VkQueue getPresentQueue() {return presentQueue; }
-    VkFormat findDepthFormat();
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
                     VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
-    
-    // used by VulkanImage
+
+    VkFormat findDepthFormat();
+
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
     void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties); 
-
-
 
 private:
     void createInstance();
@@ -95,10 +93,9 @@ private:
 
     void createDefaultCommandPool();
 
-    
-
     std::vector<const char*> getRequiredExtensions();
-    VkSampleCountFlagBits getMaxUsableSampleCount(); 
+    VkSampleCountFlagBits getMaxUsableSampleCount();
+
     void setMsaaValue(VkSampleCountFlagBits value); 
 
     bool isDeviceSuitable(VkPhysicalDevice device);

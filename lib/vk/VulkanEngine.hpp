@@ -55,15 +55,20 @@ private:
 
     // -----------------------
     // -----------------------
+    void initGUI();
     void init_shaders();
     void init_fixed();
     void init_renderables();
     void init_commands();
     void init_sync_structures();
 
+    void cleanup_GUI();
+
     void draw();
     void draw_objects(VkCommandBuffer cmd);  
-    void draw_fixed(VkCommandBuffer cmd);  
+    void draw_fixed(VkCommandBuffer cmd); 
+    void draw_overlay(VkCommandBuffer cmd);
+
     void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();   
 
@@ -92,6 +97,10 @@ private:
     int _frameNumber {0};
 
     //------------------------------------
+    // GUI globals
+    const bool _overlay = true;
+    VkDescriptorPool _gui_DescriptorPool = VK_NULL_HANDLE; 
+
     //------------------------------------
 
 };

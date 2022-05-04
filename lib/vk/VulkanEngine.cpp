@@ -1,5 +1,9 @@
 #include "VulkanEngine.hpp"
 #include "vk_initializers.h"
+//lib
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
 //std
 #include <vector>
 
@@ -19,6 +23,9 @@ VulkanEngine::VulkanEngine()
     init_commands();
     SPDLOG_TRACE("createCommandBuffers");
 
+    initGUI();
+    SPDLOG_TRACE("initGUI");
+
 	init_sync_structures();  
     SPDLOG_TRACE("createSyncObjects");
 
@@ -28,7 +35,20 @@ VulkanEngine::~VulkanEngine()
 {
     SPDLOG_DEBUG("destructor");
 
+    cleanup_GUI();
+
     _mainDeletionQueue.flush();
+}
+
+void VulkanEngine::cleanup_GUI()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+
+    // TODO  maybe move to Gui class
+    if(_gui_DescriptorPool) {
+        vkDestroyDescriptorPool(device.getDevice(), _gui_DescriptorPool, nullptr);
+    }     
 }
 
 void VulkanEngine::run() 
@@ -51,6 +71,92 @@ void VulkanEngine::init_shaders()
     _shaders.emplace("phong", std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
     _shaders.emplace("normalmap", std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
     _shaders.emplace("axis", std::make_unique<VulkanShader>(device, GLSL::AXIS) );      
+}
+
+void VulkanEngine::initGUI()
+{
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForVulkan(window.getWindowPtr(), true);
+
+    VkDevice                 g_Device           = device.getDevice();
+    VkPhysicalDevice         g_PhysicalDevice   = device.GetPhysicalDevice();
+    VkInstance               g_Instance         = device.getInstance();
+    uint32_t                 g_QueueFamily      = device.findPhysicalQueueFamilies().graphicsFamily.value(); //only grahics family;
+    VkQueue                  g_Queue            = device.getGraphicsQueue();                                 //only grahics Queue
+    int                      g_MinImageCount    = device.getSwapChainSupport().capabilities.minImageCount;
+    int                      g_ImageCount       = g_MinImageCount + 1;
+    VkRenderPass             g_RenderPass       = swapchain.getRenderpass();
+    VkSampleCountFlagBits    g_MSAASamples      = device.getMsaaSamples();
+    auto                     g_CheckVkResultFn  = [](VkResult x){ VK_CHECK(x);};            
+    VkAllocationCallbacks*   g_Allocator        = NULL;
+    VkPipelineCache          g_PipelineCache    = VK_NULL_HANDLE;
+
+    // Create Descriptor Pool
+    {
+        VkDescriptorPoolSize pool_sizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+        pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+        pool_info.pPoolSizes = pool_sizes;
+        VK_CHECK(vkCreateDescriptorPool(g_Device, &pool_info, NULL, &_gui_DescriptorPool));
+    }
+    
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = g_Instance;
+    init_info.PhysicalDevice = g_PhysicalDevice;
+    init_info.Device = g_Device;
+    init_info.QueueFamily =  g_QueueFamily;
+    init_info.Queue = g_Queue;
+    init_info.PipelineCache = g_PipelineCache;
+    init_info.DescriptorPool = _gui_DescriptorPool;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = g_MinImageCount;
+    init_info.ImageCount = g_ImageCount;
+    init_info.MSAASamples = g_MSAASamples;
+    init_info.Allocator = g_Allocator;
+    init_info.CheckVkResultFn = g_CheckVkResultFn;
+
+    ImGui_ImplVulkan_Init(&init_info, g_RenderPass);
+
+    // Upload Fonts
+    {
+        // using VulkanEngine local commandpool and commandbuffer
+        VK_CHECK(vkResetCommandPool(g_Device, _commandPool, 0));
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VK_CHECK(vkBeginCommandBuffer(_mainCommandBuffer, &begin_info));
+
+            ImGui_ImplVulkan_CreateFontsTexture(_mainCommandBuffer);
+
+            VkSubmitInfo end_info = {};
+            end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            end_info.commandBufferCount = 1;
+            end_info.pCommandBuffers = &_mainCommandBuffer;
+
+        VK_CHECK(vkEndCommandBuffer(_mainCommandBuffer));
+
+        VK_CHECK(vkQueueSubmit(g_Queue, 1, &end_info, VK_NULL_HANDLE));
+        VK_CHECK(vkDeviceWaitIdle(g_Device));
+
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+    }
+
 }
 
 void VulkanEngine::init_fixed()
@@ -335,6 +441,7 @@ void VulkanEngine::draw()
 
         draw_objects(cmd);
         draw_fixed(cmd);
+        draw_overlay(cmd);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -450,3 +557,30 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
         
 }
 
+void VulkanEngine::draw_overlay(VkCommandBuffer cmd)
+{
+        if(!_overlay){
+            return;
+        }
+
+        // feed inputs to dear imgui, start new frame
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+ 
+        // render your GUI
+		ImGui::Begin("Triangle Position/Color");
+            static float rotation = 0.0;
+            ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
+            static float translation[] = {0.0, 0.0};
+            ImGui::SliderFloat2("position", translation, -1.0, 1.0);
+            static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
+            // color picker
+            ImGui::ColorEdit3("color", color);
+        ImGui::End();
+        
+        ImGui::Render();
+
+        ImDrawData* draw_data = ImGui::GetDrawData();
+        ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
+}
