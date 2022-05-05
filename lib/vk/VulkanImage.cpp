@@ -4,9 +4,8 @@
 //lib
 #include <stb_image.h>
 
-VulkanImage::VulkanImage(VulkanDevice &device, VulkanSwapchain &swapchain) 
-    : device{device}
-    ,swapchain{swapchain}   
+VulkanImage::VulkanImage(VulkanDevice &device) 
+    : device{device} 
 {
     SPDLOG_DEBUG("constructor");
     createTexture();
@@ -19,17 +18,12 @@ VulkanImage::~VulkanImage()
     SPDLOG_DEBUG("destructor");
     vkDestroySampler(device.getDevice(), textureSampler, nullptr);
     SPDLOG_TRACE("vkDestroy textureSampler");
+
     vkDestroyImageView(device.getDevice(), textureImageView, nullptr);
     SPDLOG_TRACE("vkDestroy textureImageView");
-    vkDestroyImage(device.getDevice(), textureImage, nullptr);
-    SPDLOG_TRACE("vkDestroy textureImage");
-    vkFreeMemory(device.getDevice(), textureImageMemory, nullptr);   
-    SPDLOG_TRACE("vkFree textureImageMemory");
-}
 
-// helper function
-bool hasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    device.destroyVmaImage(textureImage._image, textureImage._allocation);   
+    SPDLOG_TRACE("vkDestroy textureImageMemory");
 }
 
 
@@ -46,10 +40,12 @@ void VulkanImage::createTexture()
     // 3) Create an image sampler
     // 4) Add a combined image sampler descriptor to sample colors from the texture
 
-    int texWidth{}, texHeight{}, texChannels{};
+    int texWidth, texHeight, texChannels;
+    int num_channels = STBI_rgb_alpha;
     stbi_set_flip_vertically_on_load(true);
-    stbi_uc* pixels = stbi_load(texpath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    stbi_uc* pixels = stbi_load(texpath.c_str(), &texWidth, &texHeight, &texChannels, num_channels);
+
+    VkDeviceSize imageSize = texWidth * texHeight * num_channels;
 
     // calculate number of mipmap 
     // The log2 function calculates how many times that dimension can be divided by 2. 
@@ -60,38 +56,49 @@ void VulkanImage::createTexture()
     if (!pixels) {
         throw std::runtime_error("failed to load texture image!");
     }
+    	
+    //create bufferinfo
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.pNext = nullptr;
+	bufferInfo.size = imageSize;
+   	
+    VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    device.createBuffer(imageSize, 
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            stagingBuffer, 
-            stagingBufferMemory
-    );
-
-    void* data;
-    vkMapMemory(device.getDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(device.getDevice(), stagingBufferMemory);
+    //allocate temporary buffer for holding texture data to upload
+	AllocatedBuffer stagingBuffer{};
+    device.createVmaBuffer(bufferInfo, vmaallocInfo, stagingBuffer._buffer, stagingBuffer._allocation, pixels, imageSize );
 
     // Free up the original pixel array now:
     stbi_image_free(pixels);
 
+
+    VkExtent3D imageExtent;
+	imageExtent.width = static_cast<uint32_t>(texWidth);
+	imageExtent.height = static_cast<uint32_t>(texHeight);
+	imageExtent.depth = 1;
+
+    VkImageCreateInfo img_info = vkinit::image_create_info(
+        VK_FORMAT_R8G8B8A8_SRGB, 
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+        imageExtent,
+        VK_SAMPLE_COUNT_1_BIT, 
+        mipLevels);
+    
+    VmaAllocationCreateInfo img_allocinfo = {};
+	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    device.createVmaImage(img_info, img_allocinfo, textureImage._image, textureImage._allocation );
+
     // In orger to generate mipmaps
     // we intend to use the texture image as both the source and destination of a transfer
-    device.createImage(texWidth, texHeight, mipLevels,
-                VK_SAMPLE_COUNT_1_BIT,
-                VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                textureImage, textureImageMemory
-            );
-    
+
     // steps
     // 1) Transition the texture image to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    transitionImageLayout(textureImage._image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     // 2) Execute the buffer to image copy operation
-    copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    copyBufferToImage(stagingBuffer._buffer, textureImage._image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     
     // transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
     // This will leave each level of the texture image in VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL.
@@ -100,11 +107,10 @@ void VulkanImage::createTexture()
     // If not mipmap are generated,to be able to start sampling from the texture image in the shader, 
     //   we need one last transition to prepare it for shader access:
     // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB,  texWidth, texHeight, mipLevels    );
+    generateMipmaps(textureImage._image, VK_FORMAT_R8G8B8A8_SRGB,  texWidth, texHeight, mipLevels);
 
-    // cleaning up the staging buffer and its memory
-    vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
+    // cleaning up the staging buffer
+    device.destroyVmaBuffer(stagingBuffer._buffer, stagingBuffer._allocation);
 }
 
 void VulkanImage::createTextureImageView() 
@@ -113,7 +119,7 @@ void VulkanImage::createTextureImageView()
 
     VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
         VK_FORMAT_R8G8B8A8_SRGB, 
-        textureImage, 
+        textureImage._image, 
         VK_IMAGE_ASPECT_COLOR_BIT, 
         mipLevels);
 

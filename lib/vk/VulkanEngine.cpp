@@ -193,8 +193,8 @@ void VulkanEngine::init_fixed()
 
 void VulkanEngine::init_renderables()
 { 
-    auto  &sh = *_shaders.at("normalmap");
-    //auto  &sh = *_shaders.at("texture");
+    //auto  &sh = *_shaders.at("normalmap");
+    auto  &sh = *_shaders.at("texture");
 
     for(auto & mod : _models)
     {

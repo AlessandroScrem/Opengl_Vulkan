@@ -610,7 +610,7 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
     }
 
     vkBindImageMemory(logicalDevice, image, imageMemory, 0);
-}
+} 
 
 // kind of helper function
 void VulkanDevice::createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation)   

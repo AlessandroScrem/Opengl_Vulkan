@@ -9,7 +9,7 @@
 class VulkanImage
 {
 public:
-    VulkanImage(VulkanDevice &device, VulkanSwapchain &swapchain) ;
+    VulkanImage(VulkanDevice &device) ;
     ~VulkanImage();
 
     VkImageView& getTextureImageView() { return textureImageView; }
@@ -31,11 +31,10 @@ private:
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     
     VulkanDevice &device;
-    VulkanSwapchain &swapchain;
 
     uint32_t mipLevels;
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+
+    AllocatedImage textureImage;
 
     VkImageView textureImageView;
     VkSampler textureSampler;

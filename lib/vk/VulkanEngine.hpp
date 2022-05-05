@@ -76,8 +76,7 @@ private:
     
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    //VulkanUbo ubo{device, swapchain};
-    VulkanImage vulkanimage{device, swapchain};
+    VulkanImage vulkanimage{device};
 
     std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;
     std::unordered_map< std::string, RenderObject > _fixed_objects;
