@@ -45,13 +45,14 @@ public:
 
     // some getters
     SwapChainSupportDetails getSwapChainSupport(){ return querySwapChainSupport(physicalDevice);}
-    QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
+    QueueFamilyIndices getQueueFamiliesIndices() { return findQueueFamilies(physicalDevice); }
     VkSurfaceKHR getSurface(){ return surface;}
     VkDevice getDevice() { return logicalDevice; }
-    VkPhysicalDevice GetPhysicalDevice() {return physicalDevice; }
+    VkPhysicalDevice getPhysicalDevice() {return physicalDevice; }
     VkInstance getInstance() {return instance; }
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; } 
+    VkFormat getDepthFormat() {return findDepthFormat(); }
     const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
 
     VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }   
@@ -76,13 +77,6 @@ public:
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
 
-    VkFormat findDepthFormat();
-
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-    void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties);
-    void GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties); 
-
 private:
     void createInstance();
     void setupDebugMessenger();
@@ -90,17 +84,20 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createVulkanAllocator();
-
     void createDefaultCommandPool();
+
+    void setMsaaValue(VkSampleCountFlagBits value); 
 
     std::vector<const char*> getRequiredExtensions();
     VkSampleCountFlagBits getMaxUsableSampleCount();
 
-    void setMsaaValue(VkSampleCountFlagBits value); 
-
     bool isDeviceSuitable(VkPhysicalDevice device);
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkFormat findDepthFormat();  
 
     bool checkValidationLayerSupport();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);

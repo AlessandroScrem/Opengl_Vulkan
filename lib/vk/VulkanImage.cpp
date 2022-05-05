@@ -1,4 +1,5 @@
 #include "VulkanImage.hpp"
+#include "vk_initializers.h"
 
 //lib
 #include <stb_image.h>
@@ -35,7 +36,10 @@ bool hasStencilComponent(VkFormat format) {
 void VulkanImage::createTexture() 
 {
     SPDLOG_TRACE("createTexture");
-    
+
+    // TODO move textpath outside class
+    const std::string texpath{"data/textures/viking_room.png"};  
+
     // Adding a texture to our application will involve the following steps:
     // 1) Create an image object backed by device memory
     // 2) Fill it with pixels from an image file
@@ -101,15 +105,20 @@ void VulkanImage::createTexture()
     // cleaning up the staging buffer and its memory
     vkDestroyBuffer(device.getDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device.getDevice(), stagingBufferMemory, nullptr);
-
 }
 
-// Necessita
-// swapchain.createImageView()
 void VulkanImage::createTextureImageView() 
 {
     SPDLOG_TRACE("createTextureImageView");
-    textureImageView = swapchain.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT,mipLevels); 
+
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
+        VK_FORMAT_R8G8B8A8_SRGB, 
+        textureImage, 
+        VK_IMAGE_ASPECT_COLOR_BIT, 
+        mipLevels);
+
+	//create a image-view for the texture image to use for rendering
+    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &textureImageView));
 }
 
 void VulkanImage::createTextureSampler() 
@@ -120,7 +129,7 @@ void VulkanImage::createTextureSampler()
     // and pass them around to the functions that need them, 
     // or query them in the createTextureSampler function itself.
     VkPhysicalDeviceProperties properties{};
-    device.GetPhysicalDeviceProperties(properties);
+    vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties); 
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -201,7 +210,6 @@ void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageL
 
 
 // The function involves recording and executing a command buffer 
-// Necessita
 // 
 VkCommandBuffer VulkanImage::beginSingleTimeCommands() 
 {
@@ -289,7 +297,8 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
  
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
-    device.GetPhysicalDeviceFormatProperties(imageFormat, formatProperties);
+    vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
+
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error("texture image format does not support linear blitting!");
     }

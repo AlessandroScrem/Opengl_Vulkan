@@ -198,16 +198,6 @@ void VulkanDevice::pickPhysicalDevice()
     } 
 }
 
-void VulkanDevice::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties &properties) 
-{
-    vkGetPhysicalDeviceProperties(physicalDevice, &properties); 
-}
-
-void VulkanDevice::GetPhysicalDeviceFormatProperties(const VkFormat imageFormat, VkFormatProperties &formatProperties)   
-{
-    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);   
-}
-
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
@@ -494,7 +484,7 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 
 void VulkanDevice::createCommandPool(VkCommandPool *pool) 
 {
-    uint32_t queueFamilyIndex = findPhysicalQueueFamilies().graphicsFamily.value();
+    uint32_t queueFamilyIndex = getQueueFamiliesIndices().graphicsFamily.value();
     VkCommandPoolCreateInfo poolInfo = vkinit::command_pool_create_info(
         queueFamilyIndex,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
       
@@ -568,7 +558,8 @@ void VulkanDevice::destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation)
     vmaDestroyBuffer(_allocator, buffer, allocation);
 }
 
-VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+
+ VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
@@ -580,7 +571,7 @@ VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidat
         }
     }
     throw std::runtime_error("failed to find supported format!");
-}
+} 
 
 VkFormat VulkanDevice::findDepthFormat() {
     return findSupportedFormat( 

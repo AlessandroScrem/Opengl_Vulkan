@@ -11,20 +11,13 @@ public:
     VulkanSwapchain(const VulkanSwapchain &) = delete;
     void operator=(const VulkanSwapchain &) = delete;
 
-    // used by VulkanPipeline , VulkanCommandBuffer
+    // getters
     VkExtent2D getExtent(){ return swapChainExtent;}
     VkRenderPass getRenderpass() { return renderPass; }
-
-    // used by VulkanCommandBuffer
-    size_t getFramebuffersSize() { return swapChainFramebuffers.size(); }
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
-    
-    // used by VulkanImage
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
-
-    // used by VulkanEngine
     VkSwapchainKHR getSwapchain() { return swapChain; }
     size_t getSwapchianImageSize() { return swapChainImages.size(); }
+
     void cleanupSwapChain();
     void createAllSwapchian();
 
@@ -56,12 +49,11 @@ private:
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
-    VkImage colorImage;
-    VkDeviceMemory colorImageMemory;
     VkImageView colorImageView;
-
-    AllocatedImage depthImage;
     VkImageView depthImageView;    
+
+    AllocatedImage colorImage;
+    AllocatedImage depthImage;
 };
 
 

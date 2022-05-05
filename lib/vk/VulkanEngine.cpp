@@ -70,6 +70,7 @@ void VulkanEngine::init_shaders()
 {
     _shaders.emplace("phong", std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
     _shaders.emplace("normalmap", std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
+    _shaders.emplace("texture", std::make_unique<VulkanShader>(device, GLSL::TEXTURE) );  
     _shaders.emplace("axis", std::make_unique<VulkanShader>(device, GLSL::AXIS) );      
 }
 
@@ -79,9 +80,9 @@ void VulkanEngine::initGUI()
     ImGui_ImplGlfw_InitForVulkan(window.getWindowPtr(), true);
 
     VkDevice                 g_Device           = device.getDevice();
-    VkPhysicalDevice         g_PhysicalDevice   = device.GetPhysicalDevice();
+    VkPhysicalDevice         g_PhysicalDevice   = device.getPhysicalDevice();
     VkInstance               g_Instance         = device.getInstance();
-    uint32_t                 g_QueueFamily      = device.findPhysicalQueueFamilies().graphicsFamily.value(); //only grahics family;
+    uint32_t                 g_QueueFamily      = device.getQueueFamiliesIndices().graphicsFamily.value(); //only grahics family;
     VkQueue                  g_Queue            = device.getGraphicsQueue();                                 //only grahics Queue
     int                      g_MinImageCount    = device.getSwapChainSupport().capabilities.minImageCount;
     int                      g_ImageCount       = g_MinImageCount + 1;
@@ -193,6 +194,7 @@ void VulkanEngine::init_fixed()
 void VulkanEngine::init_renderables()
 { 
     auto  &sh = *_shaders.at("normalmap");
+    //auto  &sh = *_shaders.at("texture");
 
     for(auto & mod : _models)
     {

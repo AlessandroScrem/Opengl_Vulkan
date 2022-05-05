@@ -30,7 +30,7 @@ void VulkanSwapchain::createAllSwapchian()
     createSwapchain();
     createImageViews();
     createRenderPass();
-    createColorResources();
+    createColorResources(); // needs only for multisampling
     createDepthResources();
     createFramebuffers();
 }
@@ -43,8 +43,7 @@ void VulkanSwapchain::cleanupSwapChain()
     SPDLOG_TRACE("vkDestroyFramebuffer");
 
     vkDestroyImageView(device.getDevice(), colorImageView, nullptr);
-    vkDestroyImage(device.getDevice(), colorImage, nullptr);
-    vkFreeMemory(device.getDevice(), colorImageMemory, nullptr);
+    device.destroyVmaImage(colorImage._image, colorImage._allocation);
     SPDLOG_TRACE("vkDestroy ColorResources");
  
     vkDestroyImageView(device.getDevice(), depthImageView, nullptr);
@@ -55,7 +54,7 @@ void VulkanSwapchain::cleanupSwapChain()
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device.getDevice(), imageView, nullptr);
     }
-    SPDLOG_TRACE("vkDestroyImageView");
+    SPDLOG_TRACE("vkDestroy swapChainImageViews");
 
 
     vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
@@ -104,7 +103,7 @@ void VulkanSwapchain::createSwapchain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = device.findPhysicalQueueFamilies();
+    QueueFamilyIndices indices = device.getQueueFamiliesIndices();
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -220,17 +219,6 @@ VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
     }
 }
 
- 
-VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
-    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(format, image, aspectFlags, mipLevels);
-
-    VkImageView imageView;
-    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &imageView) );
-
-    return imageView;
-}
-
-
 void VulkanSwapchain::createImageViews() 
 {
     SPDLOG_TRACE("createImageViews");
@@ -239,8 +227,13 @@ void VulkanSwapchain::createImageViews()
     const uint32_t mipmap_one = 1;
 
     for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-                swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
-            }    
+        VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
+                swapChainImageFormat, 
+                swapChainImages[i], 
+                VK_IMAGE_ASPECT_COLOR_BIT, 
+                mipmap_one);
+        VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &swapChainImageViews[i]) );
+    }    
 } 
 
 void VulkanSwapchain::createRenderPass() 
@@ -287,7 +280,7 @@ void VulkanSwapchain::createRenderPass()
 
     // depth Attachment description
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = device.findDepthFormat();
+    depthAttachment.format = device.getDepthFormat();
     depthAttachment.samples = msaaSamples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -373,31 +366,46 @@ void VulkanSwapchain::createFramebuffers()
     }
 }
 
+// needs only for multisampling
 void VulkanSwapchain::createColorResources() 
 {
    SPDLOG_TRACE("createColorResources");
 
     VkFormat colorFormat = swapChainImageFormat;
     const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
+
+    // In case of multisampling ,only one mip level, this is enforced by the Vulkan specification 
     const uint32_t mipmap_one = 1;
 
-    device.createImage(swapChainExtent.width, swapChainExtent.height, mipmap_one, 
-                msaaSamples, 
-                colorFormat, 
-                VK_IMAGE_TILING_OPTIMAL, 
+    VkExtent3D extent = {swapChainExtent.width, swapChainExtent.height, 1};
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(
+                colorFormat,
                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-                colorImage, 
-                colorImageMemory);
+                extent,msaaSamples,mipmap_one);
+ 
+    //for the color image, we want to allocate it from gpu local memory
+	VmaAllocationCreateInfo allocinfo = {};
+    allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT); 
 
-    colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mipmap_one);
+    //allocate and create the image
+    device.createVmaImage(imageInfo, allocinfo, colorImage._image, colorImage._allocation );
+
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
+        colorFormat, 
+        colorImage._image, 
+        VK_IMAGE_ASPECT_COLOR_BIT, 
+        mipmap_one);
+
+    //build a image-view for the color image to use for rendering
+    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &colorImageView));   
 }
 
 void VulkanSwapchain::createDepthResources() 
 {
     SPDLOG_TRACE("createDepthResources");
 
-    VkFormat depthFormat = device.findDepthFormat();
+    VkFormat depthFormat = device.getDepthFormat();
     const VkSampleCountFlagBits msaaSamples = device.getMsaaSamples();
     const uint32_t mipmap_one = 1;
     VkExtent3D extent = {swapChainExtent.width, swapChainExtent.height, 1};
@@ -414,7 +422,14 @@ void VulkanSwapchain::createDepthResources()
     //allocate and create the image
     device.createVmaImage(imageInfo, allocinfo, depthImage._image, depthImage._allocation );
 
-	//build a image-view for the depth image to use for rendering
-    depthImageView = createImageView(depthImage._image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mipmap_one);
+	VkImageViewCreateInfo view_info = vkinit::imageview_create_info(
+        depthFormat, 
+        depthImage._image, 
+        VK_IMAGE_ASPECT_DEPTH_BIT, 
+        mipmap_one);
+
+	//create a image-view for the depth image to use for rendering
+    VK_CHECK(vkCreateImageView(device.getDevice(), &view_info, nullptr, &depthImageView));
+
 }
 
