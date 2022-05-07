@@ -62,6 +62,7 @@ void VulkanImage::createTexture()
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.pNext = nullptr;
 	bufferInfo.size = imageSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
    	
     VmaAllocationCreateInfo vmaallocInfo = {};
 	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
@@ -163,7 +164,7 @@ void VulkanImage::createTextureSampler()
 // move image to be in the right layout
 void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
 {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -211,62 +212,12 @@ void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageL
         1, &barrier
     );
 
-    endSingleTimeCommands(commandBuffer);
-}
-
-
-// The function involves recording and executing a command buffer 
-// 
-VkCommandBuffer VulkanImage::beginSingleTimeCommands() 
-{
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = device.getDeafaultCommadPool();
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device.getDevice(), &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;   
-}
-
-void VulkanImage::endSingleTimeCommands(VkCommandBuffer commandBuffer) 
-{
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    auto graphicsQueue = device.getGraphicsQueue();
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-
-    vkFreeCommandBuffers(device.getDevice(), device.getDeafaultCommadPool(), 1, &commandBuffer);
-}
-
-void VulkanImage::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
-    VkBufferCopy copyRegion{};
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-    endSingleTimeCommands(commandBuffer);
+    device.endSingleTimeCommands(commandBuffer);
 }
 
 void VulkanImage::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) 
 {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -293,7 +244,7 @@ void VulkanImage::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wid
         &region
     );
 
-    endSingleTimeCommands(commandBuffer);
+    device.endSingleTimeCommands(commandBuffer);
 }
 
 
@@ -309,7 +260,7 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
     
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -412,5 +363,5 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
         1, &barrier);
 
 
-    endSingleTimeCommands(commandBuffer);
+    device.endSingleTimeCommands(commandBuffer);
 }
