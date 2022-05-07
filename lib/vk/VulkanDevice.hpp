@@ -61,7 +61,7 @@ public:
     // used by VulkanVertexBuffer
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                 VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 
     void createVmaBuffer(        
         VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
@@ -76,6 +76,9 @@ public:
                     VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, 
                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
                     VkImage& image, VkDeviceMemory& imageMemory);
+
+    VkCommandBuffer beginSingleTimeCommands(); 
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 private:
     void createInstance();

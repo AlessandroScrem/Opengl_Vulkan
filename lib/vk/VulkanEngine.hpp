@@ -85,15 +85,17 @@ private:
 
     //------------------------------------
     //------------------------------------
-    
-    VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+    std::vector<VkSemaphore> _presentSemaphore;
+    std::vector<VkSemaphore> _renderSemaphore;
+	std::vector<VkFence> _renderFence;
+    std::vector<VkCommandPool> _commandPool;
+	std::vector<VkCommandBuffer> _mainCommandBuffer;
+
     DeletionQueue _mainDeletionQueue;
 
-    VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
 
-    int _frameNumber {0};
+    int _currentFrame {0};
 
     //------------------------------------
     // GUI globals

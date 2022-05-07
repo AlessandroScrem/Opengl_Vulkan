@@ -116,45 +116,35 @@ void VulkanEngine::initGUI()
         pool_info.pPoolSizes = pool_sizes;
         VK_CHECK(vkCreateDescriptorPool(g_Device, &pool_info, NULL, &_gui_DescriptorPool));
     }
-    
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = g_Instance;
-    init_info.PhysicalDevice = g_PhysicalDevice;
-    init_info.Device = g_Device;
-    init_info.QueueFamily =  g_QueueFamily;
-    init_info.Queue = g_Queue;
-    init_info.PipelineCache = g_PipelineCache;
-    init_info.DescriptorPool = _gui_DescriptorPool;
-    init_info.Subpass = 0;
-    init_info.MinImageCount = g_MinImageCount;
-    init_info.ImageCount = g_ImageCount;
-    init_info.MSAASamples = g_MSAASamples;
-    init_info.Allocator = g_Allocator;
-    init_info.CheckVkResultFn = g_CheckVkResultFn;
 
-    ImGui_ImplVulkan_Init(&init_info, g_RenderPass);
+    // init ImGui_ImplVulkan
+    {
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = g_Instance;
+        init_info.PhysicalDevice = g_PhysicalDevice;
+        init_info.Device = g_Device;
+        init_info.QueueFamily =  g_QueueFamily;
+        init_info.Queue = g_Queue;
+        init_info.PipelineCache = g_PipelineCache;
+        init_info.DescriptorPool = _gui_DescriptorPool;
+        init_info.Subpass = 0;
+        init_info.MinImageCount = g_MinImageCount;
+        init_info.ImageCount = g_ImageCount;
+        init_info.MSAASamples = g_MSAASamples;
+        init_info.Allocator = g_Allocator;
+        init_info.CheckVkResultFn = g_CheckVkResultFn;
+
+        ImGui_ImplVulkan_Init(&init_info, g_RenderPass);
+    }    
 
     // Upload Fonts
     {
-        // using VulkanEngine local commandpool and commandbuffer
-        VK_CHECK(vkResetCommandPool(g_Device, _commandPool, 0));
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        VK_CHECK(vkBeginCommandBuffer(_mainCommandBuffer, &begin_info));
-
-            ImGui_ImplVulkan_CreateFontsTexture(_mainCommandBuffer);
-
-            VkSubmitInfo end_info = {};
-            end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            end_info.commandBufferCount = 1;
-            end_info.pCommandBuffers = &_mainCommandBuffer;
-
-        VK_CHECK(vkEndCommandBuffer(_mainCommandBuffer));
-
-        VK_CHECK(vkQueueSubmit(g_Queue, 1, &end_info, VK_NULL_HANDLE));
-        VK_CHECK(vkDeviceWaitIdle(g_Device));
-
+        auto cmd = device.beginSingleTimeCommands();
+        
+            ImGui_ImplVulkan_CreateFontsTexture(cmd);
+        
+        device.endSingleTimeCommands(cmd);
+        
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
@@ -162,27 +152,27 @@ void VulkanEngine::initGUI()
 
 void VulkanEngine::init_fixed()
 {
+    //create ubo
     auto fixed_ubo   = std::make_unique<VulkanUbo>(device, swapchain);
     fixed_ubo->model = Model::axis().get_tranform();
 
-
-    auto  & sh = *_shaders.at("axis");
+    // create vertexbuffer
     auto  vb = std::make_unique<VulkanVertexBuffer>(
-        device, 
-        swapchain,
+        device, swapchain,
         *fixed_ubo, 
         vulkanimage, 
         Model::axis()
     ); 
 
-    std::unique_ptr<VulkanPipeline> pip = std::make_unique<VulkanPipeline>(
-        device, 
-        swapchain, 
+    // create pipeline
+    auto pip = std::make_unique<VulkanPipeline>(
+        device, swapchain, 
         *vb, 
-        sh,
+        *_shaders.at("axis"),
         VK_PRIMITIVE_TOPOLOGY_LINE_LIST
     );
 
+    // create RenderObject
    _fixed_objects.emplace("axis", 
         RenderObject{
             std::move(vb),
@@ -274,58 +264,73 @@ void VulkanEngine::recreateSwapChain()
 
 void VulkanEngine::init_sync_structures()
 {
+
+    _presentSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+    _renderSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+    _renderFence.resize(MAX_FRAMES_IN_FLIGHT);
+
 	//create syncronization structures
 	//one fence to control when the gpu has finished rendering the frame,
 	//and 2 semaphores to syncronize rendering with swapchain
 	//we want the fence to start signalled so we can wait on it on the first frame
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 
-	VK_CHECK(vkCreateFence(device.getDevice(), &fenceCreateInfo, nullptr, &_renderFence));
 
-	//enqueue the destruction of the fence
-	_mainDeletionQueue.push_function([=]() {
-		vkDestroyFence(device.getDevice(), _renderFence, nullptr);
-		});
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+    
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
+        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore[i]));
+	    VK_CHECK(vkCreateFence(device.getDevice(), &fenceCreateInfo, nullptr, &_renderFence[i]));
 
-	VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore));
-	VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore));
-	
-	//enqueue the destruction of semaphores
-	_mainDeletionQueue.push_function([=]() {
-		vkDestroySemaphore(device.getDevice(), _presentSemaphore, nullptr);
-		vkDestroySemaphore(device.getDevice(), _renderSemaphore, nullptr);
-		});
+        //enqueue the destruction of semaphores
+        _mainDeletionQueue.push_function([=]() {
+            vkDestroySemaphore(device.getDevice(), _presentSemaphore[i], nullptr);
+            vkDestroySemaphore(device.getDevice(), _renderSemaphore[i], nullptr);
+            });
+        //enqueue the destruction of the fence
+        _mainDeletionQueue.push_function([=]() {
+            vkDestroyFence(device.getDevice(), _renderFence[i], nullptr);
+            });   
+    }
 }
+    
+
+	
 
 void VulkanEngine::init_commands()
-{
- 	//create a command pool for commands submitted to the graphics queue.
-    device.createCommandPool(&_commandPool);
+{   
+    _commandPool.resize(MAX_FRAMES_IN_FLIGHT);
+    _mainCommandBuffer.resize(MAX_FRAMES_IN_FLIGHT);
 
-	//allocate the default command buffer that we will use for rendering
-	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        //create a command pool for commands submitted to the graphics queue.
+        device.createCommandPool(&_commandPool[i]);
 
-	VK_CHECK(vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, &_mainCommandBuffer));
+        //allocate the default command buffer that we will use for rendering
+        VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool[i], 1);
+	    VK_CHECK(vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, &_mainCommandBuffer[i]));
 
-	_mainDeletionQueue.push_function([=]() {
-		vkDestroyCommandPool(device.getDevice(), _commandPool, nullptr);
-	});
+        _mainDeletionQueue.push_function([=]() {
+            vkDestroyCommandPool(device.getDevice(), _commandPool[i], nullptr);
+        });
+    }
 }
 
 
 void VulkanEngine::draw()
 {
 	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
-	VK_CHECK(vkWaitForFences(device.getDevice(), 1, &_renderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(device.getDevice(), 1, &_renderFence));
+	VK_CHECK(vkWaitForFences(device.getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
+	VK_CHECK(vkResetFences(device.getDevice(), 1, &_renderFence[_currentFrame]) );
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer, 0));
+	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer[_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
 	//request image from the swapchain
 	uint32_t swapchainImageIndex;
-	VkResult  result = vkAcquireNextImageKHR(device.getDevice(), swapchain.getSwapchain(), 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex);
+	VkResult  result = vkAcquireNextImageKHR(device.getDevice(), swapchain.getSwapchain(), 1000000000, 
+        _presentSemaphore[_currentFrame], nullptr,&swapchainImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreateSwapChain();
@@ -335,8 +340,7 @@ void VulkanEngine::draw()
     }
 
 	//naming it cmd for shorter writing
-	VkCommandBuffer cmd = _mainCommandBuffer;
-
+	VkCommandBuffer cmd = _mainCommandBuffer[_currentFrame];
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
@@ -355,15 +359,17 @@ void VulkanEngine::draw()
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = 1.f;
 
+	VkClearValue clearValues[] = { clearValue, depthClear };
+
 	//start the main renderpass. 
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(swapchain.getRenderpass(), swapchain.getExtent(), swapchain.getFramebuffer(swapchainImageIndex));
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
+        swapchain.getRenderpass(), 
+        swapchain.getExtent(), 
+        swapchain.getFramebuffer(swapchainImageIndex));
 
 	//connect clear values
 	rpInfo.clearValueCount = 2;
-
-	VkClearValue clearValues[] = { clearValue, depthClear };
-
 	rpInfo.pClearValues = &clearValues[0];
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -387,14 +393,13 @@ void VulkanEngine::draw()
 	submit.pWaitDstStageMask = &waitStage;
 
 	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores = &_presentSemaphore;
-
+	submit.pWaitSemaphores = &_presentSemaphore[_currentFrame];
 	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores = &_renderSemaphore;
+	submit.pSignalSemaphores = &_renderSemaphore[_currentFrame];
 
 	//submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(device.getPresentQueue(), 1, &submit, _renderFence));
+	VK_CHECK(vkQueueSubmit(device.getPresentQueue(), 1, &submit, _renderFence[_currentFrame]));
 
 	//prepare present
 	// this will put the image we just rendered to into the visible window.
@@ -405,10 +410,8 @@ void VulkanEngine::draw()
     VkSwapchainKHR swapChains[] = {swapchain.getSwapchain()};
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.swapchainCount = 1;
-
-	presentInfo.pWaitSemaphores = &_renderSemaphore;
+	presentInfo.pWaitSemaphores = &_renderSemaphore[_currentFrame];
 	presentInfo.waitSemaphoreCount = 1;
-
 	presentInfo.pImageIndices = &swapchainImageIndex;
 
     result = vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
@@ -418,8 +421,8 @@ void VulkanEngine::draw()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-	//increase the number of frames drawn
-	_frameNumber++;    
+	//next frame 0 -> to MAX_FRAMES_IN_FLIGHT -1    
+	_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;    
 }
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd)
