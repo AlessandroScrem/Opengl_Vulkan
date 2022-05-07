@@ -27,20 +27,15 @@ struct DeletionQueue
         for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
             (*it)(); //call functors
         }
-
         deletors.clear();
     }
 };
 
-
-struct RenderObject {
-	
+struct RenderObject {	
     std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
 	std::unique_ptr<VulkanPipeline>  pipeline;
 	std::unique_ptr<VulkanUbo> ubo;
 };
-
-const unsigned int MAX_FRAMES_IN_FLIGHT = 2;    
 
 class VulkanEngine : public Engine
 {
@@ -54,7 +49,6 @@ public:
 private:
 
     // -----------------------
-    // -----------------------
     void initGUI();
     void init_shaders();
     void init_fixed();
@@ -65,26 +59,26 @@ private:
     void cleanup_GUI();
 
     void draw();
-    void draw_objects(VkCommandBuffer cmd);  
-    void draw_fixed(VkCommandBuffer cmd); 
-    void draw_overlay(VkCommandBuffer cmd);
+    void draw_objects(VkCommandBuffer cmd, uint32_t imageIndex);  
+    void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
+    void draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex);
 
     void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();   
 
-    Window window{EngineType::Vulkan, Engine::input_};
-    
+    // -----------------------
+    Window window{EngineType::Vulkan, Engine::input_};  
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
     VulkanImage vulkanimage{device};
 
+    //------------------------------------
     std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;
     std::unordered_map< std::string, RenderObject > _fixed_objects;
     std::vector<RenderObject> _renderables;
- 
 
     //------------------------------------
-    //------------------------------------
+    int _currentFrame {0};
     const int MAX_FRAMES_IN_FLIGHT = 2;
     std::vector<VkSemaphore> _presentSemaphore;
     std::vector<VkSemaphore> _renderSemaphore;
@@ -92,17 +86,13 @@ private:
     std::vector<VkCommandPool> _commandPool;
 	std::vector<VkCommandBuffer> _mainCommandBuffer;
 
+    //------------------------------------
     DeletionQueue _mainDeletionQueue;
-
-
-    int _currentFrame {0};
 
     //------------------------------------
     // GUI globals
     const bool _overlay = true;
     VkDescriptorPool _gui_DescriptorPool = VK_NULL_HANDLE; 
-
-    //------------------------------------
 
 };
 

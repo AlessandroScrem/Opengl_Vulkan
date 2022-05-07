@@ -15,7 +15,7 @@ public:
     VkExtent2D getExtent(){ return swapChainExtent;}
     VkRenderPass getRenderpass() { return renderPass; }
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
-    VkSwapchainKHR getSwapchain() { return swapChain; }
+    VkSwapchainKHR  getSwapchain() { return swapChain; }
     size_t getSwapchianImageSize() { return swapChainImages.size(); }
 
     void cleanupSwapChain();

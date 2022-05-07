@@ -12,23 +12,11 @@ VulkanEngine::VulkanEngine()
     SPDLOG_DEBUG("constructor");
 
     init_shaders();
-    SPDLOG_TRACE("init_shaders");
-
     init_fixed();
-    SPDLOG_TRACE("init_fixed");    
-
     init_renderables();
-    SPDLOG_TRACE("init_randerables");    
-
     init_commands();
-    SPDLOG_TRACE("createCommandBuffers");
-
     initGUI();
-    SPDLOG_TRACE("initGUI");
-
 	init_sync_structures();  
-    SPDLOG_TRACE("createSyncObjects");
-
 }
 
 VulkanEngine::~VulkanEngine() 
@@ -36,7 +24,6 @@ VulkanEngine::~VulkanEngine()
     SPDLOG_DEBUG("destructor");
 
     cleanup_GUI();
-
     _mainDeletionQueue.flush();
 }
 
@@ -68,6 +55,8 @@ void VulkanEngine::run()
 
 void VulkanEngine::init_shaders()
 {
+    SPDLOG_TRACE("init_shaders");
+       
     _shaders.emplace("phong", std::make_unique<VulkanShader>(device, GLSL::PHONG) );  
     _shaders.emplace("normalmap", std::make_unique<VulkanShader>(device, GLSL::NORMALMAP) );  
     _shaders.emplace("texture", std::make_unique<VulkanShader>(device, GLSL::TEXTURE) );  
@@ -76,6 +65,8 @@ void VulkanEngine::init_shaders()
 
 void VulkanEngine::initGUI()
 {
+    SPDLOG_TRACE("initGUI");
+
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForVulkan(window.getWindowPtr(), true);
 
@@ -147,11 +138,12 @@ void VulkanEngine::initGUI()
         
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
-
 }
 
 void VulkanEngine::init_fixed()
 {
+    SPDLOG_TRACE("init_fixed"); 
+    
     //create ubo
     auto fixed_ubo   = std::make_unique<VulkanUbo>(device, swapchain);
     fixed_ubo->model = Model::axis().get_tranform();
@@ -183,6 +175,8 @@ void VulkanEngine::init_fixed()
 
 void VulkanEngine::init_renderables()
 { 
+    SPDLOG_TRACE("init_randerables");  
+
     //auto  &sh = *_shaders.at("normalmap");
     auto  &sh = *_shaders.at("texture");
 
@@ -260,10 +254,9 @@ void VulkanEngine::recreateSwapChain()
     }
 }
 
-
-
 void VulkanEngine::init_sync_structures()
 {
+    SPDLOG_TRACE("createSyncObjects");
 
     _presentSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
     _renderSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
@@ -275,8 +268,6 @@ void VulkanEngine::init_sync_structures()
 	//we want the fence to start signalled so we can wait on it on the first frame
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
-
-
     
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
@@ -293,13 +284,12 @@ void VulkanEngine::init_sync_structures()
             vkDestroyFence(device.getDevice(), _renderFence[i], nullptr);
             });   
     }
-}
-    
-
-	
+}	
 
 void VulkanEngine::init_commands()
-{   
+{ 
+    SPDLOG_TRACE("createCommandBuffers");
+  
     _commandPool.resize(MAX_FRAMES_IN_FLIGHT);
     _mainCommandBuffer.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -320,6 +310,10 @@ void VulkanEngine::init_commands()
 
 void VulkanEngine::draw()
 {
+    if (window.framebufferResized()){
+        recreateSwapChain(); 
+    }
+
 	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
 	VK_CHECK(vkWaitForFences(device.getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
 	VK_CHECK(vkResetFences(device.getDevice(), 1, &_renderFence[_currentFrame]) );
@@ -332,9 +326,8 @@ void VulkanEngine::draw()
 	VkResult  result = vkAcquireNextImageKHR(device.getDevice(), swapchain.getSwapchain(), 1000000000, 
         _presentSemaphore[_currentFrame], nullptr,&swapchainImageIndex);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        recreateSwapChain();
-        return;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR ) {
+        spdlog::error("VK_ERROR_OUT_OF_DATE_KHR");
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
@@ -374,9 +367,9 @@ void VulkanEngine::draw()
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        draw_objects(cmd);
-        draw_fixed(cmd);
-        draw_overlay(cmd);
+        draw_objects(cmd, swapchainImageIndex);
+        draw_fixed(cmd, swapchainImageIndex);
+        draw_overlay(cmd, swapchainImageIndex);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -407,25 +400,25 @@ void VulkanEngine::draw()
 	// as its necessary that drawing commands have finished before the image is displayed to the user
 	VkPresentInfoKHR presentInfo = vkinit::present_info();
 
-    VkSwapchainKHR swapChains[] = {swapchain.getSwapchain()};
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pWaitSemaphores = &_renderSemaphore[_currentFrame];
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &swapchainImageIndex;
+    VkSwapchainKHR swapChains[]     = {swapchain.getSwapchain()};
+	presentInfo.pSwapchains         = swapChains;
+	presentInfo.swapchainCount      = 1;
+	presentInfo.pWaitSemaphores     = &_renderSemaphore[_currentFrame];
+	presentInfo.waitSemaphoreCount  = 1;
+	presentInfo.pImageIndices       = &swapchainImageIndex;
 
     result = vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.framebufferResized()){
-        recreateSwapChain();
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR){              
+        spdlog::error("VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR");
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-	//next frame 0 -> to MAX_FRAMES_IN_FLIGHT -1    
+	//next frame 0 -> MAX_FRAMES_IN_FLIGHT -1    
 	_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;    
 }
 
-void VulkanEngine::draw_objects(VkCommandBuffer cmd)
+void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 {
     // for(  auto & ro : _renderables){
 
@@ -436,13 +429,13 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
         VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
 
 	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline()); 
-        ro.ubo->bind(0);
+        ro.ubo->bind(imageIndex);
 
-        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
-        size_t indexsize = vertexbuffer.getIndexSize();
-        VkDeviceSize offsets[] = {0};
-        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
+        VkBuffer vertexBuffers[]        = {vertexbuffer.getVertexBuffer()};
+        VkBuffer indexBuffer            = vertexbuffer.getIndexBuffer();
+        size_t indexsize                = vertexbuffer.getIndexSize();
+        VkDeviceSize offsets[]          = {0};
+        VkDescriptorSet descriptorSet   = vertexbuffer.getDescriptorSet(0);
         VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
 
         vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
@@ -452,67 +445,67 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
     // }   
 }
 
-void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
+void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
 {
         
-        RenderObject & ro = _fixed_objects.at("axis");
+    RenderObject & ro = _fixed_objects.at("axis");
 
-        VulkanPipeline &pipeline = *ro.pipeline;
-        VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
-        
-        int x, y;
-        window.extents(x, y);
-        // set new world origin to bottom left + offset
-        float offset = 50; 
-        float left   = -offset;
-        float right  = x-offset;
-        float bottom = y-offset;
-        float top    = -offset;
-   
-        ro.ubo->view = ourCamera.GetViewMatrix();
-        ro.ubo->proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
+    VulkanPipeline &pipeline = *ro.pipeline;
+    VulkanVertexBuffer &vertexbuffer = *ro.vertexbuffer;
+    
+    int x, y;
+    window.extents(x, y);
+    // set new world origin to bottom left + offset
+    float offset = 50; 
+    float left   = -offset;
+    float right  = x-offset;
+    float bottom = y-offset;
+    float top    = -offset;
 
-	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
-        ro.ubo->bind(0);
+    ro.ubo->view = ourCamera.GetViewMatrix();
+    ro.ubo->proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
 
-        VkBuffer vertexBuffers[] = {vertexbuffer.getVertexBuffer()};
-        VkBuffer indexBuffer = vertexbuffer.getIndexBuffer();
-        size_t indexsize = vertexbuffer.getIndexSize();
-        VkDeviceSize offsets[] = {0};
-        VkDescriptorSet descriptorSet = vertexbuffer.getDescriptorSet(0);
-        VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
+    ro.ubo->bind(imageIndex);
 
-        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0); 
+    VkBuffer vertexBuffers[]        = {vertexbuffer.getVertexBuffer()};
+    VkBuffer indexBuffer            = vertexbuffer.getIndexBuffer();
+    size_t indexsize                = vertexbuffer.getIndexSize();
+    VkDeviceSize offsets[]          = {0};
+    VkDescriptorSet descriptorSet   = vertexbuffer.getDescriptorSet(0);
+    VkPipelineLayout pipelineLayout = pipeline.getPipelineLayout();
+
+    vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0); 
         
 }
 
-void VulkanEngine::draw_overlay(VkCommandBuffer cmd)
+void VulkanEngine::draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex)
 {
-        if(!_overlay){
-            return;
-        }
+    if(!_overlay){
+        return;
+    }
 
-        // feed inputs to dear imgui, start new frame
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
- 
-        // render your GUI
-		ImGui::Begin("Triangle Position/Color");
-            static float rotation = 0.0;
-            ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
-            static float translation[] = {0.0, 0.0};
-            ImGui::SliderFloat2("position", translation, -1.0, 1.0);
-            static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
-            // color picker
-            ImGui::ColorEdit3("color", color);
-        ImGui::End();
-        
-        ImGui::Render();
+    // feed inputs to dear imgui, start new frame
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
-        ImDrawData* draw_data = ImGui::GetDrawData();
-        ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
+    // render your GUI
+    ImGui::Begin("Triangle Position/Color");
+        static float rotation = 0.0;
+        ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
+        static float translation[] = {0.0, 0.0};
+        ImGui::SliderFloat2("position", translation, -1.0, 1.0);
+        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
+        // color picker
+        ImGui::ColorEdit3("color", color);
+    ImGui::End();
+    
+    ImGui::Render();
+
+    ImDrawData* draw_data = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
 }

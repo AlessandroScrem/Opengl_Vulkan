@@ -166,7 +166,7 @@ void Window::registerCallbacks()
     // register window resize
     glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height) { 
         //does nothing
-        spdlog::info("window resized");   
+        // spdlog::info("window resized");   
     });
 
     // register window minimize

@@ -128,11 +128,11 @@ void VulkanSwapchain::createSwapchain()
 
     // TODO: maybe move Images creation outside class?
     // get swapchain images number
-    vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr);
+    VK_CHECK(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr) );
     swapChainImages.resize(imageCount);
     
     // get swapchain images to vector
-    vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, swapChainImages.data());
+    VK_CHECK(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, swapChainImages.data()) );
 
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
