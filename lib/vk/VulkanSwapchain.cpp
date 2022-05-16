@@ -1,3 +1,4 @@
+#include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "vk_initializers.h"
 

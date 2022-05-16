@@ -1,13 +1,13 @@
 #pragma once
-#include "VulkanDevice.hpp"
-#include "VulkanSwapchain.hpp"
-//common lib
 #include <vertex.h>
+
+class VulkanDevice;
+
 
 class VulkanUbo : public  UniformBufferObject
 {
 public:
-    VulkanUbo(VulkanDevice &device, VulkanSwapchain &swapchian);
+    VulkanUbo(VulkanDevice &device, size_t sc_images);
     ~VulkanUbo();
     void createUniformBuffers();
     void cleanupUniformBuffers();
@@ -17,7 +17,7 @@ public:
 private:
 
     VulkanDevice &device;
-    VulkanSwapchain &swapchain;
+    size_t swapchainImages{};
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;

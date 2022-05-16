@@ -1,9 +1,7 @@
+#include "VulkanDevice.hpp"
 #include "VulkanUbo.hpp"
 
-//lib
-#include <glm/gtc/type_ptr.hpp>
-
-VulkanUbo::VulkanUbo(VulkanDevice &device, VulkanSwapchain &swapchain) : device{device}, swapchain{swapchain}
+VulkanUbo::VulkanUbo(VulkanDevice &device, size_t sc_images) : device{device}, swapchainImages{sc_images}
 {
     SPDLOG_DEBUG("constructor");
     createUniformBuffers();
@@ -15,13 +13,9 @@ VulkanUbo::~VulkanUbo()
     cleanupUniformBuffers();
 }
 
-// Necessita
-// swapchain.getSwapchianImageSize()
 void VulkanUbo::cleanupUniformBuffers() 
 {   
     SPDLOG_TRACE("cleanupUniformBuffers");
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
     for (size_t i = 0; i < swapchainImages ; i++) {
         vkDestroyBuffer(device.getDevice(), uniformBuffers[i], nullptr);
         vkFreeMemory(device.getDevice(), uniformBuffersMemory[i], nullptr);
@@ -29,15 +23,12 @@ void VulkanUbo::cleanupUniformBuffers()
 }
 
 
-// Necessita
-// swapchain.getSwapchianImageSize()
 void VulkanUbo::createUniformBuffers() 
 {
     SPDLOG_TRACE("createUniformBuffers");
 
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
     uniformBuffers.resize(swapchainImages);
     uniformBuffersMemory.resize(swapchainImages);
 
@@ -50,7 +41,8 @@ void VulkanUbo::createUniformBuffers()
         }
 }
 
-// called by VulkanEngine::drawframe()
+//lib
+#include <glm/gtc/type_ptr.hpp>
 void VulkanUbo::bind(uint32_t currentImage) 
 {
     void* data;

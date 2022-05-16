@@ -1,3 +1,4 @@
+#include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"
 #include "vk_initializers.h"
 

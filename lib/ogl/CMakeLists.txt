@@ -7,7 +7,7 @@ target_sources(ogl_lib
         OpenGLEngine.cpp
         InitOpengl.cpp
         OpenglVertexBuffer.hpp
-        OpenglVertexBuffer.hpp
+        OpenglVertexBuffer.cpp
         OpenglImage.hpp
         OpenglImage.cpp
         OpenglShader.hpp

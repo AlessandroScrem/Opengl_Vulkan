@@ -1,11 +1,6 @@
 #pragma once
-#include "VulkanDevice.hpp"
-#include "VulkanSwapchain.hpp"
-#include "VulkanUbo.hpp"
-#include "VulkanImage.hpp"
 // lib common
 #include <baseclass.hpp>
-#include <mytypes.hpp>
 #include <glsl_constants.h>
 // std
 #include <vector>
@@ -43,13 +38,16 @@ static const std::array<VkVertexInputAttributeDescription, 4> getAttributeDescri
 
     return attributeDescriptions;
 }
-
+class VulkanDevice;
+class VulkanSwapchain;
+class VulkanUbo;
+class VulkanImage;
 
 class VulkanShader : public Shader
 { 
 struct ShaderBindigs{
-    std::unique_ptr<VulkanImage> image = nullptr;
-    std::unique_ptr<VulkanUbo>   ubo = nullptr;
+    std::unique_ptr<VulkanImage> image;
+    std::unique_ptr<VulkanUbo>   ubo;
     uint32_t    imageBindig = 0;
     uint32_t    uboBindig = 0; 
 
@@ -59,12 +57,10 @@ public:
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();
 
-    uint32_t size() {return static_cast<uint32_t>( shaderStages.size() );}
-    VkPipelineShaderStageCreateInfo* data() {return shaderStages.data();}
-    std::vector<VkPipelineShaderStageCreateInfo>  * get() {return  &shaderStages;}
     const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
     const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
+    VulkanUbo & getUbo();
    
     void cleanupDescriptorPool();
     void cleanupPipeline();
@@ -76,12 +72,12 @@ public:
     void setTopology(VkPrimitiveTopology mode);
     void buid();
 
-    VulkanUbo & getUbo();
 
 private:
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void buildShaders();  
+    void createPipeline();
 
     // ----------------------------
     void createDescriptorSetLayout();
@@ -92,10 +88,8 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
-    const bool Opengl_compatible_viewport = false; 
 
     // ----------------------------
-    void createPipeline();
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL; 
     VkPipelineLayout pipelineLayout;
@@ -105,6 +99,7 @@ private:
     VulkanSwapchain &swapchain;
     GLSL::ShaderType shaderType;
 
+    const bool Opengl_compatible_viewport = false; 
     bool precompiled = true;
 
     VkShaderModule vertModule;

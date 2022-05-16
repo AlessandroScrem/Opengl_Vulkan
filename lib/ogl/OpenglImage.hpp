@@ -1,17 +1,12 @@
 #pragma once
-//common
-#include <mytypes.hpp>
-
 //std
 #include <string>
-
-
 
 class OpenglImage
 {
 public:
     OpenglImage(const std::string  &filename = "data/textures/viking_room.png");
-    ~OpenglImage(){   SPDLOG_DEBUG("destructor"); }
+    ~OpenglImage();
 
     void bind();
 private:

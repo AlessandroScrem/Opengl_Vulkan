@@ -1,3 +1,7 @@
+#include "VulkanDevice.hpp"
+#include "VulkanSwapchain.hpp"
+#include "VulkanUbo.hpp"
+#include "VulkanImage.hpp"
 #include "VulkanShader.hpp"
 #include "vk_initializers.h"
 // lib
@@ -299,7 +303,8 @@ void VulkanShader::addTexture(std::string imagepath , uint32_t binding)
 
 void VulkanShader::addUbo(uint32_t binding)
 { 
-    shaderBindings.ubo = std::make_unique<VulkanUbo>(device, swapchain);   
+    size_t swapchainImageSize = swapchain.getSwapchianImageSize();
+    shaderBindings.ubo = std::make_unique<VulkanUbo>(device, swapchainImageSize);   
     shaderBindings.uboBindig = binding;
 }
 void VulkanShader::addConstant(uint32_t binding){

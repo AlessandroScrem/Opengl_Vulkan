@@ -1,5 +1,9 @@
+#include "OpenglVertexBuffer.hpp"
+#include "OpenglShader.hpp"
+#include "OpenglUbo.hpp"
 #include "OpenGLEngine.hpp"
-
+// common lib
+#include <model.hpp>
 //libs
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -7,11 +11,10 @@
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
+// std
 
 namespace ogl
 {
-
 OpenGLEngine::OpenGLEngine()
 {    
     SPDLOG_DEBUG("constructor"); 
@@ -21,7 +24,6 @@ OpenGLEngine::OpenGLEngine()
     init_shaders();
     init_renderables();
     init_fixed();
-
 }
 
 OpenGLEngine::~OpenGLEngine() 
@@ -37,7 +39,6 @@ void OpenGLEngine::cleanup()
     // Cleanup ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-
 }
 
 void OpenGLEngine::initOpenglGlobalStates() 
@@ -65,10 +66,8 @@ void OpenGLEngine::initOpenglGlobalStates()
     spdlog::info("Opengl GL_MAX_UNIFORM_BUFFER_BINDINGS = {} ", max_uniform_buffer_bindings);
     spdlog::info("Opengl GL_MAX_UNIFORM_BLOCK_SIZE = {} ", max_uniform_blocksize);
 
-
     //enable vsync glfwSwapInterval(0)
     glfwSwapInterval(0);
-
 }
 
 void OpenGLEngine::initGUI()
@@ -83,13 +82,11 @@ void OpenGLEngine::initGUI()
 	if(!ImGui_ImplOpenGL3_Init(glsl_version)){
         throw std::runtime_error("failed to initialize ImGui_ImplOpenGL3_Init!");
     }
-
 }
 
 void OpenGLEngine::init_shaders()
 {
-
-       SPDLOG_TRACE("init_shaders");
+    SPDLOG_TRACE("init_shaders");
     {
         auto shader = std::make_unique<OpenglShader>(GLSL::TEXTURE);
         shader->addUbo(0);
@@ -149,6 +146,15 @@ void OpenGLEngine::init_renderables()
 
     } 
 }
+
+OpenglShader & OpenGLEngine::getShader(std::string name) 
+{
+    auto got = _shaders.find (name);
+    if ( got == _shaders.end() ){
+        throw std::runtime_error("failed to find shader!");
+    }
+    return static_cast<OpenglShader&>(*got->second);
+} 
 
 void OpenGLEngine::run() 
 {  

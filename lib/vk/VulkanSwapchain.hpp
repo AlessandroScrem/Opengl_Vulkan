@@ -1,5 +1,6 @@
 #pragma once
-#include "VulkanDevice.hpp"
+class VulkanDevice;
+class Window;
 
 class VulkanSwapchain
 {

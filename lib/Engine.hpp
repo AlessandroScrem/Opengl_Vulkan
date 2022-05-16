@@ -5,7 +5,6 @@
 #include <baseclass.hpp>
 #include <mytypes.hpp>
 #include <camera.hpp>
-#include <model.hpp>
 #include <multiplatform_input.hpp>
 //std
 #include <vector>

@@ -1,10 +1,8 @@
 #pragma once
-
-#include "VulkanDevice.hpp"
-#include "VulkanSwapchain.hpp"
-
 //std
 #include <string>
+
+class VulkanDevice;
 
 class VulkanImage
 {

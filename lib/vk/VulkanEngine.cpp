@@ -1,5 +1,10 @@
 #include "VulkanEngine.hpp"
+#include "VulkanUbo.hpp"
+#include "VulkanVertexBuffer.hpp"
+#include "VulkanShader.hpp"
 #include "vk_initializers.h"
+//common lib
+#include "model.hpp"
 //lib
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -205,6 +210,14 @@ void VulkanEngine::init_fixed()
 }
 
 
+VulkanShader & VulkanEngine::getShader(std::string name) 
+{
+    auto got = _shaders.find (name);
+    if ( got == _shaders.end() ){
+        throw std::runtime_error("failed to find shader!");
+    }
+    return static_cast<VulkanShader&>(*got->second);
+}  
  
 void VulkanEngine::updateUbo(VulkanUbo &ubo)
 {

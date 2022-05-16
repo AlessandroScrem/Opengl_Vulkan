@@ -1,17 +1,12 @@
 #pragma once
 
+#include "../Engine.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
-#include "VulkanUbo.hpp"
-#include "VulkanVertexBuffer.hpp"
-#include "VulkanImage.hpp"
-#include "VulkanShader.hpp"
-#include "../Engine.hpp"
 //common lib
 #include <baseclass.hpp>
 #include <Window.hpp>
 #include <multiplatform_input.hpp>
-#include <unordered_map>
 #include <deque>
 
 struct DeletionQueue
@@ -31,6 +26,8 @@ struct DeletionQueue
     }
 };
 
+class VulkanShader;
+class VulkanUbo;
 
 class VulkanEngine : public Engine
 {
@@ -61,23 +58,18 @@ private:
     void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();
 
-    VulkanShader & getShader(std::string name) {
-        auto got = _shaders.find (name);
-        if ( got == _shaders.end() ){
-            throw std::runtime_error("failed to find shader!");
-        }
-        return static_cast<VulkanShader&>(*got->second);
-    }   
+    /**
+     * @brief Get the Shader object from shaders collection
+     * 
+     * @param name shader name
+     * @return VulkanShader& 
+     */
+    VulkanShader & getShader(std::string name); 
 
     // -----------------------
     Window window{EngineType::Vulkan, Engine::input_};  
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    // VulkanImage vulkanimage{device};
-    //VulkanUbo global_ubo{device, swapchain};
-
-    //------------------------------------
-
 
     //------------------------------------
     int _currentFrame {0};

@@ -1,9 +1,8 @@
 #include "OpenglImage.hpp"
-
+// common lib
+#include "mytypes.hpp"
 // stb lib    
 #include <stb_image.h>
-
-// libs
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -47,7 +46,12 @@ OpenglImage::OpenglImage(const std::string  &filename/*  = "data/textures/viking
     stbi_image_free(pixels);
   
     id =  textureID;
-}  
+} 
+
+OpenglImage::~OpenglImage()
+{   
+    SPDLOG_DEBUG("destructor");
+}
 
 void OpenglImage::bind(){
     glBindTexture(GL_TEXTURE_2D, id);
