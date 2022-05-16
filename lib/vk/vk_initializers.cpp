@@ -159,20 +159,12 @@ namespace vkinit
 			info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		}
 
-		info.depthClampEnable = VK_FALSE;
-		//discards all primitives before the rasterization stage if enabled which we don't want
-		info.rasterizerDiscardEnable = VK_FALSE;
-
 		info.polygonMode = polygonMode;
-		info.lineWidth = 1.0f;
-		//no backface cull
-		//info.cullMode = VK_CULL_MODE_BACK_BIT;
 		info.cullMode = VK_CULL_MODE_NONE ;
-		//no depth bias
+		info.depthClampEnable = VK_FALSE;
+		info.rasterizerDiscardEnable = VK_FALSE;
 		info.depthBiasEnable = VK_FALSE;
-		info.depthBiasConstantFactor = 0.0f;
-		info.depthBiasClamp = 0.0f;
-		info.depthBiasSlopeFactor = 0.0f;
+		info.lineWidth = 1.0f;
 
 		return info;
 	}

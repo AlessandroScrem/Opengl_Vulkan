@@ -5,21 +5,14 @@
 #include "OpenglShader.hpp"
 #include "OpenglUbo.hpp"
 // common
+#include <baseclass.hpp>
 #include <Window.hpp>
 // std
 #include <unordered_map>
 //libs
 
-
-namespace ogl{
-
-struct RenderObject {
-    
-    std::unique_ptr<OpenglVertexBuffer> vertexbuffer;
-    std::string  shader;
-    std::unique_ptr<OpenglUbo> ubo;
-};
-
+namespace ogl
+{
 
 class OpenGLEngine : public Engine
 {    
@@ -43,15 +36,21 @@ private:
     void draw_objects();
     void updateUbo(OpenglUbo &ubo);
 
+    OpenglShader & getShader(std::string name) {
+        auto got = _shaders.find (name);
+        if ( got == _shaders.end() ){
+            throw std::runtime_error("failed to find shader!");
+        }
+        return static_cast<OpenglShader&>(*got->second);
+    }   
+
     void clearBackground();
     
     Window window{EngineType::Opengl, Engine::input_};
 
     const bool _overlay = true;
 
-    std::unordered_map< std::string, std::unique_ptr<OpenglShader> > _shaders;
-    std::vector<RenderObject> _renderables;
-    std::unordered_map<std::string, RenderObject> _fixed_objects;
 };
 
-}// namespace ogl
+}//namespace ogl
+

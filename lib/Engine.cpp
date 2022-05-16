@@ -11,25 +11,12 @@ Engine::Engine(){
     ngn::ServiceLocator::Provide();
     MapActions();
 
-    loadModels();
 }
 
 Engine::~Engine(){
     SPDLOG_DEBUG("destructor");    
 }
 
-void Engine::loadModels()
-{
-    constexpr char  viking_room[] = "data/models/viking_room.obj";
-    constexpr char  monkey[] = "data/models/suzanne.obj";
-
-    Model vr(viking_room, Model::UP::ZUP);
-    glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    vr.set_transform(trasf);
-
-    _models.push_back( vr);
-    _models.push_back(Model(monkey, Model::UP::YUP));
-}
 
 std::unique_ptr<Engine>
 Engine::create(EngineType type)
@@ -279,7 +266,7 @@ void Engine::MapActions()
 
             if (value){
                 _model_index += 1;
-                if(_model_index >= _models.size()) _model_index = 0;
+                if(_model_index >= _renderables.size()) _model_index = 0;
                 shouldupdate = true;               
             }else{                     
                 shouldupdate = false;

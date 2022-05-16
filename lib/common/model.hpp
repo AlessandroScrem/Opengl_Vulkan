@@ -18,9 +18,8 @@ public:
     Model(const std::vector<Vertex> &vertices, std::vector<uint16_t> &indices,  UP up = UP::YUP );
     ~Model();
 
-    static Model& axis();
-
     void load(const char * modelpath);
+    static Model& axis();
 
     size_t verticesSize() const  {return vertices.size(); }
     size_t indicesSize() const   {return indices.size(); }

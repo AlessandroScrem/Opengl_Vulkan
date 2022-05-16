@@ -8,8 +8,8 @@
 // common
 #include <vertex.h>
 
-struct OpenglUbo : UniformBufferObject{
-
+class OpenglUbo : public UniformBufferObject{
+public:
     OpenglUbo(){
         glGenBuffers(1, &ubo);
     }

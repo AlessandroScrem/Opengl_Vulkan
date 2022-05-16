@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 // common
+#include <baseclass.hpp>
 #include <vertex.h>
 #include <model.hpp>
 // std
@@ -42,7 +43,7 @@ struct VertexInputAttributeDescription {
     const std::vector<uint16_t> indices = {0, 1, 2};  
 */
 
-class OpenglVertexBuffer
+class OpenglVertexBuffer : public RenderObject
 {
 public:   
     static std::array<VertexInputAttributeDescription, 4> getAttributeDescriptions() {
@@ -78,12 +79,12 @@ public:
         return attributeDescriptions;
     }
 
-    OpenglVertexBuffer(Model &model) : model{model}
+    OpenglVertexBuffer(Model &model)
     {
-        auto vertices_size = model.verticesSize();
-        auto vertices_data = model.verticesData();
-        auto indices_size  = model.indicesSize();
-        auto indices_data  = model.indicesData();
+        _indices_size       = static_cast<GLsizei>(model.indicesSize());
+        auto vertices_size  = model.verticesSize();
+        auto vertices_data  = model.verticesData();
+        auto indices_data   = model.indicesData();
 
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -95,7 +96,7 @@ public:
         glBufferData(GL_ARRAY_BUFFER, vertices_size * sizeof(Vertex), vertices_data, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(Index), indices_data, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices_size * sizeof(Index), indices_data, GL_STATIC_DRAW);
         
         setVertexAttribPointer();
 
@@ -111,9 +112,7 @@ public:
 
     void draw(GLenum mode){
         glBindVertexArray(VAO); 
-        glBindTexture(GL_TEXTURE_2D, texture.getId());
-        glDrawElements(mode, (GLsizei) model.indicesSize() , GL_UNSIGNED_INT, 0);
-        glActiveTexture(GL_TEXTURE1);
+        glDrawElements(mode, (GLsizei) _indices_size , GL_UNSIGNED_INT, 0);
     }
 
 private:
@@ -132,12 +131,8 @@ private:
             );
         }
     }
-
-    OpenglImage texture{"data/textures/viking_room.png"};
     
     unsigned int VBO, VAO, EBO;
-
-    Model &model; 
-
+    GLsizei _indices_size;
 };
 

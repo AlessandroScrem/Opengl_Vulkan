@@ -8,7 +8,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-//std
+
 namespace ogl
 {
 
@@ -88,36 +88,66 @@ void OpenGLEngine::initGUI()
 
 void OpenGLEngine::init_shaders()
 {
-    _shaders.emplace("phong", std::make_unique<OpenglShader>(GLSL::PHONG) );  
-    _shaders.emplace("normalmap", std::make_unique<OpenglShader>(GLSL::NORMALMAP) );  
-    _shaders.emplace("axis", std::make_unique<OpenglShader>(GLSL::AXIS) );  
+
+       SPDLOG_TRACE("init_shaders");
+    {
+        auto shader = std::make_unique<OpenglShader>(GLSL::TEXTURE);
+        shader->addUbo(0);
+        shader->addTexture("data/textures/viking_room.png", 1);
+        shader->buid();
+
+        _shaders.emplace("texture", std::move(shader));
+    }
+    {
+        auto shader = std::make_unique<OpenglShader>(GLSL::NORMALMAP);
+        shader->addUbo(0);
+        shader->buid();
+
+        _shaders.emplace("normalmap", std::move(shader));
+    }
+    {
+        auto shader = std::make_unique<OpenglShader>(GLSL::AXIS);
+        shader->addUbo(0);
+        shader->setPolygonMode(GL_LINE);
+        shader->setTopology(GL_LINES);
+        shader->buid();
+
+        _shaders.emplace("axis", std::move(shader));
+    } 
 }
 
 void OpenGLEngine::init_fixed()
 { 
-    auto fixed_ubo   = std::make_unique<OpenglUbo>();
-    fixed_ubo->model = Model::axis().get_tranform();
-    _fixed_objects.emplace("axis", 
-        RenderObject{
-            std::make_unique<OpenglVertexBuffer>(Model::axis()),
-            "axis", 
-            std::move(fixed_ubo) }
-    );  
+    auto & model = Model::axis();
+    std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(Model::axis());
+    object->shader = "axis";
+    object->model = model.get_tranform();
+    _fixed_objects.emplace("axis", std::move(object));    
 }
 
 void OpenGLEngine::init_renderables()
 {
 
-    for(auto & mod : _models)
-    {  
-        auto obj_ubo = std::make_unique<OpenglUbo>();
-        obj_ubo->model = mod.get_tranform(); 
-        _renderables.push_back(RenderObject{
-            std::move(std::make_unique<OpenglVertexBuffer>(mod)),
-            "normalmap", 
-            std::move(obj_ubo) }
-        ); 
-    }   
+    {
+        Model model("data/models/viking_room.obj", Model::UP::ZUP);
+        // rotate toward camera
+        glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model.set_transform(trasf);
+
+        std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(model);
+        object->shader = "texture";
+        object->model = model.get_tranform();
+        _renderables.push_back(std::move(object));
+    }
+
+    {
+        Model model("data/models/suzanne.obj", Model::UP::YUP);
+        std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>( model);
+        object->shader = "normalmap";
+        object->model = model.get_tranform();
+        _renderables.push_back(std::move(object));
+
+    } 
 }
 
 void OpenGLEngine::run() 
@@ -177,9 +207,10 @@ void OpenGLEngine::draw_overlay()
 
 void OpenGLEngine::draw_fixed()
 {
-    RenderObject & ro = _fixed_objects.at("axis");
-    OpenglVertexBuffer & vb = *ro.vertexbuffer;
-    OpenglShader & shader = *_shaders.at(ro.shader);
+    RenderObject & ro                   = *_fixed_objects.at("axis");
+    OpenglShader &shader                = getShader(ro.shader);
+    OpenglUbo & ubo                     = shader.getUbo();
+    OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
     int x, y;
     window.extents(x, y);
@@ -190,39 +221,43 @@ void OpenGLEngine::draw_fixed()
     float right  = x-offset;
     float bottom = -offset;
     float top    = y-offset;
- 
-    ro.ubo->view = ourCamera.GetViewMatrix();
-    ro.ubo->proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
-    ro.ubo->bind();
+
+    ubo.view = ourCamera.GetViewMatrix();
+    ubo.proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
+    ubo.bind();
 
     shader.use();
-    vb.draw(GL_LINES);
+    vertexbuffer.draw(shader.getTopology());
     
 }
 
 void OpenGLEngine::draw_objects()
 {
-        RenderObject & ro = _renderables.at(_model_index);
-        OpenglVertexBuffer &vertexBuffer = *ro.vertexbuffer;
-        OpenglShader & shader = *_shaders.at(ro.shader);
-        // render
-        updateUbo(*ro.ubo);
-    
-        ro.ubo->bind();
+    RenderObject & ro                   = *_renderables.at(_model_index);
+    OpenglShader &shader                = getShader(ro.shader);
+    OpenglUbo & ubo                     = shader.getUbo();
+    OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
-        shader.use();
-        vertexBuffer.draw(GL_TRIANGLES);
+    updateUbo(ubo);
+    ubo.model = ro.model;
+
+    // render
+    updateUbo(ubo);
+    ubo.bind();
+
+    shader.use();
+    vertexbuffer.draw(shader.getTopology());
 }
 
 void OpenGLEngine::clearBackground()
 {
-        // set the background color
-        float r = Engine::background.red;
-        float g = Engine::background.green;
-        float b = Engine::background.blue;
-        float a = Engine::background.alpha;
-	    glClearColor(r, g, b, a);
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
+    // set the background color
+    float r = Engine::background.red;
+    float g = Engine::background.green;
+    float b = Engine::background.blue;
+    float a = Engine::background.alpha;
+    glClearColor(r, g, b, a);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
 }
 
 void OpenGLEngine::updateUbo(OpenglUbo &ubo)

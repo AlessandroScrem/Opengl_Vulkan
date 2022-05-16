@@ -2,6 +2,7 @@
 
 #include "ngn_command.hpp"
 //common lib
+#include <baseclass.hpp>
 #include <mytypes.hpp>
 #include <camera.hpp>
 #include <model.hpp>
@@ -36,8 +37,9 @@ protected:
     ngn::MultiplatformInput input_{};
     EngineType engine_type{};
 
-    // default model space is Yup   
-    std::vector<Model> _models{};
+    std::unordered_map< std::string, std::unique_ptr<Shader> > _shaders;
+    std::unordered_map< std::string, std::unique_ptr<RenderObject> > _fixed_objects;
+    std::vector< std::unique_ptr<RenderObject> > _renderables;
     
     Color background{};
     Camera ourCamera{};
@@ -46,11 +48,9 @@ protected:
 
 private:
     void MapActions();
-    void loadModels();
     
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;
-
 
     static std::unique_ptr<Engine> makeVulkan();
     static std::unique_ptr<Engine> makeOpengl();

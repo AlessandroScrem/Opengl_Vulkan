@@ -33,17 +33,13 @@
 - VulkanVertexBuffer
   - createVertexBuffer();
   - createIndexBuffer();
-  - createDescpriptorSetLayout()
-  - createDescriptorPool()
-  - createDescriptorSets()
 
 - VulkanShader
   - buildShaders()
-
-- VulkanPipeline
+  - createDescpriptorSetLayout()
+  - createDescriptorPool()
+  - createDescriptorSets()
   - createPipeline()
-  - pipeLineLayout
-  - graphicsPipeline
 
 - VulkanEngine()
   - create _shaders
@@ -60,11 +56,11 @@
   - vkFreeCommandBuffers()
   - vkDestroySemaphores()
   
-- VulakanPipeline
+- VulkanShader
   - vkDestroyPipeline(graphicsPipeline)
   - vkDestroyPipelineLayout(pipeLineLayout)
-
-- VulkanShader
+  - cleanupDescriptorPool()
+  - destroyDescpriptorSetLayout()
   - vkDestroyShaderModule(vertexmodule)
   - vkDestroyShaderModule(fragmentexmodule)
 
@@ -73,8 +69,6 @@
   - Index FreeMemory();
   - Vertex destroyBuffer()
   - Vertex FreeMemory();
-  - cleanupDescriptorPool()
-  - destroyDescpriptorSetLayout()
 
 - VulkanImage
   - vkDestroy textureSampler

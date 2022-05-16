@@ -13,8 +13,6 @@ target_sources(vk_lib
         VulkanDevice.cpp
         VulkanSwapchain.hpp
         VulkanSwapchain.cpp
-        VulkanPipeline.hpp
-        VulkanPipeline.cpp
         VulkanVertexBuffer.hpp
         VulkanVertexBuffer.cpp
         VulkanImage.hpp

@@ -47,14 +47,65 @@ std::vector<char> compileGlslToSvp(std::string &source, shaderc_shader_kind kind
     return {data.cbegin(), data.cend()};
 }
 
+
+class PipelineBuilder2 {
+public:
+
+	std::vector<VkPipelineShaderStageCreateInfo> *_shaderStages;
+	VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
+	VkPipelineRasterizationStateCreateInfo _rasterizer;
+	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo _multisampling;
+	VkPipelineLayout _pipelineLayout;
+    VkPipelineDepthStencilStateCreateInfo _depthStencil;
+
+	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+};
+
+VulkanShader::VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type /* = GLSL::PHONG */)
+    : device{device}
+    , swapchain{swapchain}
+    , shaderType{type} 
+{
+}
+
 VulkanShader::~VulkanShader(){
     SPDLOG_TRACE("VulkanShader destructor"); 
+
+    cleanupPipeline();
+    cleanupDescriptorPool();
+    vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
+    SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
 
     vkDestroyShaderModule(device.getDevice(), vertModule, nullptr);
     vkDestroyShaderModule(device.getDevice(), fragModule, nullptr);
 }
 
+void VulkanShader::buid(    )
+{
+    buildShaders();                 
 
+    createDescriptorSetLayout();    
+    createDescriptorPool();        
+    createDescriptorSets();         
+
+    createPipeline();              
+}
+
+void VulkanShader::cleanupDescriptorPool()
+{
+    SPDLOG_TRACE("cleanupDescriptorPool");
+    vkDestroyDescriptorPool(device.getDevice(), descriptorPool, nullptr);
+}
+
+void VulkanShader::cleanupPipeline()
+{
+    SPDLOG_TRACE("vkDestroyPipeline");
+    vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
+    SPDLOG_TRACE("vkDestroyPipelineLayout");
+    vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);    
+}
 
 
 VkShaderModule VulkanShader::createShaderModule(const std::vector<char>& code) {
@@ -70,7 +121,6 @@ VkShaderModule VulkanShader::createShaderModule(const std::vector<char>& code) {
 return shaderModule;
 }
 
-
 void VulkanShader::buildShaders(){ 
 
     std::vector<char> vertshader_spv{};
@@ -78,26 +128,24 @@ void VulkanShader::buildShaders(){
     
     if(precompiled)
     {
-        vertshader_spv = GLSL::readFile(GLSL::getname(shaderType) + ".vert.spv");
-        fragshader_spv = GLSL::readFile(GLSL::getname(shaderType) + ".frag.spv");
+        vertshader_spv = GLSL::readFile(GLSL::getPath(shaderType) + ".vert.spv");
+        fragshader_spv = GLSL::readFile(GLSL::getPath(shaderType) + ".frag.spv");
     }else
     {
-        auto glsl_vertshader = GLSL::readFile(GLSL::getname(shaderType) + ".vert");
+        auto glsl_vertshader = GLSL::readFile(GLSL::getPath(shaderType) + ".vert");
         auto vsh_str = std::string(begin(glsl_vertshader), end(glsl_vertshader));
         auto vspv = compileGlslToSvp(vsh_str, shaderc_glsl_vertex_shader);
         vertshader_spv.assign(vspv.begin(), vspv.end());
 
-        auto glsl_fragshader = GLSL::readFile(GLSL::getname(shaderType) + ".frag");
+        auto glsl_fragshader = GLSL::readFile(GLSL::getPath(shaderType) + ".frag");
         auto frag_str = std::string(begin(glsl_fragshader), end(glsl_fragshader));
         auto fspv = compileGlslToSvp(frag_str, shaderc_glsl_fragment_shader);
         fragshader_spv.assign(fspv.begin(), fspv.end());
     }
 
-
     vertModule = createShaderModule(vertshader_spv);
     fragModule = createShaderModule(fragshader_spv);
-
-    
+  
     shaderStages.push_back(
         vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertModule));
         
@@ -105,4 +153,292 @@ void VulkanShader::buildShaders(){
         vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule));
 
 }
+
+void VulkanShader::createDescriptorSetLayout()
+{
+    SPDLOG_TRACE("createDescriptorSetLayout");
+
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings{};
+
+    if(shaderBindings.image){
+        VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.binding = shaderBindings.imageBindig;
+        samplerLayoutBinding.descriptorCount = 1;
+        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+        layoutBindings.push_back(samplerLayoutBinding);
+    }
+    if(shaderBindings.ubo){
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.binding = shaderBindings.uboBindig;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        layoutBindings.push_back(uboLayoutBinding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+    layoutInfo.pBindings = layoutBindings.data();
+
+    if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+
+void VulkanShader::createDescriptorPool() 
+{
+    SPDLOG_TRACE("createDescriptorPool");
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+
+    std::vector<VkDescriptorPoolSize> poolSize{};
+
+    if(shaderBindings.image){
+        VkDescriptorPoolSize samplerPoolSize{};
+        samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages);
+
+        poolSize.push_back(samplerPoolSize);
+    }
+    if(shaderBindings.ubo){
+        VkDescriptorPoolSize uboPoolSize{};
+        uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages); 
+
+        poolSize.push_back(uboPoolSize);
+    }
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
+    poolInfo.pPoolSizes = poolSize.data();
+    poolInfo.maxSets = static_cast<uint32_t>(swapchainImages);
+
+    if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
+void VulkanShader::createDescriptorSets() 
+{
+    SPDLOG_TRACE("createDescriptorSets");
+
+    auto swapchainImages =  swapchain.getSwapchianImageSize();
+
+    std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImages);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(swapchainImages);
+    if (vkAllocateDescriptorSets(device.getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    // populate every descriptor:
+    for (size_t i = 0; i < swapchainImages; i++) {
+        
+        std::vector<VkWriteDescriptorSet> descriptorWrites{};
+        if(shaderBindings.image){
+            auto& imageview = shaderBindings.image->getTextureImageView();
+            auto& sampler = shaderBindings.image->getTextureSampler();
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = imageview;
+            imageInfo.sampler =  sampler;
+
+            VkWriteDescriptorSet imageWrite{};
+            imageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            imageWrite.dstSet = descriptorSets[i];
+            imageWrite.dstBinding = shaderBindings.imageBindig;
+            imageWrite.dstArrayElement = 0;
+            imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            imageWrite.descriptorCount = 1;
+            imageWrite.pImageInfo = &imageInfo;
+
+            descriptorWrites.push_back(imageWrite); 
+        }
+        if(shaderBindings.ubo){
+            auto& uniformBuffers = shaderBindings.ubo->getUniformBuffers();
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet uboWrite{};
+            uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            uboWrite.dstSet = descriptorSets[i];
+            uboWrite.dstBinding = shaderBindings.uboBindig;
+            uboWrite.dstArrayElement = 0;
+            uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            uboWrite.descriptorCount = 1;
+            uboWrite.pBufferInfo = &bufferInfo;
+
+            descriptorWrites.push_back(uboWrite);
+        }
+
+        vkUpdateDescriptorSets(device.getDevice(), 
+                static_cast<uint32_t>(descriptorWrites.size()), 
+                descriptorWrites.data(), 
+                0, nullptr);
+    }
+}
+void VulkanShader::addTexture(std::string imagepath , uint32_t binding)
+{   
+    shaderBindings.image = std::make_unique<VulkanImage>(device, imagepath);
+    shaderBindings.imageBindig = binding;
+}
+
+void VulkanShader::addUbo(uint32_t binding)
+{ 
+    shaderBindings.ubo = std::make_unique<VulkanUbo>(device, swapchain);   
+    shaderBindings.uboBindig = binding;
+}
+void VulkanShader::addConstant(uint32_t binding){
+
+}
+
+void VulkanShader::setPolygonMode(VkPolygonMode mode)
+ {
+     polygonMode = mode;
+ }
+
+ void VulkanShader::setTopology(VkPrimitiveTopology mode)
+ {
+     topology = mode;
+ }
+
+VulkanUbo & VulkanShader::getUbo()
+{
+    return *shaderBindings.ubo;
+}
+ 
+
+void VulkanShader::createPipeline() 
+{ 
+
+    //build the pipeline layout that controls the inputs/outputs of the shader
+	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+
+    VK_CHECK(vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) );  
+
+    //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
+	PipelineBuilder2 pipelineBuilder;
+
+    //use the default shaders
+    pipelineBuilder._shaderStages = &shaderStages;
+    
+    //use the default layout we created
+    pipelineBuilder._pipelineLayout = pipelineLayout;
+  
+    // Fixed functions
+    // Vertex input
+    pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
+
+    //connect the pipeline builder vertex input info to the one we get from Vertex
+    auto bindingDescription = getBindingDescription();
+    auto attributeDescriptions = getAttributeDescriptions();
+
+    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescription.size());
+    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
+    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+  
+    // Input assembly
+    // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(topology);
+
+    // Rasterizer
+    // default polygonmode is VK_POLYGON_MODE_FILL
+    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(polygonMode, Opengl_compatible_viewport);
+
+    // Multisampling 
+    pipelineBuilder._multisampling = vkinit::multisampling_state_create_info(device.getMsaaSamples());
+  
+    // Depth and stencil state
+    pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
+
+    // Color blending
+    pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
+
+    // end 
+    // Fixed functions
+    graphicsPipeline = pipelineBuilder.build_pipeline(device.getDevice(), swapchain.getRenderpass()); 
+}
+
+VkPipeline PipelineBuilder2::build_pipeline(VkDevice device, VkRenderPass pass) {
+
+	//make viewport state dynamic.
+	VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.pNext = nullptr;
+
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = nullptr;
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = nullptr;
+    
+    // Vieewport + Scissor 
+    VkDynamicState dynamicStateEnables[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR}; 
+    VkPipelineDynamicStateCreateInfo dynamicState = {};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.pNext = NULL;
+    dynamicState.pDynamicStates = dynamicStateEnables;
+    dynamicState.dynamicStateCount = 2;
+
+	//setup dummy color blending. We arent using transparent objects yet
+	//the blending is just "no blend", but we do write to the color attachment
+	VkPipelineColorBlendStateCreateInfo colorBlending = {};
+	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlending.pNext = nullptr;
+
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	colorBlending.attachmentCount = 1;
+	colorBlending.pAttachments = &_colorBlendAttachment;
+
+	//build the actual pipeline
+	//we now use all of the info structs we have been writing into into this one to create the pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.pNext = nullptr;
+    pipelineInfo.pDynamicState = &dynamicState;
+	pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages->size());
+	pipelineInfo.pStages = _shaderStages->data();
+	pipelineInfo.pVertexInputState = &_vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &_inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &_rasterizer;
+	pipelineInfo.pMultisampleState = &_multisampling;
+    pipelineInfo.pDepthStencilState = &_depthStencil;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.layout = _pipelineLayout;
+	pipelineInfo.renderPass = pass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+	//it's easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
+	VkPipeline newPipeline;
+	if (vkCreateGraphicsPipelines(
+		device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
+		spdlog::error("failed to create pipeline");
+		return VK_NULL_HANDLE; // failed to create graphics pipeline
+	}
+	else
+	{
+		return newPipeline;
+	}
+}
+
 

@@ -21,35 +21,9 @@ namespace std {
     };
 }  
 
-Model & Model::axis(){
-
-    glm::vec3 origin{0.0f};
-    glm::vec3 x{1.0f, 0.0f, 0.0f};
-    glm::vec3 y{0.0f, 1.0f, 0.0f};
-    glm::vec3 z{0.0f, 0.0f, 1.0f};
-
-    glm::vec3 red{1.0f, 0.0f, 0.0f};
-    glm::vec3 green{0.0f, 1.0f, 0.0f};
-    glm::vec3 blue{0.0f, 0.0f, 1.0f};
-
-    static Model axis{}; 
-    std::vector<Vertex>vertices{};
-    axis.vertices.push_back( Vertex{origin,  blue,  glm::vec3{0.f}, glm::vec3{0.f} } );
-    axis.vertices.push_back( Vertex{x,       blue,  glm::vec3{0.f}, glm::vec3{0.f} } );
-    axis.vertices.push_back( Vertex{origin,  green, glm::vec3{0.f}, glm::vec3{0.f} } );
-    axis.vertices.push_back( Vertex{y,       green, glm::vec3{0.f}, glm::vec3{0.f} } );
-    axis.vertices.push_back( Vertex{origin,  red,   glm::vec3{0.f}, glm::vec3{0.f} } );
-    axis.vertices.push_back( Vertex{z,       red,   glm::vec3{0.f}, glm::vec3{0.f} } );
-
-    axis.indices.push_back(0); axis.indices.push_back(1);
-    axis.indices.push_back(2); axis.indices.push_back(3);
-    axis.indices.push_back(4); axis.indices.push_back(5);
-
-    return axis;
-}
 
 Model::Model(UP up /* = UP::YUP */ ) 
-{    
+{   
     init_tranform(up);
 }
 
@@ -148,4 +122,25 @@ void Model::load(const char *modelpath)
     SPDLOG_INFO("Vertices.size() = {}", vertices.size());   
     SPDLOG_INFO("Indices.size()  = {}", indices.size()); 
    
+}
+
+Model& Model::axis()
+{
+    static Model axis{};
+    // Setup vertices
+    axis.vertices =
+    {
+        { {  0.0f,  0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
+        { {  1.0f,  0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }},
+
+        { {  0.0f,  0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }},
+        { {  0.0f,  1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }},
+
+        { {  0.0f,  0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }},
+        { {  0.0f,  0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }}
+    };
+    // Setup indices
+    axis.indices = { 0, 1, 2, 3, 4, 5};
+
+    return axis;
 }

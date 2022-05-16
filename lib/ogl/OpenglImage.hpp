@@ -10,10 +10,10 @@
 class OpenglImage
 {
 public:
-    OpenglImage(const char *path, const std::string &directory){ OpenglImage(std::string(directory + '/' + std::string(path))); }
-    OpenglImage(const std::string  &filename);
+    OpenglImage(const std::string  &filename = "data/textures/viking_room.png");
     ~OpenglImage(){   SPDLOG_DEBUG("destructor"); }
-    unsigned int getId(){return id;}
+
+    void bind();
 private:
     unsigned int id;
     

@@ -3,12 +3,12 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanUbo.hpp"
-#include "VulkanPipeline.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanImage.hpp"
 #include "VulkanShader.hpp"
 #include "../Engine.hpp"
 //common lib
+#include <baseclass.hpp>
 #include <Window.hpp>
 #include <multiplatform_input.hpp>
 #include <unordered_map>
@@ -31,11 +31,6 @@ struct DeletionQueue
     }
 };
 
-struct RenderObject {	
-    std::unique_ptr<VulkanVertexBuffer> vertexbuffer;
-	std::unique_ptr<VulkanPipeline>  pipeline;
-	std::unique_ptr<VulkanUbo> ubo;
-};
 
 class VulkanEngine : public Engine
 {
@@ -64,18 +59,25 @@ private:
     void draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex);
 
     void updateUbo(VulkanUbo &ubo);
-    void recreateSwapChain();   
+    void recreateSwapChain();
+
+    VulkanShader & getShader(std::string name) {
+        auto got = _shaders.find (name);
+        if ( got == _shaders.end() ){
+            throw std::runtime_error("failed to find shader!");
+        }
+        return static_cast<VulkanShader&>(*got->second);
+    }   
 
     // -----------------------
     Window window{EngineType::Vulkan, Engine::input_};  
     VulkanDevice device{window};
     VulkanSwapchain swapchain{device, window};
-    VulkanImage vulkanimage{device};
+    // VulkanImage vulkanimage{device};
+    //VulkanUbo global_ubo{device, swapchain};
 
     //------------------------------------
-    std::unordered_map< std::string, std::unique_ptr<VulkanShader> > _shaders;
-    std::unordered_map< std::string, RenderObject > _fixed_objects;
-    std::vector<RenderObject> _renderables;
+
 
     //------------------------------------
     int _currentFrame {0};

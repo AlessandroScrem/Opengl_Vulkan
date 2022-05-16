@@ -4,8 +4,9 @@
 //lib
 #include <stb_image.h>
 
-VulkanImage::VulkanImage(VulkanDevice &device) 
-    : device{device} 
+VulkanImage::VulkanImage(VulkanDevice &device,  std::string imagepath /*  = "data/textures/viking_room.png" */) 
+    : device{device}
+    , texpath{imagepath} 
 {
     SPDLOG_DEBUG("constructor");
     createTexture();
@@ -30,9 +31,6 @@ VulkanImage::~VulkanImage()
 void VulkanImage::createTexture() 
 {
     SPDLOG_TRACE("createTexture");
-
-    // TODO move textpath outside class
-    const std::string texpath{"data/textures/viking_room.png"};  
 
     // Adding a texture to our application will involve the following steps:
     // 1) Create an image object backed by device memory

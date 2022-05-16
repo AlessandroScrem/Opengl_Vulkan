@@ -11,7 +11,7 @@
 #include <string>
 #include <iostream>
 
-OpenglImage::OpenglImage(const std::string  &filename)
+OpenglImage::OpenglImage(const std::string  &filename/*  = "data/textures/viking_room.png" */)
 {
     SPDLOG_DEBUG("constructor"); 
 
@@ -47,6 +47,11 @@ OpenglImage::OpenglImage(const std::string  &filename)
     stbi_image_free(pixels);
   
     id =  textureID;
-}   
+}  
+
+void OpenglImage::bind(){
+    glBindTexture(GL_TEXTURE_2D, id);
+    glActiveTexture(GL_TEXTURE1);
+}
 
 
