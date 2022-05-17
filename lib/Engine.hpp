@@ -19,6 +19,8 @@ struct Color
     float alpha = 1.0f;
 };
 
+class Window;
+
 class Engine
 {    
 public:
@@ -42,6 +44,7 @@ protected:
     
     Color background{};
     Camera ourCamera{};
+    // std::unique_ptr<Window> window;
 
     size_t _model_index{0};
 

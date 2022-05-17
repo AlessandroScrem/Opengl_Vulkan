@@ -37,10 +37,11 @@ private:
     OpenglShader & getShader(std::string name); 
 
     void clearBackground();
+    void updateframebuffersize();
     
     Window window{EngineType::Opengl, Engine::input_};
 
-    const bool _overlay = true;
+    const bool ui_Overlay_ = true;
 
 };
 

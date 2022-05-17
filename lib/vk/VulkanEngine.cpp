@@ -234,11 +234,6 @@ void VulkanEngine::recreateSwapChain()
 {  
     SPDLOG_DEBUG("recreateSwapChain");
 
-     while (window.waitforSize()) {
-        window.GetWindowExtents();
-        glfwWaitEvents();
-    }
-
     vkDeviceWaitIdle(device.getDevice());
 
     // destroy 
@@ -307,7 +302,7 @@ void VulkanEngine::init_commands()
 
 void VulkanEngine::draw()
 {
-    if (window.framebufferResized()){
+    if (window.is_Resized()){
         recreateSwapChain(); 
     }
 
@@ -467,8 +462,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
     VulkanUbo & ubo                     = shader.getUbo();
     VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
-    int x, y;
-    window.extents(x, y);
+    auto[x, y] = window.extents();
     //set new world origin to bottom left + offset
     float offset = 50; 
     float left   = -offset;
@@ -499,7 +493,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
 
 void VulkanEngine::draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex)
 {
-    if(!_overlay){
+    if(!ui_Overlay_){
         return;
     }
 

@@ -194,22 +194,15 @@ VkPresentModeKHR VulkanSwapchain::chooseSwapPresentMode(const std::vector<VkPres
 }
 
 
-
-
 // 3) Swap extent (resolution of images in swap chain)
 VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) 
 {    
-    if (capabilities.currentExtent.width != UINT32_MAX && !window.framebufferResized()) {
+    if (capabilities.currentExtent.width != UINT32_MAX && !window.is_Resized()) {
         return capabilities.currentExtent;
     } else {
 
-        auto[width, height] = window.GetWindowExtents();
-        
-
-        VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
-        };
+        VkExtent2D actualExtent{};
+        std::tie(actualExtent.width, actualExtent.height) = window.extents();       
 
         // The max and min functions are used here to clamp the value of WIDTH and HEIGHT 
         // between the allowed minimum and maximum extents that are supported by the implementation.

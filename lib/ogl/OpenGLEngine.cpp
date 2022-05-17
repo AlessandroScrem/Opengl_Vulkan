@@ -170,24 +170,34 @@ void OpenGLEngine::run()
     spdlog::info("*******           END             ************");  
 }
 
+void OpenGLEngine::updateframebuffersize() 
+{
+    auto [w, h] = window.extents();
+    glViewport(0, 0, w, h);
+}
+
+
 void OpenGLEngine::draw()
 {
-        // init frame
-        clearBackground();
-        
-        draw_fixed();
-        draw_objects();
+    if (window.is_Resized()){
+        updateframebuffersize();
+    }
 
-        draw_overlay();
- 
-        // end frame
-        window.updateframebuffersize();
-        window.swapBuffers();  
+    // init frame
+    clearBackground();
+    
+    draw_fixed();
+    draw_objects();
+
+    draw_overlay();
+
+    // end frame
+    window.swapBuffers();  
 }
 
 void OpenGLEngine::draw_overlay()
 {
-        if(!_overlay){
+        if(!ui_Overlay_){
             return;
         }
 
@@ -218,8 +228,7 @@ void OpenGLEngine::draw_fixed()
     OpenglUbo & ubo                     = shader.getUbo();
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
-    int x, y;
-    window.extents(x, y);
+    auto [x, y] = window.extents();
 
     // set new world origin to bottom left + offset
     float offset = 50; 

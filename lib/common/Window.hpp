@@ -1,14 +1,19 @@
 #pragma once
 
 #include "mytypes.hpp"
-#include "multiplatform_input.hpp"
+// #include "multiplatform_input.hpp"
 
 // lib
 
 //std
 #include <string>
 
+
 struct GLFWwindow;
+namespace ngn
+{
+    class MultiplatformInput;
+}
 
 class Window
 {
@@ -20,40 +25,33 @@ public:
     Window &operator=(const Window &) = delete;
 
     bool shouldClose();
-    bool framebufferResized() {return is_framebufferResized; }
-    bool waitforSize() { return is_iconified || is_zerosize ; }
-    void updateframebuffersize();
+    bool is_Resized() {return is_resized;}
+
     void update();
     void setWindowMessage(std::string msg){SetWindowTitle(msg);}
+
     GLFWwindow* getWindowPtr();
+    float getWindowAspect() { return (float) width_ / height_; }
+    std::pair<uint32_t, uint32_t> extents() { return {width_ ,height_}; }
 
-    std::pair<int, int> GetWindowExtents();
-    float getWindowAspect() { 
-        if(is_zerosize) return 1.0;
-        return (float) width_ / height_; 
-    }
-
-    void extents(int &x, int &y ){ x = width_; y = height_;}
 
     void swapBuffers();
 
 private:
     void initWindow();
     void createWindow();
+    void updateWindowSize();
     void initGUI();
-    void registerCallbacks();
+    void registerCallbacks(ngn::MultiplatformInput &input);
     void SetWindowTitle(std::string msg = "");
+
 
     int width_{800};
     int height_{600};
     std::string windowName_ = {};
     const EngineType  engineType;
 
-    ngn::MultiplatformInput &input_;
-
-    bool is_framebufferResized = false;
-    bool is_iconified = false;
-    bool is_zerosize = false;
+    bool is_resized = false;
     bool is_initialized = false;
 
     GLFWwindow* window_ = nullptr;

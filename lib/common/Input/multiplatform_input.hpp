@@ -2,10 +2,8 @@
 
 #include "input_key.hpp"
 #include "input_devices.hpp"
-
 // std
 #include <unordered_map>
-
 
 namespace ngn {
 
@@ -32,9 +30,6 @@ namespace ngn {
         std::unordered_map<InputKey, InputDeviceState> keyboardState_ {};
         std::unordered_map<InputKey, InputDeviceState> mouseState_ {};
         Cursorpos pos_{};
-
-
-
     };
 } // namespace ngn
 

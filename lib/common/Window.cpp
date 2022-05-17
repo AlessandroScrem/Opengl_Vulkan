@@ -1,15 +1,13 @@
 #include "Window.hpp"
 #include "service_locator.hpp"
+#include "multiplatform_input.hpp"
 #include "utils.hpp"
-
 //std
 #include <cstdlib>
 #include <iostream>
-
 //libs
 #include <imgui.h>
 #include <GL/glew.h>
-//libs
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -17,7 +15,6 @@ void InitOpengl(GLFWwindow* window);
 
 Window::Window(EngineType type, ngn::MultiplatformInput &input) 
 : engineType{type} 
-, input_{input}
 {
     SPDLOG_DEBUG("constructor");
 
@@ -36,7 +33,7 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
     initWindow();
     createWindow();
     initGUI();
-    registerCallbacks();
+    registerCallbacks(input);
 }
 
 Window::~Window() {
@@ -85,9 +82,6 @@ void Window::createWindow()
     if(engineType == EngineType::Opengl)
     {
         InitOpengl(window_);
-        spdlog::info("Opengl release number {} ", glGetString(GL_VERSION) );
-        spdlog::info("GL_SHADING_LANGUAGE_VERSION {} ", glGetString(GL_SHADING_LANGUAGE_VERSION) );
-        spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
     }
 
     is_initialized = true;
@@ -108,22 +102,20 @@ void Window::SetWindowTitle(std::string msg) {
     glfwSetWindowTitle(window_, (windowName_ + msg).c_str());
 }
 
-void Window::registerCallbacks() 
+void Window::registerCallbacks(ngn::MultiplatformInput &input) 
 {
 
     SPDLOG_TRACE("registerCallbacks");  
-    using namespace  ngn;
 
-    glfwSetWindowUserPointer(window_, &input_);
+    glfwSetWindowUserPointer(window_, &input);
 
     // register keyboard
     glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         // Get the input
-        auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
-
+        auto* p_input = static_cast<ngn::MultiplatformInput*>(glfwGetWindowUserPointer(window));
         
         bool io_captured = (ImGui::GetCurrentContext() == nullptr) ? false : ImGui::GetIO().WantCaptureMouse ;
-        if(!input || io_captured){
+        if(!p_input || io_captured){
             return;
         }else{
 
@@ -140,17 +132,17 @@ void Window::registerCallbacks()
                     value = 0.f;
             }
 
-            input->UpdateKeyboardState(key, value);
+            p_input->UpdateKeyboardState(key, value);
         }
     });
 
     // register mouse btn
     glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
         // Get the input
-        auto* input = static_cast<MultiplatformInput*>(glfwGetWindowUserPointer(window));
+        auto* p_input = static_cast<ngn::MultiplatformInput*>(glfwGetWindowUserPointer(window));
 
         bool io_captured = (ImGui::GetCurrentContext() == nullptr) ? false : ImGui::GetIO().WantCaptureMouse ;
-        if(!input){
+        if(!p_input){
             return;
         }
         
@@ -159,20 +151,22 @@ void Window::registerCallbacks()
             ImGui::GetIO().AddMouseButtonEvent(button, action == GLFW_PRESS ? true : false);
         }else{
             // (2) ONLY forward mouse data to your underlying app/game.
-            input->UpdateMouseState(button, action == GLFW_PRESS ? 1.f : 0.f);
+            p_input->UpdateMouseState(button, action == GLFW_PRESS ? 1.f : 0.f);
         }
     });
 
+
     // register window resize
-    glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height) { 
+    glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height) {
+        
         //does nothing
-        // spdlog::info("window resized");   
+        spdlog::info("cb window resized");   
     });
 
     // register window minimize
     glfwSetWindowIconifyCallback(window_,[](GLFWwindow* window, int iconified) {
         //does nothing
-        spdlog::info("window iconified");
+        spdlog::info("cb window iconified");
     });   
 }
 
@@ -181,12 +175,6 @@ bool Window::shouldClose()
     return glfwWindowShouldClose(window_); 
 }
 
-void Window::updateframebuffersize() 
-{
-    if (is_framebufferResized){
-        glViewport(0, 0, width_, height_);
-    }
-}
 
 void Window::swapBuffers() 
 { 
@@ -194,31 +182,36 @@ void Window::swapBuffers()
 }
 
 
-void Window::update(){
- 
-    double xpos, ypos;
-    glfwGetCursorPos(window_, &xpos, &ypos);
-    // update global mouse position 
-    ngn::Mouse::Move((float)xpos, (float)ypos);
+void Window::update()
+{
+    updateWindowSize();
 
-    GetWindowExtents();
+    {   // update global mouse position        
+        double xpos, ypos;
+        glfwGetCursorPos(window_, &xpos, &ypos);
+        ngn::Mouse::Move((float)xpos, (float)ypos);
+    }
 }
 
-std::pair<int, int> Window::GetWindowExtents() 
+void Window::updateWindowSize() 
 {
     int w, h;
-    glfwGetFramebufferSize(window_, &w, &h);
-    if( (is_zerosize = (!w || !h)) ) {
-        spdlog::info("is_zerosize = {}", is_zerosize);
-    }
-    if( (is_framebufferResized = (w != width_ || h != height_)) ) {
+
+    do  // loop to skip zerosized
+    {   
+        glfwWaitEvents();     
+        glfwGetFramebufferSize(window_, &w, &h);
+    }while(!w || !h);  
+    
+
+    if( (is_resized = (w != width_ || h != height_)) ) {
         width_ = w;
         height_ = h;
-        spdlog::info("is_framebufferResized = {}", is_framebufferResized);
-
-    }
-    return { width_, height_ };
+        spdlog::info("is  Resized = {}", is_resized);
+    }       
+    assert(width_ || height_);
 }
+
 
 GLFWwindow* Window::getWindowPtr() {
     if(!is_initialized) {

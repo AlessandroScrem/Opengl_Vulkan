@@ -85,7 +85,7 @@ private:
 
     //------------------------------------
     // GUI globals
-    const bool _overlay = true;
+    const bool ui_Overlay_ = true;
     VkDescriptorPool _gui_DescriptorPool = VK_NULL_HANDLE; 
 
 };

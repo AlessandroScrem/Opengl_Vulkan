@@ -1,3 +1,5 @@
+// common libs
+#include "mytypes.hpp"
 //libs
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
@@ -13,4 +15,7 @@ void InitOpengl(GLFWwindow* window)
     if (glewInit() != GLEW_OK) {
         throw std::runtime_error("Failed to initialize GLEW");
     }
+    spdlog::info("Opengl release number {} ", glGetString(GL_VERSION) );
+    spdlog::info("GL_SHADING_LANGUAGE_VERSION {} ", glGetString(GL_SHADING_LANGUAGE_VERSION) );
+    spdlog::info("GL_RENDERER {} ", glGetString(GL_RENDERER) );
 }

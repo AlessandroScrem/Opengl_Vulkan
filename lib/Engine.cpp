@@ -1,5 +1,6 @@
 #include "Engine.hpp"
 // common lib
+#include <Window.hpp>
 #include <service_locator.hpp>
 // std
 #include <memory>
@@ -11,6 +12,11 @@ Engine::Engine(){
     ngn::ServiceLocator::Provide();
     MapActions();
 
+    // if(!window){
+    //     window = std::make_unique<Window>();
+    // }
+    // window->create(type);
+    // window->registerCallbacks(input_);
 }
 
 Engine::~Engine(){
