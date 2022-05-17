@@ -24,7 +24,7 @@ class Window;
 class Engine
 {    
 public:
-    Engine();
+    Engine(EngineType type);
     virtual ~Engine();
        
     virtual void run() = 0;
@@ -36,17 +36,17 @@ protected:
     void updateEvents();
 
     ngn::MultiplatformInput input_{};
-    EngineType engine_type{};
+    EngineType engine_type_{};
 
-    std::unordered_map< std::string, std::unique_ptr<Shader> > _shaders;
-    std::unordered_map< std::string, std::unique_ptr<RenderObject> > _fixed_objects;
-    std::vector< std::unique_ptr<RenderObject> > _renderables;
+    std::unordered_map< std::string, std::unique_ptr<Shader> > shaders_;
+    std::unordered_map< std::string, std::unique_ptr<RenderObject> > fixed_objects_;
+    std::vector< std::unique_ptr<RenderObject> > renderables_;
     
     Color background{};
     Camera ourCamera{};
-    // std::unique_ptr<Window> window;
+    std::unique_ptr<Window> window_;
 
-    size_t _model_index{0};
+    size_t model_index_{0};
 
 private:
     void MapActions();
@@ -54,7 +54,7 @@ private:
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;
 
-    static std::unique_ptr<Engine> makeVulkan();
-    static std::unique_ptr<Engine> makeOpengl();
+    static std::unique_ptr<Engine> makeVulkan(EngineType type);
+    static std::unique_ptr<Engine> makeOpengl(EngineType type);
 };
 

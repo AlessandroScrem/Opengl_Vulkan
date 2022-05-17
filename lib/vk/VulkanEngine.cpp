@@ -1,4 +1,6 @@
+#include "VulkanDevice.hpp"
 #include "VulkanEngine.hpp"
+#include "VulkanSwapchain.hpp"
 #include "VulkanUbo.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanShader.hpp"
@@ -13,16 +15,10 @@
 #include <vector>
 #include <memory>
 
-VulkanEngine::VulkanEngine()
+VulkanEngine::VulkanEngine(EngineType type) : Engine(type)
 { 
     SPDLOG_DEBUG("constructor");
-
-    init_shaders();        
-    init_fixed();           
-    init_renderables();    
-    init_commands();    
-    initGUI();            
-	init_sync_structures();  
+    init();
 }
 
 VulkanEngine::~VulkanEngine() 
@@ -33,9 +29,27 @@ VulkanEngine::~VulkanEngine()
     _mainDeletionQueue.flush();
 
     // destroy Vulakan resources on Engine
-    Engine::_shaders.clear();
-    Engine::_renderables.clear();
-    Engine::_fixed_objects.clear();
+    Engine::shaders_.clear();
+    Engine::renderables_.clear();
+    Engine::fixed_objects_.clear();
+}
+
+void VulkanEngine::init()
+{
+    device_ = std::make_unique<VulkanDevice>(*window_);
+    swapchain_ = std::make_unique<VulkanSwapchain>(*device_, *window_); 
+
+    init_shaders();        
+    init_fixed();           
+    init_renderables();    
+    init_commands();    
+    initGUI();            
+	init_sync_structures();  
+}
+
+void VulkanEngine::setWindowMessage(std::string msg)
+{
+    window_->setWindowMessage(msg);
 }
 
 void VulkanEngine::cleanup_GUI()
@@ -45,7 +59,7 @@ void VulkanEngine::cleanup_GUI()
 
     // TODO  maybe move to Gui class
     if(_gui_DescriptorPool) {
-        vkDestroyDescriptorPool(device.getDevice(), _gui_DescriptorPool, nullptr);
+        vkDestroyDescriptorPool(device_->getDevice(), _gui_DescriptorPool, nullptr);
     }     
 }
 
@@ -54,17 +68,17 @@ void VulkanEngine::initGUI()
     SPDLOG_TRACE("initGUI");
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(window.getWindowPtr(), true);
+    ImGui_ImplGlfw_InitForVulkan(window_->getWindowPtr(), true);
 
-    VkDevice                 g_Device           = device.getDevice();
-    VkPhysicalDevice         g_PhysicalDevice   = device.getPhysicalDevice();
-    VkInstance               g_Instance         = device.getInstance();
-    uint32_t                 g_QueueFamily      = device.getQueueFamiliesIndices().graphicsFamily.value(); //only grahics family;
-    VkQueue                  g_Queue            = device.getGraphicsQueue();                                 //only grahics Queue
-    int                      g_MinImageCount    = device.getSwapChainSupport().capabilities.minImageCount;
+    VkDevice                 g_Device           = device_->getDevice();
+    VkPhysicalDevice         g_PhysicalDevice   = device_->getPhysicalDevice();
+    VkInstance               g_Instance         = device_->getInstance();
+    uint32_t                 g_QueueFamily      = device_->getQueueFamiliesIndices().graphicsFamily.value(); //only grahics family;
+    VkQueue                  g_Queue            = device_->getGraphicsQueue();                                 //only grahics Queue
+    int                      g_MinImageCount    = device_->getSwapChainSupport().capabilities.minImageCount;
     int                      g_ImageCount       = g_MinImageCount + 1;
-    VkRenderPass             g_RenderPass       = swapchain.getRenderpass();
-    VkSampleCountFlagBits    g_MSAASamples      = device.getMsaaSamples();
+    VkRenderPass             g_RenderPass       = swapchain_->getRenderpass();
+    VkSampleCountFlagBits    g_MSAASamples      = device_->getMsaaSamples();
     auto                     g_CheckVkResultFn  = [](VkResult x){ VK_CHECK(x);};            
     VkAllocationCallbacks*   g_Allocator        = NULL;
     VkPipelineCache          g_PipelineCache    = VK_NULL_HANDLE;
@@ -116,11 +130,11 @@ void VulkanEngine::initGUI()
 
     // Upload Fonts
     {
-        auto cmd = device.beginSingleTimeCommands();
+        auto cmd = device_->beginSingleTimeCommands();
         
             ImGui_ImplVulkan_CreateFontsTexture(cmd);
         
-        device.endSingleTimeCommands(cmd);
+        device_->endSingleTimeCommands(cmd);
         
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
@@ -130,13 +144,13 @@ void VulkanEngine::run()
 {
     spdlog::info("*******           START           ************");  
 
-    while(!window.shouldClose() ) {
+    while(!window_->shouldClose() ) {
         glfwPollEvents();
         Engine::updateEvents();
-        window.update();
+        window_->update();
         draw();
     }
-    vkDeviceWaitIdle(device.getDevice()); 
+    vkDeviceWaitIdle(device_->getDevice()); 
 
     spdlog::info("*******           END             ************");  
 }
@@ -145,28 +159,28 @@ void VulkanEngine::init_shaders()
 {
     SPDLOG_TRACE("init_shaders");
     {
-        auto shader = std::make_unique<VulkanShader>(device, swapchain, GLSL::TEXTURE); 
+        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::TEXTURE); 
         shader->addUbo(0);                                                             
         shader->addTexture("data/textures/viking_room.png", 1);                         
         shader->buid();                                                                 
 
-        _shaders.emplace("texture", std::move(shader));                                 
+        shaders_.emplace("texture", std::move(shader));                                 
     }
     {
-        auto shader = std::make_unique<VulkanShader>(device, swapchain, GLSL::NORMALMAP);
+        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::NORMALMAP);
         shader->addUbo(0);
         shader->buid();
 
-        _shaders.emplace("normalmap", std::move(shader));
+        shaders_.emplace("normalmap", std::move(shader));
     }
     {
-        auto shader = std::make_unique<VulkanShader>(device, swapchain, GLSL::AXIS);
+        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::AXIS);
         shader->addUbo(0);
         shader->setPolygonMode(VK_POLYGON_MODE_LINE);
         shader->setTopology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
         shader->buid();
 
-        _shaders.emplace("axis", std::move(shader));
+        shaders_.emplace("axis", std::move(shader));
     }
 }
 
@@ -180,18 +194,18 @@ void VulkanEngine::init_renderables()
         glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model.set_transform(trasf);
 
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(device, model);
+        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, model);
         object->shader = "texture";
         object->model = model.get_tranform();
-        _renderables.push_back(std::move(object));
+        renderables_.push_back(std::move(object));
     }
 
     {
         Model model("data/models/suzanne.obj", Model::UP::YUP);
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(device, model);
+        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, model);
         object->shader = "normalmap";
         object->model = model.get_tranform();
-        _renderables.push_back(std::move(object));
+        renderables_.push_back(std::move(object));
 
     }
 }
@@ -201,10 +215,10 @@ void VulkanEngine::init_fixed()
     SPDLOG_TRACE("init_fixed"); 
 
     {
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(device, Model::axis());
+        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, Model::axis());
         object->shader = "axis";
         object->model = glm::mat4(1.0f);
-        _fixed_objects.emplace("axis", std::move(object)); 
+        fixed_objects_.emplace("axis", std::move(object)); 
     }    
 
 }
@@ -212,8 +226,8 @@ void VulkanEngine::init_fixed()
 
 VulkanShader & VulkanEngine::getShader(std::string name) 
 {
-    auto got = _shaders.find (name);
-    if ( got == _shaders.end() ){
+    auto got = shaders_.find (name);
+    if ( got == shaders_.end() ){
         throw std::runtime_error("failed to find shader!");
     }
     return static_cast<VulkanShader&>(*got->second);
@@ -223,7 +237,7 @@ void VulkanEngine::updateUbo(VulkanUbo &ubo)
 {
 
     ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 1.0f, 11.0f);
+    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 1.0f, 11.0f);
     ubo.proj[1][1] *= -1;
 
     ubo.viewPos = ourCamera.GetPosition();
@@ -234,14 +248,14 @@ void VulkanEngine::recreateSwapChain()
 {  
     SPDLOG_DEBUG("recreateSwapChain");
 
-    vkDeviceWaitIdle(device.getDevice());
+    vkDeviceWaitIdle(device_->getDevice());
 
     // destroy 
     //global_ubo.cleanupUniformBuffers();  
-    swapchain.cleanupSwapChain();
+    swapchain_->cleanupSwapChain();
 
     // create 
-    swapchain.createAllSwapchian();
+    swapchain_->createAllSwapchian();
     //global_ubo.createUniformBuffers();
 
 }
@@ -262,18 +276,18 @@ void VulkanEngine::init_sync_structures()
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
     
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
-        VK_CHECK(vkCreateSemaphore(device.getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore[i]));
-	    VK_CHECK(vkCreateFence(device.getDevice(), &fenceCreateInfo, nullptr, &_renderFence[i]));
+        VK_CHECK(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
+        VK_CHECK(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore[i]));
+	    VK_CHECK(vkCreateFence(device_->getDevice(), &fenceCreateInfo, nullptr, &_renderFence[i]));
 
         //enqueue the destruction of semaphores
         _mainDeletionQueue.push_function([=]() {
-            vkDestroySemaphore(device.getDevice(), _presentSemaphore[i], nullptr);
-            vkDestroySemaphore(device.getDevice(), _renderSemaphore[i], nullptr);
+            vkDestroySemaphore(device_->getDevice(), _presentSemaphore[i], nullptr);
+            vkDestroySemaphore(device_->getDevice(), _renderSemaphore[i], nullptr);
             });
         //enqueue the destruction of the fence
         _mainDeletionQueue.push_function([=]() {
-            vkDestroyFence(device.getDevice(), _renderFence[i], nullptr);
+            vkDestroyFence(device_->getDevice(), _renderFence[i], nullptr);
             });   
     }
 }	
@@ -287,14 +301,14 @@ void VulkanEngine::init_commands()
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         //create a command pool for commands submitted to the graphics queue.
-        device.createCommandPool(&_commandPool[i]);
+        device_->createCommandPool(&_commandPool[i]);
 
         //allocate the default command buffer that we will use for rendering
         VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool[i], 1);
-	    VK_CHECK(vkAllocateCommandBuffers(device.getDevice(), &cmdAllocInfo, &_mainCommandBuffer[i]));
+	    VK_CHECK(vkAllocateCommandBuffers(device_->getDevice(), &cmdAllocInfo, &_mainCommandBuffer[i]));
 
         _mainDeletionQueue.push_function([=]() {
-            vkDestroyCommandPool(device.getDevice(), _commandPool[i], nullptr);
+            vkDestroyCommandPool(device_->getDevice(), _commandPool[i], nullptr);
         });
     }
 }
@@ -302,20 +316,20 @@ void VulkanEngine::init_commands()
 
 void VulkanEngine::draw()
 {
-    if (window.is_Resized()){
+    if (window_->is_Resized()){
         recreateSwapChain(); 
     }
 
 	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
-	VK_CHECK(vkWaitForFences(device.getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
-	VK_CHECK(vkResetFences(device.getDevice(), 1, &_renderFence[_currentFrame]) );
+	VK_CHECK(vkWaitForFences(device_->getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
+	VK_CHECK(vkResetFences(device_->getDevice(), 1, &_renderFence[_currentFrame]) );
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
 	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer[_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
 	//request image from the swapchain
 	uint32_t swapchainImageIndex;
-	VkResult  result = vkAcquireNextImageKHR(device.getDevice(), swapchain.getSwapchain(), 1000000000, 
+	VkResult  result = vkAcquireNextImageKHR(device_->getDevice(), swapchain_->getSwapchain(), 1000000000, 
         _presentSemaphore[_currentFrame], nullptr,&swapchainImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR ) {
@@ -349,9 +363,9 @@ void VulkanEngine::draw()
 	//start the main renderpass. 
 	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
 	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
-        swapchain.getRenderpass(), 
-        swapchain.getExtent(), 
-        swapchain.getFramebuffer(swapchainImageIndex));
+        swapchain_->getRenderpass(), 
+        swapchain_->getExtent(), 
+        swapchain_->getFramebuffer(swapchainImageIndex));
 
 	//connect clear values
 	rpInfo.clearValueCount = 2;
@@ -384,7 +398,7 @@ void VulkanEngine::draw()
 
 	//submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(device.getPresentQueue(), 1, &submit, _renderFence[_currentFrame]));
+	VK_CHECK(vkQueueSubmit(device_->getPresentQueue(), 1, &submit, _renderFence[_currentFrame]));
 
 	//prepare present
 	// this will put the image we just rendered to into the visible window.
@@ -392,14 +406,14 @@ void VulkanEngine::draw()
 	// as its necessary that drawing commands have finished before the image is displayed to the user
 	VkPresentInfoKHR presentInfo = vkinit::present_info();
 
-    VkSwapchainKHR swapChains[]     = {swapchain.getSwapchain()};
+    VkSwapchainKHR swapChains[]     = {swapchain_->getSwapchain()};
 	presentInfo.pSwapchains         = swapChains;
 	presentInfo.swapchainCount      = 1;
 	presentInfo.pWaitSemaphores     = &_renderSemaphore[_currentFrame];
 	presentInfo.waitSemaphoreCount  = 1;
 	presentInfo.pImageIndices       = &swapchainImageIndex;
 
-    result = vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
+    result = vkQueuePresentKHR(device_->getPresentQueue(), &presentInfo);
     if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR){              
         spdlog::error("VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR");
     } else if (result != VK_SUCCESS) {
@@ -414,7 +428,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 {
     // for(  auto & ro : _renderables){
 
-        RenderObject & ro                   = *_renderables.at(_model_index);
+        RenderObject & ro                   = *renderables_.at(model_index_);
         VulkanShader &shader                = getShader(ro.shader);
         VulkanUbo & ubo                     = shader.getUbo();
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
@@ -434,7 +448,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 
         VkViewport viewport{};
         VkRect2D scissor{};
-        scissor.extent = swapchain.getExtent();
+        scissor.extent = swapchain_->getExtent();
         scissor.offset = {0, 0};
         viewport.y = 0.0f;
         viewport.x = 0.0f;
@@ -457,12 +471,12 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
 {
         
-    RenderObject & ro                   = *_fixed_objects.at("axis");
+    RenderObject & ro                   = *fixed_objects_.at("axis");
     VulkanShader & shader               = getShader(ro.shader);
     VulkanUbo & ubo                     = shader.getUbo();
     VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
-    auto[x, y] = window.extents();
+    auto[x, y] = window_->extents();
     //set new world origin to bottom left + offset
     float offset = 50; 
     float left   = -offset;

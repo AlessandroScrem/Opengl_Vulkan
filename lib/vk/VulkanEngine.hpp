@@ -1,12 +1,11 @@
 #pragma once
 
 #include "../Engine.hpp"
-#include "VulkanDevice.hpp"
-#include "VulkanSwapchain.hpp"
+#include "vktypes.h"
 //common lib
 #include <baseclass.hpp>
-#include <Window.hpp>
-#include <multiplatform_input.hpp>
+// #include <Window.hpp>
+// #include <multiplatform_input.hpp>
 #include <deque>
 
 struct DeletionQueue
@@ -26,21 +25,24 @@ struct DeletionQueue
     }
 };
 
+class VulkanDevice;
+class VulkanSwapchain;
 class VulkanShader;
 class VulkanUbo;
 
 class VulkanEngine : public Engine
 {
 public:
-    VulkanEngine();
+    VulkanEngine(EngineType type);
     ~VulkanEngine();
 
     void run() override;
-    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);}
+    void setWindowMessage(std::string msg);
 
 private:
 
     // -----------------------
+    void init();
     void initGUI();
     void init_shaders();
     void init_fixed();
@@ -67,9 +69,8 @@ private:
     VulkanShader & getShader(std::string name); 
 
     // -----------------------
-    Window window{EngineType::Vulkan, Engine::input_};  
-    VulkanDevice device{window};
-    VulkanSwapchain swapchain{device, window};
+    std::unique_ptr<VulkanDevice> device_;
+    std::unique_ptr<VulkanSwapchain> swapchain_;
 
     //------------------------------------
     int _currentFrame {0};

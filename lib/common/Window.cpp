@@ -36,6 +36,7 @@ Window::Window(EngineType type, ngn::MultiplatformInput &input)
     registerCallbacks(input);
 }
 
+
 Window::~Window() {
     SPDLOG_DEBUG("destructor");
     
@@ -46,6 +47,27 @@ Window::~Window() {
 
     glfwDestroyWindow(window_);
     glfwTerminate();
+}
+
+void Window::init(EngineType type)
+{
+    engineType = type;
+
+    switch (engineType)
+    {
+    case EngineType::Opengl :
+        windowName_ = "Hello Opengl";
+        break;    
+    case EngineType::Vulkan :
+        windowName_ = "Hello Vulkan";
+        break;    
+    default:
+        break;
+    }
+
+    initWindow();
+    createWindow();
+    initGUI();
 }
 
 void Window::initWindow() 

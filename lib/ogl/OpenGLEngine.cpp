@@ -4,6 +4,7 @@
 #include "OpenGLEngine.hpp"
 // common lib
 #include <model.hpp>
+#include <Window.hpp>
 //libs
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -15,7 +16,7 @@
 
 namespace ogl
 {
-OpenGLEngine::OpenGLEngine()
+OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
 {    
     SPDLOG_DEBUG("constructor"); 
     initOpenglGlobalStates();  
@@ -39,6 +40,11 @@ void OpenGLEngine::cleanup()
     // Cleanup ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+}
+
+void OpenGLEngine::setWindowMessage(std::string msg) 
+{
+    window_->setWindowMessage(msg);
 }
 
 void OpenGLEngine::initOpenglGlobalStates() 
@@ -74,7 +80,7 @@ void OpenGLEngine::initGUI()
 {
 	// Setup Platform/Renderer bindings
     // TODO update glsl_version acconrdigly with opengl context creation
-	if(!ImGui_ImplGlfw_InitForOpenGL(window.getWindowPtr(), true)){
+	if(!ImGui_ImplGlfw_InitForOpenGL(window_->getWindowPtr(), true)){
         throw std::runtime_error("failed to initialize ImGui_ImplGlfw_InitForOpenGL!");
     }
 
@@ -93,14 +99,14 @@ void OpenGLEngine::init_shaders()
         shader->addTexture("data/textures/viking_room.png", 1);
         shader->buid();
 
-        _shaders.emplace("texture", std::move(shader));
+        shaders_.emplace("texture", std::move(shader));
     }
     {
         auto shader = std::make_unique<OpenglShader>(GLSL::NORMALMAP);
         shader->addUbo(0);
         shader->buid();
 
-        _shaders.emplace("normalmap", std::move(shader));
+        shaders_.emplace("normalmap", std::move(shader));
     }
     {
         auto shader = std::make_unique<OpenglShader>(GLSL::AXIS);
@@ -109,7 +115,7 @@ void OpenGLEngine::init_shaders()
         shader->setTopology(GL_LINES);
         shader->buid();
 
-        _shaders.emplace("axis", std::move(shader));
+        shaders_.emplace("axis", std::move(shader));
     } 
 }
 
@@ -119,7 +125,7 @@ void OpenGLEngine::init_fixed()
     std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(Model::axis());
     object->shader = "axis";
     object->model = model.get_tranform();
-    _fixed_objects.emplace("axis", std::move(object));    
+    fixed_objects_.emplace("axis", std::move(object));    
 }
 
 void OpenGLEngine::init_renderables()
@@ -134,7 +140,7 @@ void OpenGLEngine::init_renderables()
         std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(model);
         object->shader = "texture";
         object->model = model.get_tranform();
-        _renderables.push_back(std::move(object));
+        renderables_.push_back(std::move(object));
     }
 
     {
@@ -142,15 +148,15 @@ void OpenGLEngine::init_renderables()
         std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>( model);
         object->shader = "normalmap";
         object->model = model.get_tranform();
-        _renderables.push_back(std::move(object));
+        renderables_.push_back(std::move(object));
 
     } 
 }
 
 OpenglShader & OpenGLEngine::getShader(std::string name) 
 {
-    auto got = _shaders.find (name);
-    if ( got == _shaders.end() ){
+    auto got = shaders_.find (name);
+    if ( got == shaders_.end() ){
         throw std::runtime_error("failed to find shader!");
     }
     return static_cast<OpenglShader&>(*got->second);
@@ -160,10 +166,10 @@ void OpenGLEngine::run()
 {  
     spdlog::info("*******           START           ************");  
 
-    while(!window.shouldClose() ) {
+    while(!window_->shouldClose() ) {
         glfwPollEvents();
         Engine::updateEvents();
-        window.update();
+        window_->update();
         draw();
     }
     
@@ -172,14 +178,14 @@ void OpenGLEngine::run()
 
 void OpenGLEngine::updateframebuffersize() 
 {
-    auto [w, h] = window.extents();
+    auto [w, h] = window_->extents();
     glViewport(0, 0, w, h);
 }
 
 
 void OpenGLEngine::draw()
 {
-    if (window.is_Resized()){
+    if (window_->is_Resized()){
         updateframebuffersize();
     }
 
@@ -192,7 +198,7 @@ void OpenGLEngine::draw()
     draw_overlay();
 
     // end frame
-    window.swapBuffers();  
+    window_->swapBuffers();  
 }
 
 void OpenGLEngine::draw_overlay()
@@ -223,12 +229,12 @@ void OpenGLEngine::draw_overlay()
 
 void OpenGLEngine::draw_fixed()
 {
-    RenderObject & ro                   = *_fixed_objects.at("axis");
+    RenderObject & ro                   = *fixed_objects_.at("axis");
     OpenglShader &shader                = getShader(ro.shader);
     OpenglUbo & ubo                     = shader.getUbo();
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
-    auto [x, y] = window.extents();
+    auto [x, y] = window_->extents();
 
     // set new world origin to bottom left + offset
     float offset = 50; 
@@ -248,7 +254,7 @@ void OpenGLEngine::draw_fixed()
 
 void OpenGLEngine::draw_objects()
 {
-    RenderObject & ro                   = *_renderables.at(_model_index);
+    RenderObject & ro                   = *renderables_.at(model_index_);
     OpenglShader &shader                = getShader(ro.shader);
     OpenglUbo & ubo                     = shader.getUbo();
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
@@ -278,7 +284,7 @@ void OpenGLEngine::clearBackground()
 void OpenGLEngine::updateUbo(OpenglUbo &ubo)
 {
     ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window.getWindowAspect(), 0.1f, 10.0f);
+    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 0.1f, 10.0f);
     ubo.viewPos = ourCamera.GetPosition();
 }
 

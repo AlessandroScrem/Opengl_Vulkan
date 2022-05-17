@@ -5,18 +5,20 @@
 // std
 #include <memory>
 
-Engine::Engine(){
+Engine::Engine(EngineType type){
     SPDLOG_DEBUG("constructor");
+
+    engine_type_ = type;
 
     // provide input manager
     ngn::ServiceLocator::Provide();
     MapActions();
 
-    // if(!window){
-    //     window = std::make_unique<Window>();
-    // }
-    // window->create(type);
-    // window->registerCallbacks(input_);
+    if(!window_){
+        window_ = std::make_unique<Window>();
+    }
+    window_->init(type);
+    window_->registerCallbacks(input_);
 }
 
 Engine::~Engine(){
@@ -30,11 +32,11 @@ Engine::create(EngineType type)
     std::unique_ptr<Engine> engine;
 
     if(type == EngineType::Opengl){
-        engine = makeOpengl();
+        engine = makeOpengl(type);
     }
 
     if(type == EngineType::Vulkan){
-        engine = makeVulkan();
+        engine = makeVulkan(type);
     }
 
     return engine;   
@@ -271,8 +273,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                _model_index += 1;
-                if(_model_index >= _renderables.size()) _model_index = 0;
+                model_index_ += 1;
+                if(model_index_ >= renderables_.size()) model_index_ = 0;
                 shouldupdate = true;               
             }else{                     
                 shouldupdate = false;

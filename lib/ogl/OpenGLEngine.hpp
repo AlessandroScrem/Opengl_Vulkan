@@ -3,23 +3,25 @@
 #include "..\Engine.hpp"
 // common
 #include <baseclass.hpp>
-#include <Window.hpp>
+// #include <Window.hpp>
 
 
 class OpenglShader;
 class OpenglUbo;
 class OpenglVertexBuffer;
+class Window;
+
 
 namespace ogl
 {
 class OpenGLEngine : public Engine
 {    
 public:
-    OpenGLEngine();
+    OpenGLEngine(EngineType type);
     ~OpenGLEngine();
 
     void run() override;
-    void setWindowMessage(std::string msg) override{window.setWindowMessage(msg);};
+    void setWindowMessage(std::string msg);
 
 private:
     void initOpenglGlobalStates();
@@ -39,7 +41,7 @@ private:
     void clearBackground();
     void updateframebuffersize();
     
-    Window window{EngineType::Opengl, Engine::input_};
+    // Window window{EngineType::Opengl, Engine::input_};
 
     const bool ui_Overlay_ = true;
 
