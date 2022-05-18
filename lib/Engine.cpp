@@ -42,29 +42,54 @@ Engine::create(EngineType type)
     return engine;   
 }
 
+void Engine::setWindowMessage(std::string msg) 
+{
+    window_->setWindowMessage(msg);
+}
+
+#include <chrono>
+void Engine::run() 
+{ 
+
+    auto timestamp = [&]() {      
+        if(ngn::Time::time())
+        {
+            std::stringstream msg;
+            msg << " [ " <<  ngn::Time::getFrameTime() << " ns/frame ]";
+            msg << " [ " <<  ngn::Time::geFps()  << " FPS ]" ;
+            msg << " Focal = " << ourCamera.GetFocal() ;
+            msg << " " << ngn::Mouse::getDirection_str();
+            setWindowMessage(msg.str());        
+        } };
+
+    spdlog::info("*******           START           ************");  
+
+    while(!window_->shouldClose() ) {
+
+        window_->update();        
+        updateEvents();
+
+        ngn::Time::start();
+
+        draw();
+        
+        ngn::Time::end();
+        timestamp();
+
+    }
+    
+    spdlog::info("*******           END             ************");  
+}
+
 void Engine::updateEvents() 
 {
     if (ngn::ServiceLocator::GetInputManager()) {
         ngn::ServiceLocator::GetInputManager()->processInput();
     }
 
-    ngn::Time::update();
-
-    std::string cmd;
-    glm::vec2 offset;
     for(auto const& command : commands_){
         command.second->Execute();
-        cmd = command.first;
-        offset = (command.second)->get_offset();
     }
-    std::stringstream msg;
-    msg << " [ " <<  ngn::Time::getFrameTime()*1000.0 << " ms/frame ]" ;
-    msg << " [ " <<  ( ngn::Time::getFrameTime() > 0  ? 1.0 / ngn::Time::getFrameTime() : 0.0f) << " FPS ]" ;
-    msg << " Focal = " << ourCamera.GetFocal() ;
-    msg << " Cmd  " << cmd ;
-    msg << " " << ngn::Mouse::getDirection_str();
-    msg << " " << glm::to_string(offset);
-    setWindowMessage(msg.str());
 }
 
 

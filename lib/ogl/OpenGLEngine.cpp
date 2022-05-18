@@ -42,10 +42,6 @@ void OpenGLEngine::cleanup()
     ImGui_ImplGlfw_Shutdown();
 }
 
-void OpenGLEngine::setWindowMessage(std::string msg) 
-{
-    window_->setWindowMessage(msg);
-}
 
 void OpenGLEngine::initOpenglGlobalStates() 
 {
@@ -162,19 +158,6 @@ OpenglShader & OpenGLEngine::getShader(std::string name)
     return static_cast<OpenglShader&>(*got->second);
 } 
 
-void OpenGLEngine::run() 
-{  
-    spdlog::info("*******           START           ************");  
-
-    while(!window_->shouldClose() ) {
-        glfwPollEvents();
-        Engine::updateEvents();
-        window_->update();
-        draw();
-    }
-    
-    spdlog::info("*******           END             ************");  
-}
 
 void OpenGLEngine::updateframebuffersize() 
 {

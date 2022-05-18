@@ -1,11 +1,12 @@
-#include "VulkanDevice.hpp"
 #include "VulkanEngine.hpp"
+#include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanUbo.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanShader.hpp"
 #include "vk_initializers.h"
 //common lib
+#include <Window.hpp>
 #include "model.hpp"
 //lib
 #include <imgui.h>
@@ -25,7 +26,10 @@ VulkanEngine::~VulkanEngine()
 {
     SPDLOG_DEBUG("destructor");
 
+    vkDeviceWaitIdle(device_->getDevice()); 
+
     cleanup_GUI();
+
     _mainDeletionQueue.flush();
 
     // destroy Vulakan resources on Engine
@@ -47,10 +51,7 @@ void VulkanEngine::init()
 	init_sync_structures();  
 }
 
-void VulkanEngine::setWindowMessage(std::string msg)
-{
-    window_->setWindowMessage(msg);
-}
+
 
 void VulkanEngine::cleanup_GUI()
 {
@@ -140,20 +141,6 @@ void VulkanEngine::initGUI()
     }
 }
 
-void VulkanEngine::run() 
-{
-    spdlog::info("*******           START           ************");  
-
-    while(!window_->shouldClose() ) {
-        glfwPollEvents();
-        Engine::updateEvents();
-        window_->update();
-        draw();
-    }
-    vkDeviceWaitIdle(device_->getDevice()); 
-
-    spdlog::info("*******           END             ************");  
-}
 
 void VulkanEngine::init_shaders()
 {

@@ -20,8 +20,7 @@ public:
     OpenGLEngine(EngineType type);
     ~OpenGLEngine();
 
-    void run() override;
-    void setWindowMessage(std::string msg);
+    void draw() override;
 
 private:
     void initOpenglGlobalStates();
@@ -30,7 +29,6 @@ private:
     void init_fixed();
     void init_renderables();
     void cleanup();
-    void draw();
     void draw_overlay();
     void draw_fixed();
     void draw_objects();
@@ -41,9 +39,8 @@ private:
     void clearBackground();
     void updateframebuffersize();
     
-    // Window window{EngineType::Opengl, Engine::input_};
 
-    const bool ui_Overlay_ = true;
+
 
 };
 

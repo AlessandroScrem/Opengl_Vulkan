@@ -1,6 +1,6 @@
 #pragma once
 //common lib
-#include <Window.hpp>
+#include <mytypes.hpp>
 //lib
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -24,6 +24,7 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+class Window;
 
 class VulkanDevice
 {    

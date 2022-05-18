@@ -4,8 +4,6 @@
 #include "vktypes.h"
 //common lib
 #include <baseclass.hpp>
-// #include <Window.hpp>
-// #include <multiplatform_input.hpp>
 #include <deque>
 
 struct DeletionQueue
@@ -36,8 +34,7 @@ public:
     VulkanEngine(EngineType type);
     ~VulkanEngine();
 
-    void run() override;
-    void setWindowMessage(std::string msg);
+    void draw() override;
 
 private:
 
@@ -52,7 +49,6 @@ private:
 
     void cleanup_GUI();
 
-    void draw();
     void draw_objects(VkCommandBuffer cmd, uint32_t imageIndex);  
     void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
     void draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex);
@@ -86,7 +82,6 @@ private:
 
     //------------------------------------
     // GUI globals
-    const bool ui_Overlay_ = true;
     VkDescriptorPool _gui_DescriptorPool = VK_NULL_HANDLE; 
 
 };

@@ -1,7 +1,8 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "vk_initializers.h"
-
+//common lib
+#include <Window.hpp>
 // std
 #include <cstdint> // Necessary for UINT32_MAX
 #include <algorithm> // Necessary for std::min/std::max

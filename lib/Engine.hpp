@@ -27,13 +27,13 @@ public:
     Engine(EngineType type);
     virtual ~Engine();
        
-    virtual void run() = 0;
-    virtual void setWindowMessage(std::string msg) =0;
+    void run();
+    virtual void draw() = 0;
+    void setWindowMessage(std::string msg);
 
    static std::unique_ptr<Engine> create(EngineType type);
 
 protected:
-    void updateEvents();
 
     ngn::MultiplatformInput input_{};
     EngineType engine_type_{};
@@ -47,8 +47,11 @@ protected:
     std::unique_ptr<Window> window_;
 
     size_t model_index_{0};
+    const bool ui_Overlay_ = true;
 
 private:
+    void nextFrame();
+    void updateEvents();
     void MapActions();
     
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};

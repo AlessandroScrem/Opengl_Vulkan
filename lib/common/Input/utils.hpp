@@ -31,7 +31,12 @@ struct Feed{
 struct Time{
 private:
     // Time between current frame and last frame
-    inline static float frameTime = 1.0f;
+    inline static float     frameTime    = 1.0f;
+    inline static float     fpsTimer     = 0.f; 
+    inline static uint32_t  lastFPS      = 0;
+    inline static uint32_t  frameCounter = 0;;
+    inline static std::chrono::time_point<std::chrono::high_resolution_clock>  tStart;
+    inline static std::chrono::time_point<std::chrono::high_resolution_clock>  lastTimestamp;
 
 public:
     /**
@@ -41,15 +46,39 @@ public:
      */
     static float getFrameTime(){ return frameTime; }
 
+    static bool time(){ return (fpsTimer >=1000.0); }
+
+    static uint32_t geFps(){ return lastFPS; }
+
+    static void start() { tStart = std::chrono::high_resolution_clock::now(); }
+
+    static void end() 
+    {   
+        frameCounter++;
+        auto tEnd = std::chrono::high_resolution_clock::now();
+	    fpsTimer = std::chrono::duration<float, std::milli>(tEnd - lastTimestamp).count();
+        if (fpsTimer >= 1000.0 ) // If more than 1 sec ago
+        { 
+	        frameTime = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
+            lastFPS = static_cast<uint32_t>((float)frameCounter * (1000.0f / fpsTimer));
+
+            frameCounter = 0;
+		    lastTimestamp = tEnd;
+        }
+    }
+
+
+
    /**
      * @brief Update timeframe calculation
      * 
      */
+    [[deprecated("use start end instead")]]
     static void update() {
         static uint32_t nbFrames = 0;
         static std::chrono::time_point<std::chrono::high_resolution_clock>  lastTime;
         auto newTime = std::chrono::high_resolution_clock::now();
-        float deltaTime = (float)(std::chrono::duration<double, std::milli>(newTime - lastTime).count());
+        auto deltaTime = (float)(std::chrono::duration<double, std::milli>(newTime - lastTime).count());
 
         if (deltaTime >= 1000.0 ){ // If more than 1 sec ago
             frameTime = 1.0f / (float) nbFrames;

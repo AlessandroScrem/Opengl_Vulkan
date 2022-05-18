@@ -206,6 +206,7 @@ void Window::swapBuffers()
 
 void Window::update()
 {
+    glfwPollEvents();
     updateWindowSize();
 
     {   // update global mouse position        
@@ -221,7 +222,7 @@ void Window::updateWindowSize()
 
     do  // loop to skip zerosized
     {   
-        glfwWaitEvents();     
+        // glfwWaitEvents(); //  eat fps    
         glfwGetFramebufferSize(window_, &w, &h);
     }while(!w || !h);  
     
