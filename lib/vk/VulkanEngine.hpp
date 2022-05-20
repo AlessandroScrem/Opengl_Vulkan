@@ -26,6 +26,7 @@ struct DeletionQueue
 class VulkanDevice;
 class VulkanSwapchain;
 class VulkanShader;
+class ShaderBuilder;
 class VulkanUbo;
 
 class VulkanEngine : public Engine
@@ -40,18 +41,17 @@ private:
 
     // -----------------------
     void init();
-    void initGUI();
-    void init_shaders();
+    void init_UiOverlay();
     void init_fixed();
     void init_renderables();
     void init_commands();
     void init_sync_structures();
 
-    void cleanup_GUI();
+    void cleanup_UiOverlay();
 
     void draw_objects(VkCommandBuffer cmd, uint32_t imageIndex);  
     void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
-    void draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex);
+    void draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex);
 
     void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();

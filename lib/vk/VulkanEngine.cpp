@@ -28,7 +28,7 @@ VulkanEngine::~VulkanEngine()
 
     vkDeviceWaitIdle(device_->getDevice()); 
 
-    cleanup_GUI();
+    cleanup_UiOverlay();
 
     _mainDeletionQueue.flush();
 
@@ -42,18 +42,21 @@ void VulkanEngine::init()
 {
     device_ = std::make_unique<VulkanDevice>(*window_);
     swapchain_ = std::make_unique<VulkanSwapchain>(*device_, *window_); 
+    Shader::addBuilder(std::make_unique<ShaderBuilder>(*device_, *swapchain_));
 
-    init_shaders();        
+    Engine::init_shaders(); 
+       
     init_fixed();           
-    init_renderables();    
+    init_renderables();
+
     init_commands();    
-    initGUI();            
+    init_UiOverlay();            
 	init_sync_structures();  
 }
 
 
 
-void VulkanEngine::cleanup_GUI()
+void VulkanEngine::cleanup_UiOverlay()
 {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -64,9 +67,9 @@ void VulkanEngine::cleanup_GUI()
     }     
 }
 
-void VulkanEngine::initGUI()
+void VulkanEngine::init_UiOverlay()
 {
-    SPDLOG_TRACE("initGUI");
+    SPDLOG_TRACE("UiOverlay");
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForVulkan(window_->getWindowPtr(), true);
@@ -138,36 +141,6 @@ void VulkanEngine::initGUI()
         device_->endSingleTimeCommands(cmd);
         
         ImGui_ImplVulkan_DestroyFontUploadObjects();
-    }
-}
-
-
-void VulkanEngine::init_shaders()
-{
-    SPDLOG_TRACE("init_shaders");
-    {
-        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::TEXTURE); 
-        shader->addUbo(0);                                                             
-        shader->addTexture("data/textures/viking_room.png", 1);                         
-        shader->buid();                                                                 
-
-        shaders_.emplace("texture", std::move(shader));                                 
-    }
-    {
-        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::NORMALMAP);
-        shader->addUbo(0);
-        shader->buid();
-
-        shaders_.emplace("normalmap", std::move(shader));
-    }
-    {
-        auto shader = std::make_unique<VulkanShader>(*device_, *swapchain_, GLSL::AXIS);
-        shader->addUbo(0);
-        shader->setPolygonMode(VK_POLYGON_MODE_LINE);
-        shader->setTopology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-        shader->buid();
-
-        shaders_.emplace("axis", std::move(shader));
     }
 }
 
@@ -362,7 +335,7 @@ void VulkanEngine::draw()
 
         draw_objects(cmd, swapchainImageIndex);
         draw_fixed(cmd, swapchainImageIndex);
-        draw_overlay(cmd, swapchainImageIndex);
+        draw_UiOverlay(cmd, swapchainImageIndex);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
@@ -492,7 +465,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
         
 }
 
-void VulkanEngine::draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex)
+void VulkanEngine::draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex)
 {
     if(!ui_Overlay_){
         return;
@@ -501,20 +474,8 @@ void VulkanEngine::draw_overlay(VkCommandBuffer cmd, uint32_t imageIndex)
     // feed inputs to dear imgui, start new frame
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
 
-    // render your GUI
-    ImGui::Begin("Triangle Position/Color");
-        static float rotation = 0.0;
-        ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
-        static float translation[] = {0.0, 0.0};
-        ImGui::SliderFloat2("position", translation, -1.0, 1.0);
-        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
-        // color picker
-        ImGui::ColorEdit3("color", color);
-    ImGui::End();
-    
-    ImGui::Render();
+        Engine::draw_UiOverlay();
 
     ImDrawData* draw_data = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);

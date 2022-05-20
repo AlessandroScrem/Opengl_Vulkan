@@ -2,20 +2,73 @@
 #include "OpenglImage.hpp"
 #include "OpenglUbo.hpp"
 
+
+OpenglShaderBuilder::OpenglShaderBuilder()
+{
+    this->Reset();
+}
+
+void OpenglShaderBuilder::Reset(){
+    this->shader= std::make_unique<OpenglShader>();
+}
+
+Builder& OpenglShaderBuilder::type(GLSL::ShaderType id) { 
+    this->shader->shaderType = id;        
+    return *this;
+}
+
+Builder& OpenglShaderBuilder::addUbo(uint32_t binding ) {
+    this->shader->addUbo(binding);
+    return *this;
+}
+
+Builder& OpenglShaderBuilder::addTexture(std::string image, uint32_t binding ) {
+    this->shader->addTexture(image, binding);
+    return *this;
+}
+
+Builder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
+    switch (mode)
+    {
+    case 0:
+        this->shader->setTopology(GL_TRIANGLES);
+        this->shader->setPolygonMode(GL_FILL);
+        break;
+    case 1:
+        this->shader->setTopology(GL_LINES);
+        this->shader->setPolygonMode(GL_LINE);
+        break;
+    
+    default:
+        break;
+    }
+    return *this;
+}
+
+std::unique_ptr<Shader> OpenglShaderBuilder::build() {
+    this->shader->buid();
+    std::unique_ptr<Shader> result = std::move(this->shader);
+    this->Reset();
+    return result;
+}
+
+
+
 OpenglShader::OpenglShader(GLSL::ShaderType type /* = GLSL::PHONG */) 
     : shaderType{type}
 {
-    SPDLOG_DEBUG("constructor"); 
+    SPDLOG_TRACE("OpenglShader constructor"); 
 }
 
 OpenglShader::~OpenglShader()
 {
-    SPDLOG_DEBUG("destructor"); 
+    SPDLOG_DEBUG("OpenglShader destructor"); 
     glDeleteProgram(shaderProgram);
 }
 
 void OpenglShader::buid()
 {
+    SPDLOG_DEBUG("OpenglShader build"); 
     buildShaders();
 }
 

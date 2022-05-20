@@ -43,6 +43,27 @@ class VulkanSwapchain;
 class VulkanUbo;
 class VulkanImage;
 
+class VulkanShader;
+
+class ShaderBuilder : public Builder{
+private:
+    VulkanDevice &device;
+    VulkanSwapchain &swapchain;
+
+    std::unique_ptr<VulkanShader> shader;
+public:
+
+    ShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain);
+
+    void Reset();
+    virtual Builder& type(GLSL::ShaderType id)  override;
+    virtual Builder& addUbo(uint32_t binding ) override;
+    virtual Builder& addTexture(std::string image, uint32_t binding)  override;
+    virtual Builder& setPolygonMode(uint32_t mode) override;
+    virtual std::unique_ptr<Shader> build() override;
+
+};
+
 class VulkanShader : public Shader
 { 
 struct ShaderBindigs{
@@ -54,6 +75,8 @@ struct ShaderBindigs{
 }shaderBindings;
 
 public:
+    friend class ShaderBuilder;
+
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();
 
@@ -101,6 +124,7 @@ private:
 
     const bool Opengl_compatible_viewport = false; 
     bool precompiled = true;
+    bool prepared = false;
 
     VkShaderModule vertModule;
     VkShaderModule fragModule;

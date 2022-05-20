@@ -2,6 +2,8 @@
 // common lib
 #include <Window.hpp>
 #include <service_locator.hpp>
+//lib
+#include <imgui.h>
 // std
 #include <memory>
 
@@ -47,11 +49,9 @@ void Engine::setWindowMessage(std::string msg)
     window_->setWindowMessage(msg);
 }
 
-#include <chrono>
 void Engine::run() 
 { 
-
-    auto timestamp = [&]() {      
+    auto timestamp = [=]() {      
         if(ngn::Time::time())
         {
             std::stringstream msg;
@@ -63,7 +63,6 @@ void Engine::run()
         } };
 
     spdlog::info("*******           START           ************");  
-
     while(!window_->shouldClose() ) {
 
         window_->update();        
@@ -72,13 +71,30 @@ void Engine::run()
         ngn::Time::start();
 
         draw();
-        
+
         ngn::Time::end();
         timestamp();
 
-    }
-    
+    }    
     spdlog::info("*******           END             ************");  
+}
+
+void Engine::draw_UiOverlay()
+{
+    // render your GUI
+    ImGui::NewFrame();
+ 
+    ImGui::Begin("Triangle Position/Color");
+        static float rotation = 0.0;
+        ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
+        static float translation[] = {0.0, 0.0};
+        ImGui::SliderFloat2("position", translation, -1.0, 1.0);
+        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
+        // color picker
+        ImGui::ColorEdit3("color", color);
+    ImGui::End();
+    
+    ImGui::Render();
 }
 
 void Engine::updateEvents() 
@@ -90,6 +106,36 @@ void Engine::updateEvents()
     for(auto const& command : commands_){
         command.second->Execute();
     }
+}
+
+void Engine::init_shaders()
+{
+    SPDLOG_TRACE("Engine::init_shaders");
+
+    {
+        auto shader = Shader::make().type(GLSL::TEXTURE)
+                                    .addUbo(0)
+                                    .addTexture("data/textures/viking_room.png", 1)
+                                    .build(); 
+
+        shaders_.emplace("texture", std::move(shader));                                 
+    }
+    {
+        auto shader = Shader::make().type(GLSL::NORMALMAP)
+                                    .addUbo(0)
+                                    .build();
+
+        shaders_.emplace("normalmap", std::move(shader));
+    }
+    {
+        auto shader = Shader::make().type(GLSL::AXIS)
+                                    .addUbo(0)
+                                    .setPolygonMode(1)
+                                    .build();
+
+        shaders_.emplace("axis", std::move(shader));
+    }
+
 }
 
 
@@ -306,9 +352,7 @@ void Engine::MapActions()
             }
             return true;
         }
-    });
-    
-    
+    });   
 }
 
 

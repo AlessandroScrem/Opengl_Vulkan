@@ -24,12 +24,11 @@ public:
 
 private:
     void initOpenglGlobalStates();
-    void initGUI();
-    void init_shaders();
+    void init_UiOverlay();
+    void cleanup_UiOverlay();
     void init_fixed();
     void init_renderables();
-    void cleanup();
-    void draw_overlay();
+    void draw_UiOverlay();
     void draw_fixed();
     void draw_objects();
     void updateUbo(OpenglUbo &ubo);
@@ -38,11 +37,7 @@ private:
 
     void clearBackground();
     void updateframebuffersize();
-    
-
-
 
 };
-
 }//namespace ogl
 

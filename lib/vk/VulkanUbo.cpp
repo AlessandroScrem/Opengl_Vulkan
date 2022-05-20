@@ -3,13 +3,13 @@
 
 VulkanUbo::VulkanUbo(VulkanDevice &device, size_t sc_images) : device{device}, swapchainImages{sc_images}
 {
-    SPDLOG_DEBUG("constructor");
+    SPDLOG_TRACE("constructor");
     createUniformBuffers();
 }
 
 VulkanUbo::~VulkanUbo()
 {
-    SPDLOG_DEBUG("destructor");
+    SPDLOG_TRACE("destructor");
     cleanupUniformBuffers();
 }
 

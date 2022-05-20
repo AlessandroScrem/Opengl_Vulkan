@@ -29,11 +29,15 @@ public:
        
     void run();
     virtual void draw() = 0;
+    
     void setWindowMessage(std::string msg);
 
-   static std::unique_ptr<Engine> create(EngineType type);
+    static std::unique_ptr<Engine> create(EngineType type);
 
 protected:
+
+    void init_shaders();
+    void draw_UiOverlay();
 
     ngn::MultiplatformInput input_{};
     EngineType engine_type_{};
@@ -50,14 +54,14 @@ protected:
     const bool ui_Overlay_ = true;
 
 private:
-    void nextFrame();
     void updateEvents();
     void MapActions();
-    
+
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;
 
     static std::unique_ptr<Engine> makeVulkan(EngineType type);
     static std::unique_ptr<Engine> makeOpengl(EngineType type);
+
 };
 

@@ -1,5 +1,4 @@
 #include "multiplatform_input.hpp"
-
 // lib
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -24,6 +23,22 @@ namespace ngn
     {
         pos_.x = posx;
         pos_.y = posy;
+    }
+
+    void MultiplatformInput::UpdateWindowSize(int w, int h) 
+    { 
+        winstat_.w = w; 
+        winstat_.h = h; 
+    } 
+
+    void MultiplatformInput::Resized(bool stat) 
+    { 
+        winstat_.resized = stat;
+    }
+
+    void MultiplatformInput::Iconized(bool stat) 
+    { 
+        winstat_.iconized =  stat; 
     }
 
     InputKey MultiplatformInput::multiplatformKeyToInputKey(int key) {

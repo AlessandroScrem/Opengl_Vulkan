@@ -9,8 +9,27 @@
 // std
 
 
+
 class OpenglUbo;
 class OpenglImage;
+class OpenglShader;
+
+class OpenglShaderBuilder : public Builder{
+private:
+    std::unique_ptr<OpenglShader> shader;
+
+public:
+
+    OpenglShaderBuilder();
+
+    void Reset();
+    virtual Builder& type(GLSL::ShaderType id)  override;
+    virtual Builder& addUbo(uint32_t binding ) override ;
+    virtual Builder& addTexture(std::string image, uint32_t binding)  override;
+    virtual Builder& setPolygonMode(uint32_t mode) override;
+    virtual std::unique_ptr<Shader> build() override;
+
+};
 
 class OpenglShader : public Shader
 {
@@ -23,6 +42,8 @@ struct ShaderBindigs{
 }shaderBindings;
 
 public:
+    friend class OpenglShaderBuilder;
+
     OpenglShader(GLSL::ShaderType type = GLSL::PHONG);
     ~OpenglShader();
 

@@ -20,9 +20,12 @@ OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
 {    
     SPDLOG_DEBUG("constructor"); 
     initOpenglGlobalStates();  
-    initGUI();
+    init_UiOverlay();
 
-    init_shaders();
+    Shader::addBuilder(std::make_unique<OpenglShaderBuilder>());
+    Engine::init_shaders(); 
+
+
     init_renderables();
     init_fixed();
 }
@@ -30,12 +33,12 @@ OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
 OpenGLEngine::~OpenGLEngine() 
 {
     SPDLOG_DEBUG("destructor");
-    cleanup();
+    cleanup_UiOverlay();
 }
 
-void OpenGLEngine::cleanup() 
+void OpenGLEngine::cleanup_UiOverlay() 
 {   
-    SPDLOG_TRACE("cleanup");
+    SPDLOG_TRACE("cleanup_UiOverlay");
     
     // Cleanup ImGui
     ImGui_ImplOpenGL3_Shutdown();
@@ -72,7 +75,7 @@ void OpenGLEngine::initOpenglGlobalStates()
     glfwSwapInterval(0);
 }
 
-void OpenGLEngine::initGUI()
+void OpenGLEngine::init_UiOverlay()
 {
 	// Setup Platform/Renderer bindings
     // TODO update glsl_version acconrdigly with opengl context creation
@@ -84,35 +87,6 @@ void OpenGLEngine::initGUI()
 	if(!ImGui_ImplOpenGL3_Init(glsl_version)){
         throw std::runtime_error("failed to initialize ImGui_ImplOpenGL3_Init!");
     }
-}
-
-void OpenGLEngine::init_shaders()
-{
-    SPDLOG_TRACE("init_shaders");
-    {
-        auto shader = std::make_unique<OpenglShader>(GLSL::TEXTURE);
-        shader->addUbo(0);
-        shader->addTexture("data/textures/viking_room.png", 1);
-        shader->buid();
-
-        shaders_.emplace("texture", std::move(shader));
-    }
-    {
-        auto shader = std::make_unique<OpenglShader>(GLSL::NORMALMAP);
-        shader->addUbo(0);
-        shader->buid();
-
-        shaders_.emplace("normalmap", std::move(shader));
-    }
-    {
-        auto shader = std::make_unique<OpenglShader>(GLSL::AXIS);
-        shader->addUbo(0);
-        shader->setPolygonMode(GL_LINE);
-        shader->setTopology(GL_LINES);
-        shader->buid();
-
-        shaders_.emplace("axis", std::move(shader));
-    } 
 }
 
 void OpenGLEngine::init_fixed()
@@ -178,13 +152,13 @@ void OpenGLEngine::draw()
     draw_fixed();
     draw_objects();
 
-    draw_overlay();
+    draw_UiOverlay();
 
     // end frame
     window_->swapBuffers();  
 }
 
-void OpenGLEngine::draw_overlay()
+void OpenGLEngine::draw_UiOverlay()
 {
         if(!ui_Overlay_){
             return;
@@ -193,20 +167,9 @@ void OpenGLEngine::draw_overlay()
         // feed inputs to dear imgui, start new frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
- 
-        // render your GUI
-		ImGui::Begin("Triangle Position/Color");
-		static float rotation = 0.0;
-		ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
-		static float translation[] = {0.0, 0.0};
-		ImGui::SliderFloat2("position", translation, -1.0, 1.0);
-        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
-         // color picker
-        ImGui::ColorEdit3("color", color);
-        ImGui::End();
-        
-        ImGui::Render();
+
+            Engine::draw_UiOverlay();
+
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 

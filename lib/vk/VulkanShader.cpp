@@ -51,6 +51,55 @@ std::vector<char> compileGlslToSvp(std::string &source, shaderc_shader_kind kind
     return {data.cbegin(), data.cend()};
 }
 
+ShaderBuilder::ShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain)
+: device{device}, swapchain{swapchain}
+{
+    this->Reset();
+}
+
+void ShaderBuilder::Reset(){
+    this->shader = std::make_unique<VulkanShader>(device, swapchain);
+}
+
+Builder& ShaderBuilder::type(GLSL::ShaderType id) {
+     this->shader->shaderType = id;
+     return *this; 
+}
+
+Builder& ShaderBuilder::addUbo(uint32_t binding ) {
+    this->shader->addUbo(binding);
+    return *this;
+}
+
+Builder& ShaderBuilder::addTexture(std::string image, uint32_t binding ) {
+    this->shader->addTexture(image, binding);
+    return *this;
+}
+
+Builder& ShaderBuilder::setPolygonMode(uint32_t mode) {
+    switch (mode)
+    {
+    case 0:
+        this->shader->setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+        this->shader->setPolygonMode(VK_POLYGON_MODE_FILL);
+        break;
+    case 1:
+        this->shader->setTopology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+        this->shader->setPolygonMode(VK_POLYGON_MODE_LINE);
+        break;
+    
+    default:
+        break;
+    }
+    return *this;
+}
+
+std::unique_ptr<Shader> ShaderBuilder::build() {
+    this->shader->buid();
+    std::unique_ptr<Shader> result = std::move(this->shader);
+    this->Reset();
+    return result;
+}
 
 class PipelineBuilder2 {
 public:
@@ -72,29 +121,39 @@ VulkanShader::VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLS
     , swapchain{swapchain}
     , shaderType{type} 
 {
+    SPDLOG_TRACE("VulkanShader constructor");
 }
 
 VulkanShader::~VulkanShader(){
-    SPDLOG_TRACE("VulkanShader destructor"); 
+    SPDLOG_TRACE("VulkanShader destructor");
 
-    cleanupPipeline();
-    cleanupDescriptorPool();
-    vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
-    SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
+    if(prepared){
+        SPDLOG_DEBUG("destroy shader");
 
-    vkDestroyShaderModule(device.getDevice(), vertModule, nullptr);
-    vkDestroyShaderModule(device.getDevice(), fragModule, nullptr);
+        cleanupPipeline();
+        cleanupDescriptorPool();
+        vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
+        SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
+
+        vkDestroyShaderModule(device.getDevice(), vertModule, nullptr);
+        vkDestroyShaderModule(device.getDevice(), fragModule, nullptr);
+
+    } 
 }
 
-void VulkanShader::buid(    )
+void VulkanShader::buid()
 {
+    SPDLOG_DEBUG("VulkanShader build");
+
     buildShaders();                 
 
     createDescriptorSetLayout();    
     createDescriptorPool();        
     createDescriptorSets();         
 
-    createPipeline();              
+    createPipeline(); 
+
+    prepared = true;             
 }
 
 void VulkanShader::cleanupDescriptorPool()
