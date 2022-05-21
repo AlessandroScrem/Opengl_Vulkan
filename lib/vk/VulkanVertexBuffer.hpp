@@ -51,12 +51,15 @@ public:
 
     size_t getIndexSize() { return indices_size; }
 
+    void bind(VkCommandBuffer cmd, uint32_t imgeIndex);
+
 private:
 
     void createVertexBuffer(Model &model);
     void createIndexBuffer(Model &model);
 
     VulkanDevice &device;
+    bool prepared = false;
 
     size_t indices_size;
 

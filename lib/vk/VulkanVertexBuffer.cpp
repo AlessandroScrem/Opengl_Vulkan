@@ -9,7 +9,9 @@ VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, Model &model) : dev
 { 
     SPDLOG_DEBUG("constructor");
     createIndexBuffer(model);   
-    createVertexBuffer(model);   
+    createVertexBuffer(model); 
+
+    prepared = true;  
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() 
@@ -53,4 +55,15 @@ void VulkanVertexBuffer::createIndexBuffer(Model &model)
 
 	//allocate the buffer
 	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
+}
+
+void VulkanVertexBuffer::bind(VkCommandBuffer cmd, uint32_t imgeIndex)
+{
+    if(!prepared){
+        return;
+    }
+    VkDeviceSize offsets{};
+    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer._buffer, &offsets);
+    vkCmdBindIndexBuffer(cmd, indexBuffer._buffer, 0, VK_INDEX_TYPE_UINT32);       
+    vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indices_size), 1, 0, 0, 0);   
 }

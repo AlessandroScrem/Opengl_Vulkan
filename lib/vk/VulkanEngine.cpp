@@ -305,41 +305,58 @@ void VulkanEngine::draw()
 
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
-	//make a clear-color.
-	VkClearValue clearValue;
-    // set the background color
-    float r = Engine::background.red;
-    float g = Engine::background.green;
-    float b = Engine::background.blue;
-    float a = Engine::background.alpha;
-	clearValue.color = { { r, g, b, a } };
+        //make a clear-color.
+        VkClearValue clearValue;
+        // set the background color
+        float r = Engine::background.red;
+        float g = Engine::background.green;
+        float b = Engine::background.blue;
+        float a = Engine::background.alpha;
+        clearValue.color = { { r, g, b, a } };
 
-	//clear depth at 1
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
+        //clear depth at 1
+        VkClearValue depthClear;
+        depthClear.depthStencil.depth = 1.f;
 
-	VkClearValue clearValues[] = { clearValue, depthClear };
+        VkClearValue clearValues[] = { clearValue, depthClear };
 
-	//start the main renderpass. 
-	//We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
-        swapchain_->getRenderpass(), 
-        swapchain_->getExtent(), 
-        swapchain_->getFramebuffer(swapchainImageIndex));
+        //start the main renderpass. 
+        //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+        VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
+                                                swapchain_->getRenderpass(), 
+                                                swapchain_->getExtent(), 
+                                                swapchain_->getFramebuffer(swapchainImageIndex));
 
-	//connect clear values
-	rpInfo.clearValueCount = 2;
-	rpInfo.pClearValues = &clearValues[0];
+        //connect clear values
+        rpInfo.clearValueCount = 2;
+        rpInfo.pClearValues = &clearValues[0];
 
-	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+        //initialize the viewport
+        // TODO : check if resized
+        VkViewport viewport{};
+        VkRect2D scissor{};
+        scissor.extent = swapchain_->getExtent();
+        scissor.offset = {0, 0};
+        viewport.height = static_cast<float>(scissor.extent.height);
+        viewport.width  = static_cast<float>(scissor.extent.width);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
 
-        draw_objects(cmd, swapchainImageIndex);
-        draw_fixed(cmd, swapchainImageIndex);
-        draw_UiOverlay(cmd, swapchainImageIndex);
 
-	//finalize the render pass
-	vkCmdEndRenderPass(cmd);
-	//finalize the command buffer (we can no longer add commands, but it can now be executed)
+        //start the render pass
+        vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+            vkCmdSetViewport(cmd, 0, 1, &viewport);
+            vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+            draw_objects(cmd, swapchainImageIndex);
+            draw_fixed(cmd, swapchainImageIndex);
+            draw_UiOverlay(cmd, swapchainImageIndex);
+
+        //finalize the render pass
+        vkCmdEndRenderPass(cmd);
+        
+    //finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 
 	//prepare the submission to the queue. 
@@ -390,41 +407,14 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 
         RenderObject & ro                   = *renderables_.at(model_index_);
         VulkanShader &shader                = getShader(ro.shader);
-        VulkanUbo & ubo                     = shader.getUbo();
+        VulkanUbo & ubo                     = *shader.getUbo().ubo;
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
 
         updateUbo(ubo);
         ubo.model = ro.model;
-
-	    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.getGraphicsPipeline()); 
-        ubo.bind(imageIndex);
-
-        VkBuffer vertexBuffers[]        = {vertexbuffer.getVertexBuffer()};
-        VkBuffer indexBuffer            = vertexbuffer.getIndexBuffer();
-        size_t indexsize                = vertexbuffer.getIndexSize();
-        VkDeviceSize offsets[1]          = {0};
-        VkDescriptorSet descriptorSet   = shader.getDescriptorSet(imageIndex);
-        VkPipelineLayout pipelineLayout = shader.getPipelineLayout();
-
-        VkViewport viewport{};
-        VkRect2D scissor{};
-        scissor.extent = swapchain_->getExtent();
-        scissor.offset = {0, 0};
-        viewport.y = 0.0f;
-        viewport.x = 0.0f;
-        viewport.height = static_cast<float>(scissor.extent.height);
-        viewport.width  = static_cast<float>(scissor.extent.width);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-  
-        vkCmdSetViewport(cmd, 0, 1, &viewport);
-        vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-        vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0);
+        
+        shader.bind(cmd, imageIndex);
+        vertexbuffer.bind(cmd, imageIndex);
     // }   
 }
 
@@ -433,7 +423,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
         
     RenderObject & ro                   = *fixed_objects_.at("axis");
     VulkanShader & shader               = getShader(ro.shader);
-    VulkanUbo & ubo                     = shader.getUbo();
+    VulkanUbo & ubo                     = *shader.getUbo().ubo;
     VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
     auto[x, y] = window_->extents();
@@ -447,22 +437,8 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
     ubo.view = ourCamera.GetViewMatrix();
     ubo.proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.getGraphicsPipeline());
-    ubo.bind(imageIndex);
-
-    VkBuffer vertexBuffers[]        = {vertexbuffer.getVertexBuffer()};
-    VkBuffer indexBuffer            = vertexbuffer.getIndexBuffer();
-    size_t indexsize                = vertexbuffer.getIndexSize();
-    VkDeviceSize offsets[]          = {0};
-    VkDescriptorSet descriptorSet   = shader.getDescriptorSet(imageIndex);
-    VkPipelineLayout pipelineLayout = shader.getPipelineLayout();
-
-
-    vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);       
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-    vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indexsize), 1, 0, 0, 0); 
-        
+    shader.bind(cmd, imageIndex);
+    vertexbuffer.bind(cmd, imageIndex);       
 }
 
 void VulkanEngine::draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex)

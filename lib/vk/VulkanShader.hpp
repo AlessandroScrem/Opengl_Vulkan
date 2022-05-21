@@ -45,11 +45,21 @@ class VulkanImage;
 
 class VulkanShader;
 
+struct ImageBindings{
+    std::unique_ptr<VulkanImage> image;
+    uint32_t    binding = 0;
+};
+
+struct UboBindings{
+    std::unique_ptr<VulkanUbo>   ubo;
+    uint32_t    binding = 0;
+};
+
+
 class ShaderBuilder : public Builder{
 private:
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
-
     std::unique_ptr<VulkanShader> shader;
 public:
 
@@ -67,10 +77,8 @@ public:
 class VulkanShader : public Shader
 { 
 struct ShaderBindigs{
-    std::unique_ptr<VulkanImage> image;
-    std::unique_ptr<VulkanUbo>   ubo;
-    uint32_t    imageBindig = 0;
-    uint32_t    uboBindig = 0; 
+    std::vector<ImageBindings> imageBindings;
+    std::vector<UboBindings>   uboBindings; 
 
 }shaderBindings;
 
@@ -83,23 +91,16 @@ public:
     const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
     const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
-    VulkanUbo & getUbo();
-   
-    void cleanupDescriptorPool();
-    void cleanupPipeline();
-
-    void addTexture(std::string imagepath, uint32_t binding);
-    void addUbo(uint32_t binding);
-    void addConstant(uint32_t binding);
-    void setPolygonMode(VkPolygonMode mode);
-    void setTopology(VkPrimitiveTopology mode);
-    void buid();
-
+    UboBindings &  getUbo();
+    void bind(VkCommandBuffer cmd, uint32_t imageIndex);
 
 private:
 
-    VkShaderModule createShaderModule(const std::vector<char>& code);
     void buildShaders();  
+    VkShaderModule createShaderModule(const std::vector<char>& code);
+    void buid();
+    void cleanupDescriptorPool();
+    void cleanupPipeline();
     void createPipeline();
 
     // ----------------------------
@@ -130,8 +131,4 @@ private:
     VkShaderModule fragModule;
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages{};
-
-    std::vector<VkDescriptorPoolSize> shaderPoolsize{};
-    std::vector<VkWriteDescriptorSet> descriptorSet{};
-    std::vector<VkWriteDescriptorSet> shaderWrites{};
 };
