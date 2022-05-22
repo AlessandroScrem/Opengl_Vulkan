@@ -66,21 +66,12 @@ Builder& ShaderBuilder::type(GLSL::ShaderType id) {
      return *this; 
 }
 
-Builder& ShaderBuilder::addUbo(uint32_t id ) {
-    size_t swapchainImageSize = swapchain.getSwapchianImageSize();
-    UboBindings ubo{};
-    ubo.ubo = std::make_unique<VulkanUbo>(device, swapchainImageSize); 
-    ubo.binding = id;
-    this->shader->shaderBindings.uboBindings.push_back (std::move(ubo));
-    return *this;
-}
-
 Builder& ShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
     size_t swapchainImageSize = swapchain.getSwapchianImageSize();
-    ImageBindings image{};
-    image.image = std::make_unique<VulkanImage>(device, imagepath);
-    image.binding = id;
-    this->shader->shaderBindings.imageBindings.push_back (std::move(image));
+
+    auto image =  std::make_unique<VulkanImage>(device, imagepath);
+
+    this->shader->shaderBindings.imageBindings.emplace(id, std::move(image));
     return *this;
 }
 
@@ -154,6 +145,7 @@ void VulkanShader::buid()
 
     buildShaders();                 
 
+    createGlobalUbo();
     createDescriptorSetLayout();    
     createDescriptorPool();        
     createDescriptorSets();         
@@ -170,7 +162,7 @@ void VulkanShader::buid()
     }
 
     for(auto& uboBinding : shaderBindings.uboBindings){
-        uboBinding.ubo->bind(imageIndex);     
+        uboBinding.second->bind(imageIndex);     
     }
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -238,6 +230,13 @@ void VulkanShader::buildShaders(){
 
 }
 
+void VulkanShader::createGlobalUbo() {
+    size_t swapchainImageSize = swapchain.getSwapchianImageSize();
+    auto ubo = std::make_unique<VulkanUbo>(device, swapchainImageSize); 
+    shaderBindings.uboBindings.emplace(globalUboBinding, std::move(ubo) );
+}
+
+
 void VulkanShader::createDescriptorSetLayout()
 {
     SPDLOG_TRACE("createDescriptorSetLayout");
@@ -247,7 +246,7 @@ void VulkanShader::createDescriptorSetLayout()
     for(auto& imageBinding : shaderBindings.imageBindings){
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.binding = imageBinding.binding;
+        samplerLayoutBinding.binding = imageBinding.first;
         samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -257,7 +256,7 @@ void VulkanShader::createDescriptorSetLayout()
     for(auto& uboBinding : shaderBindings.uboBindings){
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.binding = uboBinding.binding;
+        uboLayoutBinding.binding = uboBinding.first;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -333,8 +332,8 @@ void VulkanShader::createDescriptorSets()
         
         std::vector<VkWriteDescriptorSet> descriptorWrites{};
         for(auto& imageBinding : shaderBindings.imageBindings){
-            auto& imageview = imageBinding.image->getTextureImageView();
-            auto& sampler = imageBinding.image->getTextureSampler();
+            auto& imageview = imageBinding.second->getTextureImageView();
+            auto& sampler = imageBinding.second->getTextureSampler();
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = imageview;
@@ -343,7 +342,7 @@ void VulkanShader::createDescriptorSets()
             VkWriteDescriptorSet imageWrite{};
             imageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             imageWrite.dstSet = descriptorSets[i];
-            imageWrite.dstBinding = imageBinding.binding;
+            imageWrite.dstBinding = imageBinding.first;
             imageWrite.dstArrayElement = 0;
             imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             imageWrite.descriptorCount = 1;
@@ -352,7 +351,7 @@ void VulkanShader::createDescriptorSets()
             descriptorWrites.push_back(imageWrite); 
         }
         for(auto& uboBinding : shaderBindings.uboBindings){
-            auto& uniformBuffers = uboBinding.ubo->getUniformBuffers();
+            auto& uniformBuffers = uboBinding.second->getUniformBuffers();
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
@@ -361,7 +360,7 @@ void VulkanShader::createDescriptorSets()
             VkWriteDescriptorSet uboWrite{};
             uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             uboWrite.dstSet = descriptorSets[i];
-            uboWrite.dstBinding = uboBinding.binding;
+            uboWrite.dstBinding = uboBinding.first;
             uboWrite.dstArrayElement = 0;
             uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             uboWrite.descriptorCount = 1;
@@ -376,13 +375,17 @@ void VulkanShader::createDescriptorSets()
                 0, nullptr);
     }
 }
-
-UboBindings & VulkanShader::getUbo()
-{
-    //TODO :FIX return value
-    return shaderBindings.uboBindings.at(0);
-}
  
+
+void VulkanShader::updateUbo(UniformBufferObject & mvp)
+{
+    auto& ubo = *(shaderBindings.uboBindings.at(globalUboBinding));
+
+    ubo.model = mvp.model;
+    ubo.view  = mvp.view;
+    ubo.proj  = mvp.proj;
+    ubo.proj[1][1] *= -1;
+}
 
 void VulkanShader::createPipeline() 
 { 

@@ -289,8 +289,10 @@ void VulkanEngine::draw()
 
 	//request image from the swapchain
 	uint32_t swapchainImageIndex;
-	VkResult  result = vkAcquireNextImageKHR(device_->getDevice(), swapchain_->getSwapchain(), 1000000000, 
-        _presentSemaphore[_currentFrame], nullptr,&swapchainImageIndex);
+	VkResult  result = vkAcquireNextImageKHR(device_->getDevice(), 
+                                            swapchain_->getSwapchain(), 1000000000, 
+                                            _presentSemaphore[_currentFrame], 
+                                            nullptr,&swapchainImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR ) {
         spdlog::error("VK_ERROR_OUT_OF_DATE_KHR");
@@ -298,56 +300,40 @@ void VulkanEngine::draw()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = _mainCommandBuffer[_currentFrame];
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
-        //make a clear-color.
-        VkClearValue clearValue;
-        // set the background color
-        float r = Engine::background.red;
-        float g = Engine::background.green;
-        float b = Engine::background.blue;
-        float a = Engine::background.alpha;
-        clearValue.color = { { r, g, b, a } };
-
-        //clear depth at 1
-        VkClearValue depthClear;
-        depthClear.depthStencil.depth = 1.f;
-
-        VkClearValue clearValues[] = { clearValue, depthClear };
-
         //start the main renderpass. 
         //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
         VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
                                                 swapchain_->getRenderpass(), 
                                                 swapchain_->getExtent(), 
-                                                swapchain_->getFramebuffer(swapchainImageIndex));
-
+                                                swapchain_->getFramebuffer(swapchainImageIndex)
+                                                );
+        // set the background color       
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{Engine::background.red, Engine::background.green, Engine::background.blue, Engine::background.alpha}};
+        clearValues[1].depthStencil.depth = {1.0f};
         //connect clear values
-        rpInfo.clearValueCount = 2;
-        rpInfo.pClearValues = &clearValues[0];
+        rpInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        rpInfo.pClearValues = clearValues.data();
 
         //initialize the viewport
-        // TODO : check if resized
         VkViewport viewport{};
         VkRect2D scissor{};
         scissor.extent = swapchain_->getExtent();
-        scissor.offset = {0, 0};
         viewport.height = static_cast<float>(scissor.extent.height);
         viewport.width  = static_cast<float>(scissor.extent.width);
-        viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-
 
         //start the render pass
         vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             vkCmdSetViewport(cmd, 0, 1, &viewport);
-            vkCmdSetScissor(cmd, 0, 1, &scissor);
+            vkCmdSetScissor(cmd, 0, 1, &scissor);   
 
             draw_objects(cmd, swapchainImageIndex);
             draw_fixed(cmd, swapchainImageIndex);
@@ -367,10 +353,7 @@ void VulkanEngine::draw()
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	submit.pWaitDstStageMask = &waitStage;
-
-	submit.waitSemaphoreCount = 1;
 	submit.pWaitSemaphores = &_presentSemaphore[_currentFrame];
-	submit.signalSemaphoreCount = 1;
 	submit.pSignalSemaphores = &_renderSemaphore[_currentFrame];
 
 	//submit command buffer to the queue and execute it.
@@ -385,9 +368,7 @@ void VulkanEngine::draw()
 
     VkSwapchainKHR swapChains[]     = {swapchain_->getSwapchain()};
 	presentInfo.pSwapchains         = swapChains;
-	presentInfo.swapchainCount      = 1;
 	presentInfo.pWaitSemaphores     = &_renderSemaphore[_currentFrame];
-	presentInfo.waitSemaphoreCount  = 1;
 	presentInfo.pImageIndices       = &swapchainImageIndex;
 
     result = vkQueuePresentKHR(device_->getPresentQueue(), &presentInfo);
@@ -407,11 +388,11 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
 
         RenderObject & ro                   = *renderables_.at(model_index_);
         VulkanShader &shader                = getShader(ro.shader);
-        VulkanUbo & ubo                     = *shader.getUbo().ubo;
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
 
-        updateUbo(ubo);
-        ubo.model = ro.model;
+        UniformBufferObject mvp = Engine::getMVP();        
+        mvp.model = ro.model;
+        shader.updateUbo(mvp);
         
         shader.bind(cmd, imageIndex);
         vertexbuffer.bind(cmd, imageIndex);
@@ -423,7 +404,6 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
         
     RenderObject & ro                   = *fixed_objects_.at("axis");
     VulkanShader & shader               = getShader(ro.shader);
-    VulkanUbo & ubo                     = *shader.getUbo().ubo;
     VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
     auto[x, y] = window_->extents();
@@ -434,8 +414,11 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
     float bottom = y-offset;
     float top    = -offset;
 
-    ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
+    UniformBufferObject mvp{};
+    mvp.view = ourCamera.GetViewMatrix();
+    mvp.proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
+    mvp.proj[1][1] *= -1;
+    shader.updateUbo(mvp);
 
     shader.bind(cmd, imageIndex);
     vertexbuffer.bind(cmd, imageIndex);       

@@ -87,6 +87,7 @@ void Window::createWindow()
     // min area is 64 by 64
     // there is no maximum size
     glfwSetWindowSizeLimits(window_, 32, 32, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    is_resized = true;
     is_initialized = true;
 }
 

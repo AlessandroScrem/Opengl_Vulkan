@@ -65,19 +65,42 @@ void Engine::run()
     spdlog::info("*******           START           ************");  
     while(!window_->shouldClose() ) {
 
-        window_->update();        
-        updateEvents();
 
         ngn::Time::start();
-
-        draw();
-
+            draw();
         ngn::Time::end();
+
+        window_->update();        
+        updateEvents();
         timestamp();
 
     }    
     spdlog::info("*******           END             ************");  
 }
+
+void Engine::updateEvents() 
+{
+    if (ngn::ServiceLocator::GetInputManager()) {
+        ngn::ServiceLocator::GetInputManager()->processInput();
+    }
+
+    for(auto const& command : commands_){
+        command.second->Execute();
+    }
+}
+
+UniformBufferObject Engine::getMVP()
+{   
+    UniformBufferObject mvp{};
+
+    mvp.view = ourCamera.GetViewMatrix();
+    mvp.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 1.0f, 11.0f);
+
+    mvp.viewPos = ourCamera.GetPosition();
+
+    return mvp;
+} 
+
 
 void Engine::draw_UiOverlay()
 {
@@ -97,24 +120,12 @@ void Engine::draw_UiOverlay()
     ImGui::Render();
 }
 
-void Engine::updateEvents() 
-{
-    if (ngn::ServiceLocator::GetInputManager()) {
-        ngn::ServiceLocator::GetInputManager()->processInput();
-    }
-
-    for(auto const& command : commands_){
-        command.second->Execute();
-    }
-}
-
 void Engine::init_shaders()
 {
     SPDLOG_TRACE("Engine::init_shaders");
 
     {
         auto shader = Shader::make().type(GLSL::TEXTURE)
-                                    .addUbo(0)
                                     .addTexture("data/textures/viking_room.png", 1)
                                     .build(); 
 
@@ -122,14 +133,12 @@ void Engine::init_shaders()
     }
     {
         auto shader = Shader::make().type(GLSL::NORMALMAP)
-                                    .addUbo(0)
                                     .build();
 
         shaders_.emplace("normalmap", std::move(shader));
     }
     {
         auto shader = Shader::make().type(GLSL::AXIS)
-                                    .addUbo(0)
                                     .setPolygonMode(1)
                                     .build();
 

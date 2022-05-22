@@ -31,7 +31,6 @@ private:
     void draw_UiOverlay();
     void draw_fixed();
     void draw_objects();
-    void updateUbo(OpenglUbo &ubo);
 
     OpenglShader & getShader(std::string name); 
 

@@ -13,7 +13,6 @@ class Builder{
 public:
     virtual ~Builder(){}
     virtual Builder& type(GLSL::ShaderType id)  =0;
-    virtual Builder& addUbo(uint32_t id)  =0;
     virtual Builder& addTexture(std::string image, uint32_t binding)  =0;
     virtual Builder& setPolygonMode(uint32_t mode)  =0;
     virtual std::unique_ptr<Shader> build()  =0;

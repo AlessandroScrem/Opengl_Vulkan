@@ -177,7 +177,6 @@ void OpenGLEngine::draw_fixed()
 {
     RenderObject & ro                   = *fixed_objects_.at("axis");
     OpenglShader &shader                = getShader(ro.shader);
-    OpenglUbo & ubo                     = shader.getUbo();
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
     auto [x, y] = window_->extents();
@@ -189,11 +188,12 @@ void OpenGLEngine::draw_fixed()
     float bottom = -offset;
     float top    = y-offset;
 
-    ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::ortho( left , right , bottom , top, -1000.0f, 1000.0f);
-    ubo.bind();
+    UniformBufferObject mvp{};
+    mvp.view = ourCamera.GetViewMatrix();
+    mvp.proj = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
+    shader.updateUbo(mvp);
 
-    shader.use();
+    shader.bind();
     vertexbuffer.draw(shader.getTopology());
     
 }
@@ -202,17 +202,14 @@ void OpenGLEngine::draw_objects()
 {
     RenderObject & ro                   = *renderables_.at(model_index_);
     OpenglShader &shader                = getShader(ro.shader);
-    OpenglUbo & ubo                     = shader.getUbo();
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
-    updateUbo(ubo);
-    ubo.model = ro.model;
+   
+    UniformBufferObject mvp = Engine::getMVP();        
+    mvp.model = ro.model;
+    shader.updateUbo(mvp);
 
-    // render
-    updateUbo(ubo);
-    ubo.bind();
-
-    shader.use();
+    shader.bind();
     vertexbuffer.draw(shader.getTopology());
 }
 
@@ -225,13 +222,6 @@ void OpenGLEngine::clearBackground()
     float a = Engine::background.alpha;
     glClearColor(r, g, b, a);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
-}
-
-void OpenGLEngine::updateUbo(OpenglUbo &ubo)
-{
-    ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 0.1f, 10.0f);
-    ubo.viewPos = ourCamera.GetPosition();
 }
 
 }//namespace ogl

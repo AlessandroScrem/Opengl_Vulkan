@@ -5,6 +5,7 @@
 // std
 #include <vector>
 #include <array>
+#include <map>
 
 static const std::array<VkVertexInputBindingDescription, 1> getBindingDescription() {
     std::array<VkVertexInputBindingDescription, 1> bindingDescription{};
@@ -67,7 +68,6 @@ public:
 
     void Reset();
     virtual Builder& type(GLSL::ShaderType id)  override;
-    virtual Builder& addUbo(uint32_t binding ) override;
     virtual Builder& addTexture(std::string image, uint32_t binding)  override;
     virtual Builder& setPolygonMode(uint32_t mode) override;
     virtual std::unique_ptr<Shader> build() override;
@@ -77,8 +77,8 @@ public:
 class VulkanShader : public Shader
 { 
 struct ShaderBindigs{
-    std::vector<ImageBindings> imageBindings;
-    std::vector<UboBindings>   uboBindings; 
+    std::map<uint32_t, std::unique_ptr<VulkanImage> > imageBindings;
+    std::map<uint32_t, std::unique_ptr<VulkanUbo> >   uboBindings; 
 
 }shaderBindings;
 
@@ -91,7 +91,7 @@ public:
     const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
     const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
-    UboBindings &  getUbo();
+    void updateUbo(UniformBufferObject & mpv);
     void bind(VkCommandBuffer cmd, uint32_t imageIndex);
 
 private:
@@ -104,6 +104,7 @@ private:
     void createPipeline();
 
     // ----------------------------
+    void createGlobalUbo();
     void createDescriptorSetLayout();
     void createDescriptorPool();
     void createDescriptorSets();
@@ -126,6 +127,8 @@ private:
     const bool Opengl_compatible_viewport = false; 
     bool precompiled = true;
     bool prepared = false;
+
+    const uint32_t globalUboBinding = 0;
 
     VkShaderModule vertModule;
     VkShaderModule fragModule;

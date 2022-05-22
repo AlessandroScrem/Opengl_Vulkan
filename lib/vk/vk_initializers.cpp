@@ -77,12 +77,12 @@ namespace vkinit
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		info.pNext = nullptr;
 
-		info.waitSemaphoreCount = 0;
+		info.waitSemaphoreCount = 1;
 		info.pWaitSemaphores = nullptr;
 		info.pWaitDstStageMask = nullptr;
 		info.commandBufferCount = 1;
 		info.pCommandBuffers = cmd;
-		info.signalSemaphoreCount = 0;
+		info.signalSemaphoreCount = 1;
 		info.pSignalSemaphores = nullptr;
 
 		return info;		
@@ -94,21 +94,23 @@ namespace vkinit
 		info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		info.pNext = nullptr;
 
-		info.swapchainCount = 0;
+		info.swapchainCount = 1;
 		info.pSwapchains = nullptr;
 		info.pWaitSemaphores = nullptr;
-		info.waitSemaphoreCount = 0;
+		info.waitSemaphoreCount = 1;
 		info.pImageIndices = nullptr;
 
 		return info;		
 	}
 	
-	VkRenderPassBeginInfo renderpass_begin_info(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer)
+	VkRenderPassBeginInfo renderpass_begin_info(VkRenderPass renderPass, 
+												VkExtent2D windowExtent, 
+												VkFramebuffer framebuffer)
 	{
+
 		VkRenderPassBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		info.pNext = nullptr;
-
 		info.renderPass = renderPass;
 		info.renderArea.offset.x = 0;
 		info.renderArea.offset.y = 0;

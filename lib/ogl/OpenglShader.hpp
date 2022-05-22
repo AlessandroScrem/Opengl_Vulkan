@@ -2,11 +2,13 @@
 // lib common
 #include <baseclass.hpp>
 #include <mytypes.hpp>
+#include <vertex.h>
 #include <glsl_constants.h>
 // lib
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 // std
+#include <map>
 
 
 
@@ -24,7 +26,6 @@ public:
 
     void Reset();
     virtual Builder& type(GLSL::ShaderType id)  override;
-    virtual Builder& addUbo(uint32_t binding ) override ;
     virtual Builder& addTexture(std::string image, uint32_t binding)  override;
     virtual Builder& setPolygonMode(uint32_t mode) override;
     virtual std::unique_ptr<Shader> build() override;
@@ -34,10 +35,8 @@ public:
 class OpenglShader : public Shader
 {
 struct ShaderBindigs{
-    std::unique_ptr<OpenglImage> image;
-    std::unique_ptr<OpenglUbo>   ubo;
-    uint32_t    imageBindig = 0;
-    uint32_t    uboBindig   = 0; 
+    std::map<uint32_t, std::unique_ptr<OpenglImage> > image;
+    std::map<uint32_t, std::unique_ptr<OpenglUbo> >   ubo;
 
 }shaderBindings;
 
@@ -47,17 +46,19 @@ public:
     OpenglShader(GLSL::ShaderType type = GLSL::PHONG);
     ~OpenglShader();
 
-    void addTexture(std::string imagepath, uint32_t binding);
-    void addUbo(uint32_t binding);
-    void addConstant(uint32_t binding);
-    void setPolygonMode(GLenum mode);
-    void setTopology(GLenum mode);
     void buid();  
-    void use();
+    void bind();
+    void updateUbo(UniformBufferObject & mvp);
+    void addConstant(uint32_t binding);
 
-    OpenglUbo & getUbo();
     GLenum getTopology(){return topology;}
     
+
+private:
+    void createGlobalUbo();
+    void buildShaders();
+    void compile(GLuint shader, std::vector<char> &glsl, GLenum  kind);
+    void link();
     void setVec1(const std::string &name, const float value) const
     { 
         glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()),  value); 
@@ -71,13 +72,9 @@ public:
         glUniform3f(glGetUniformLocation(shaderProgram, name.c_str()), x, y, z); 
     }
 
-private:
-    void compile(GLuint shader, std::vector<char> &glsl, GLenum  kind);
-    void link();
-    void buildShaders();
-
     GLSL::ShaderType shaderType;
     unsigned int shaderProgram;
+    const uint32_t globalUboBinding = 0;
 
     GLenum  polygonMode = GL_FILL; 
     GLenum  topology = GL_TRIANGLES;

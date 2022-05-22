@@ -17,13 +17,11 @@ Builder& OpenglShaderBuilder::type(GLSL::ShaderType id) {
     return *this;
 }
 
-Builder& OpenglShaderBuilder::addUbo(uint32_t binding ) {
-    this->shader->addUbo(binding);
-    return *this;
-}
 
-Builder& OpenglShaderBuilder::addTexture(std::string image, uint32_t binding ) {
-    this->shader->addTexture(image, binding);
+Builder& OpenglShaderBuilder::addTexture(std::string imagepath, uint32_t binding ) 
+{
+    auto image =  std::make_unique<OpenglImage>(imagepath);
+    this->shader->shaderBindings.image.emplace(binding, std::move(image));
     return *this;
 }
 
@@ -31,12 +29,12 @@ Builder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
     switch (mode)
     {
     case 0:
-        this->shader->setTopology(GL_TRIANGLES);
-        this->shader->setPolygonMode(GL_FILL);
+        this->shader->topology = GL_TRIANGLES;
+        this->shader->polygonMode = GL_FILL;
         break;
     case 1:
-        this->shader->setTopology(GL_LINES);
-        this->shader->setPolygonMode(GL_LINE);
+        this->shader->topology = GL_LINES;
+        this->shader->polygonMode = GL_LINE;
         break;
     
     default:
@@ -68,18 +66,23 @@ OpenglShader::~OpenglShader()
 
 void OpenglShader::buid()
 {
-    SPDLOG_DEBUG("OpenglShader build"); 
+    SPDLOG_DEBUG("OpenglShader build");
+    createGlobalUbo(); 
     buildShaders();
 }
 
-void  OpenglShader::use(){
+void  OpenglShader::bind(){
     //TODO : set polygonmode & topology
     // glPolygonMode(GL_FRONT_AND_BACK ,polygonMode);
 
     glUseProgram(shaderProgram);
 
-    if(shaderBindings.image){
-        shaderBindings.image->bind();
+    for(auto& shaderBinding : shaderBindings.image){
+        shaderBinding.second->bind();
+    }
+
+    for(auto& shaderBinding : shaderBindings.ubo){
+        shaderBinding.second->bind();
     }
 
 }
@@ -156,36 +159,25 @@ void OpenglShader::compile(GLuint shader, std::vector<char> &glsl, GLenum  kind)
     } 
 }
 
-OpenglUbo & OpenglShader::getUbo()
+void OpenglShader::updateUbo(UniformBufferObject & mvp)
 {
-    if(!shaderBindings.ubo){
-        throw std::runtime_error("failed to get ubo!");        
-    }
-    return *shaderBindings.ubo;
+    auto& ubo = *(shaderBindings.ubo.at(globalUboBinding));
+
+    ubo.model = mvp.model;
+    ubo.view  = mvp.view;
+    ubo.proj  = mvp.proj;
+    
 }
 
-void  OpenglShader::addTexture(std::string imagepath, uint32_t binding)
+void  OpenglShader::createGlobalUbo()
 {
-    shaderBindings.image = std::make_unique<OpenglImage>(imagepath);
-    shaderBindings.imageBindig = binding;
-}
-
-void  OpenglShader::addUbo(uint32_t binding)
-{
-    shaderBindings.ubo = std::make_unique<OpenglUbo>();
-    shaderBindings.uboBindig = binding;
+    auto ubo = std::make_unique<OpenglUbo>(); 
+    shaderBindings.ubo.emplace(globalUboBinding, std::move(ubo) );
 }
 
 void  OpenglShader::addConstant(uint32_t binding)
 {
 
 }
-void  OpenglShader::setPolygonMode(GLenum mode)
-{
-    polygonMode = mode;
-}
-void  OpenglShader::setTopology(GLenum  mode)
-{
-    topology = mode;
-}
+
 

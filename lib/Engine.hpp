@@ -5,6 +5,7 @@
 #include <baseclass.hpp>
 #include <mytypes.hpp>
 #include <camera.hpp>
+#include <vertex.h>
 #include <multiplatform_input.hpp>
 //std
 #include <vector>
@@ -27,17 +28,17 @@ public:
     Engine(EngineType type);
     virtual ~Engine();
        
-    void run();
-    virtual void draw() = 0;
-    
-    void setWindowMessage(std::string msg);
-
     static std::unique_ptr<Engine> create(EngineType type);
+    
+    void run();
+
+    virtual void draw() = 0;
 
 protected:
 
     void init_shaders();
     void draw_UiOverlay();
+    UniformBufferObject getMVP();
 
     ngn::MultiplatformInput input_{};
     EngineType engine_type_{};
@@ -56,6 +57,7 @@ protected:
 private:
     void updateEvents();
     void MapActions();
+    void setWindowMessage(std::string msg);
 
     std::unordered_map<std::string, std::unique_ptr<ngn::Command>> commands_{};
     bool shouldupdate = false;

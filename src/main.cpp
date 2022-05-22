@@ -42,5 +42,8 @@ int main(int argc, char const **argv)
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+    spdlog::info("EXIT_SUCCESS");
+    spdlog::shutdown();
+
     return EXIT_SUCCESS;
 }
