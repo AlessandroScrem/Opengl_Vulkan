@@ -62,7 +62,11 @@ void Window::initWindow()
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We want OpenGL 4.5
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
-        glfwWindowHint(GLFW_SAMPLES, 2); // try to get max MSAA  
+        glfwWindowHint(GLFW_SAMPLES, 2); // try to get max MSAA
+
+        #ifdef _DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true); // require debug context  
+        #endif
     }
 
     if(engineType == EngineType::Vulkan)
@@ -167,8 +171,7 @@ void Window::registerCallbacks(ngn::MultiplatformInput &input)
 
     // update global mouse position        
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
-    {   // TODO FIX  mouse movement 
-        // ngn::Mouse::Move((float)xpos, (float)ypos);       
+    {         
         // spdlog::info("mouse move.. ");
     });
 
@@ -220,7 +223,7 @@ void Window::update()
 {
     glfwPollEvents();
 
-    if(is_resized = Input->winstat_.resized)
+    if((is_resized = Input->winstat_.resized))
     {
         width_      = Input->winstat_.w;
         height_     = Input->winstat_.h;       
@@ -234,7 +237,6 @@ void Window::update()
         glfwWaitEvents();    
     }
     
-        // TODO FIX  mouse movement 
     {   // update global mouse position        
         double xpos, ypos;
         glfwGetCursorPos(window_, &xpos, &ypos);

@@ -128,7 +128,6 @@ void VulkanSwapchain::createSwapchain()
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    // TODO: maybe move Images creation outside class?
     // get swapchain images number
     VK_CHECK(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr) );
     swapChainImages.resize(imageCount);

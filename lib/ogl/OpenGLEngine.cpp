@@ -14,6 +14,9 @@
 #include <GLFW/glfw3.h>
 // std
 
+void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, 
+                            GLsizei length, const char *message, const void *userParam);
+
 namespace ogl
 {
 OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
@@ -49,6 +52,21 @@ void OpenGLEngine::cleanup_UiOverlay()
 void OpenGLEngine::initOpenglGlobalStates() 
 {
     SPDLOG_TRACE("initOpenglGlobalStates");
+
+    // check if we successfully initialized a debug context
+    int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        spdlog::info("GL_DEBUG_OUTPUT ENABLED");
+        // initialize debug output 
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+        glDebugMessageCallback(glDebugOutput, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+        // test debug error
+        // glBindBuffer(GL_VERTEX_ARRAY, 0);
+    }
+
 
     // configure global opengl state
     // -----------------------------
