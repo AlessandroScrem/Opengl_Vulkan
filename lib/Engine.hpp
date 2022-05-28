@@ -29,10 +29,7 @@ public:
     virtual ~Engine();
        
     static std::unique_ptr<Engine> create(EngineType type);
-    
     void run();
-
-    virtual void draw() = 0;
 
 protected:
 
@@ -73,6 +70,8 @@ protected:
     const bool ui_Overlay_ = true;
 
 private:
+
+    virtual void draw() = 0;
     void updateEvents();
     void MapActions();
     void setWindowMessage(std::string msg);

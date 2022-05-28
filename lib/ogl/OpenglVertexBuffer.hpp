@@ -35,7 +35,7 @@ private:
     std::unique_ptr<OpenglVertexBuffer> renderobject;
 public:
 
-    ObjectBuilder& Reset();
+    ObjectBuilder& Reset() override;
     virtual std::unique_ptr<RenderObject> build(Model &model, std::string shader) override;
 
 };

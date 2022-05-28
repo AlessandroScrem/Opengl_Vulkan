@@ -46,6 +46,11 @@ private:
 
     void cleanup_UiOverlay();
 
+    void begin_frame();
+    void end_frame();
+    void begin_renderpass();
+    void end_renderpass();
+
     void draw_objects(VkCommandBuffer cmd, uint32_t imageIndex);  
     void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
     void draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex);
@@ -56,9 +61,11 @@ private:
     std::unique_ptr<VulkanDevice> device_;
     std::unique_ptr<VulkanSwapchain> swapchain_;
 
+
     //------------------------------------
     int _currentFrame {0};
     const int MAX_FRAMES_IN_FLIGHT = 2;
+    uint32_t swapchainImageIndex_;
     std::vector<VkSemaphore> _presentSemaphore;
     std::vector<VkSemaphore> _renderSemaphore;
 	std::vector<VkFence> _renderFence;

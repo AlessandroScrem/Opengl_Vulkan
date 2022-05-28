@@ -208,7 +208,7 @@ void VulkanEngine::init_commands()
 }
 
 
-void VulkanEngine::draw()
+void VulkanEngine::begin_frame()
 {
     if (window_->is_Resized()){
         recreateSwapChain(); 
@@ -222,11 +222,10 @@ void VulkanEngine::draw()
 	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer[_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
 	//request image from the swapchain
-	uint32_t swapchainImageIndex;
 	VkResult  result = vkAcquireNextImageKHR(device_->getDevice(), 
                                             swapchain_->getSwapchain(), 1000000000, 
                                             _presentSemaphore[_currentFrame], 
-                                            nullptr,&swapchainImageIndex);
+                                            nullptr,&swapchainImageIndex_);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR ) {
         spdlog::error("VK_ERROR_OUT_OF_DATE_KHR");
@@ -234,56 +233,33 @@ void VulkanEngine::draw()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-	VkCommandBuffer cmd = _mainCommandBuffer[_currentFrame];
-	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+	VK_CHECK(vkBeginCommandBuffer(_mainCommandBuffer[_currentFrame], &cmdBeginInfo)); 
 
-        //start the main renderpass. 
-        //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-        VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
-                                                swapchain_->getRenderpass(), 
-                                                swapchain_->getExtent(), 
-                                                swapchain_->getFramebuffer(swapchainImageIndex)
-                                                );
-        // set the background color       
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{Engine::background.red, Engine::background.green, Engine::background.blue, Engine::background.alpha}};
-        clearValues[1].depthStencil.depth = {1.0f};
-        //connect clear values
-        rpInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        rpInfo.pClearValues = clearValues.data();
+    //initialize the viewport
+    VkViewport viewport{};
+    VkRect2D scissor{};
+    scissor.extent = swapchain_->getExtent();
+    viewport.height = static_cast<float>(scissor.extent.height);
+    viewport.width  = static_cast<float>(scissor.extent.width);
+    viewport.maxDepth = 1.0f;
 
-        //initialize the viewport
-        VkViewport viewport{};
-        VkRect2D scissor{};
-        scissor.extent = swapchain_->getExtent();
-        viewport.height = static_cast<float>(scissor.extent.height);
-        viewport.width  = static_cast<float>(scissor.extent.width);
-        viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(_mainCommandBuffer[_currentFrame], 0, 1, &viewport);
+    vkCmdSetScissor(_mainCommandBuffer[_currentFrame], 0, 1, &scissor);   
 
-        //start the render pass
-        vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
 
-            vkCmdSetViewport(cmd, 0, 1, &viewport);
-            vkCmdSetScissor(cmd, 0, 1, &scissor);   
-
-            draw_objects(cmd, swapchainImageIndex);
-            draw_fixed(cmd, swapchainImageIndex);
-            draw_UiOverlay(cmd, swapchainImageIndex);
-
-        //finalize the render pass
-        vkCmdEndRenderPass(cmd);
-        
+void VulkanEngine::end_frame()
+{
     //finalize the command buffer (we can no longer add commands, but it can now be executed)
-	VK_CHECK(vkEndCommandBuffer(cmd));
+	VK_CHECK(vkEndCommandBuffer(_mainCommandBuffer[_currentFrame]));
 
 	//prepare the submission to the queue. 
 	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
 	//we will signal the _renderSemaphore, to signal that rendering has finished
 
-	VkSubmitInfo submit = vkinit::submit_info(&cmd);
+	VkSubmitInfo submit = vkinit::submit_info(&_mainCommandBuffer[_currentFrame]);
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	submit.pWaitDstStageMask = &waitStage;
@@ -303,9 +279,9 @@ void VulkanEngine::draw()
     VkSwapchainKHR swapChains[]     = {swapchain_->getSwapchain()};
 	presentInfo.pSwapchains         = swapChains;
 	presentInfo.pWaitSemaphores     = &_renderSemaphore[_currentFrame];
-	presentInfo.pImageIndices       = &swapchainImageIndex;
+	presentInfo.pImageIndices       = &swapchainImageIndex_;
 
-    result = vkQueuePresentKHR(device_->getPresentQueue(), &presentInfo);
+    VkResult  result = vkQueuePresentKHR(device_->getPresentQueue(), &presentInfo);
     if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR){              
         spdlog::error("VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR");
     } else if (result != VK_SUCCESS) {
@@ -314,6 +290,47 @@ void VulkanEngine::draw()
 
 	//next frame 0 -> MAX_FRAMES_IN_FLIGHT -1    
 	_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;    
+}
+
+void VulkanEngine::begin_renderpass()
+{
+    //start the main renderpass. 
+    //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+    VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(
+                                            swapchain_->getRenderpass(), 
+                                            swapchain_->getExtent(), 
+                                            swapchain_->getFramebuffer(swapchainImageIndex_)
+                                            );
+    // set the background color       
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{Engine::background.red, Engine::background.green, Engine::background.blue, Engine::background.alpha}};
+    clearValues[1].depthStencil.depth = {1.0f};
+    //connect clear values
+    rpInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    rpInfo.pClearValues = clearValues.data();
+    //start the render pass
+    vkCmdBeginRenderPass(_mainCommandBuffer[_currentFrame], &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VulkanEngine::end_renderpass()
+{
+    //finalize the render pass
+    vkCmdEndRenderPass(_mainCommandBuffer[_currentFrame]);
+}
+
+void VulkanEngine::draw()
+{
+
+    begin_frame();
+    begin_renderpass();
+
+            draw_objects(_mainCommandBuffer[_currentFrame], swapchainImageIndex_);
+            draw_fixed(_mainCommandBuffer[_currentFrame], swapchainImageIndex_);
+            draw_UiOverlay(_mainCommandBuffer[_currentFrame], swapchainImageIndex_);
+
+    end_renderpass();
+    end_frame();
+
 }
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
