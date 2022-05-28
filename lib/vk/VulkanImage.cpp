@@ -80,7 +80,7 @@ void VulkanImage::createTexture()
 	imageExtent.depth = 1;
 
     VkImageCreateInfo img_info = vkinit::image_create_info(
-        VK_FORMAT_R8G8B8A8_SRGB, 
+        VK_FORMAT_R8G8B8A8_UNORM, 
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
         imageExtent,
         VK_SAMPLE_COUNT_1_BIT, 
@@ -96,7 +96,7 @@ void VulkanImage::createTexture()
 
     // steps
     // 1) Transition the texture image to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-    transitionImageLayout(textureImage._image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    transitionImageLayout(textureImage._image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     // 2) Execute the buffer to image copy operation
     copyBufferToImage(stagingBuffer._buffer, textureImage._image, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     
@@ -106,8 +106,9 @@ void VulkanImage::createTexture()
 
     // If not mipmap are generated,to be able to start sampling from the texture image in the shader, 
     //   we need one last transition to prepare it for shader access:
-    // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    generateMipmaps(textureImage._image, VK_FORMAT_R8G8B8A8_SRGB,  texWidth, texHeight, mipLevels);
+    // transitionImageLayout(textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    // generateMipmaps(textureImage._image, VK_FORMAT_R8G8B8A8_UNORM,  texWidth, texHeight, mipLevels);
+    generateMipmaps(textureImage._image, VK_FORMAT_R8G8B8A8_UNORM,  texWidth, texHeight, mipLevels);
 
     // cleaning up the staging buffer
     device.destroyVmaBuffer(stagingBuffer._buffer, stagingBuffer._allocation);
@@ -118,7 +119,7 @@ void VulkanImage::createTextureImageView()
     SPDLOG_TRACE("createTextureImageView");
 
     VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(
-        VK_FORMAT_R8G8B8A8_SRGB, 
+        VK_FORMAT_R8G8B8A8_UNORM, 
         textureImage._image, 
         VK_IMAGE_ASPECT_COLOR_BIT, 
         mipLevels);
@@ -161,7 +162,7 @@ void VulkanImage::createTextureSampler()
 }
 
 // move image to be in the right layout
-void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
+void VulkanImage::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) 
 {
     VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 

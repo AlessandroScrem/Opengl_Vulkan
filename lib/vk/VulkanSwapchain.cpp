@@ -146,8 +146,7 @@ VkSurfaceFormatKHR VulkanSwapchain::chooseSwapSurfaceFormat(const std::vector<Vk
     // We’ll use SRGB olor space 
     for (const auto& availableFormat : availableFormats) {
         // FIXME change from SRGB TO UNORM to make similar to Opengl apparence 
-        //if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        if (availableFormat.format == VK_FORMAT_R8G8B8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
         }
     }
