@@ -16,18 +16,16 @@ class OpenglUbo;
 class OpenglImage;
 class OpenglShader;
 
-class OpenglShaderBuilder : public Builder{
+class OpenglShaderBuilder : public ShaderBuilder{
 private:
     std::unique_ptr<OpenglShader> shader;
 
 public:
 
-    OpenglShaderBuilder();
-
-    void Reset();
-    virtual Builder& type(GLSL::ShaderType id)  override;
-    virtual Builder& addTexture(std::string image, uint32_t binding)  override;
-    virtual Builder& setPolygonMode(uint32_t mode) override;
+    virtual ShaderBuilder& Reset() override;
+    virtual ShaderBuilder& type(GLSL::ShaderType id)  override;
+    virtual ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
+    virtual ShaderBuilder& setPolygonMode(uint32_t mode) override;
     virtual std::unique_ptr<Shader> build() override;
 
 };
@@ -75,6 +73,8 @@ private:
     GLSL::ShaderType shaderType;
     unsigned int shaderProgram;
     const uint32_t globalUboBinding = 0;
+
+    bool prepared = false;
 
     GLenum  polygonMode = GL_FILL; 
     GLenum  topology = GL_TRIANGLES;

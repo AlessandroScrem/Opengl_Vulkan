@@ -3,29 +3,26 @@
 #include "OpenglUbo.hpp"
 
 
-OpenglShaderBuilder::OpenglShaderBuilder()
-{
-    this->Reset();
+
+ShaderBuilder& OpenglShaderBuilder::Reset(){
+    this->shader = std::make_unique<OpenglShader>();
+    return *this;
 }
 
-void OpenglShaderBuilder::Reset(){
-    this->shader= std::make_unique<OpenglShader>();
-}
-
-Builder& OpenglShaderBuilder::type(GLSL::ShaderType id) { 
+ShaderBuilder& OpenglShaderBuilder::type(GLSL::ShaderType id) { 
     this->shader->shaderType = id;        
     return *this;
 }
 
 
-Builder& OpenglShaderBuilder::addTexture(std::string imagepath, uint32_t binding ) 
+ShaderBuilder& OpenglShaderBuilder::addTexture(std::string imagepath, uint32_t binding ) 
 {
     auto image =  std::make_unique<OpenglImage>(imagepath);
     this->shader->shaderBindings.image.emplace(binding, std::move(image));
     return *this;
 }
 
-Builder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
+ShaderBuilder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
     switch (mode)
     {
     case 0:
@@ -46,7 +43,6 @@ Builder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
 std::unique_ptr<Shader> OpenglShaderBuilder::build() {
     this->shader->buid();
     std::unique_ptr<Shader> result = std::move(this->shader);
-    this->Reset();
     return result;
 }
 
@@ -61,7 +57,10 @@ OpenglShader::OpenglShader(GLSL::ShaderType type /* = GLSL::PHONG */)
 OpenglShader::~OpenglShader()
 {
     SPDLOG_DEBUG("OpenglShader destructor"); 
-    glDeleteProgram(shaderProgram);
+
+    if(prepared){
+        glDeleteProgram(shaderProgram);
+    }
 }
 
 void OpenglShader::buid()
@@ -69,6 +68,7 @@ void OpenglShader::buid()
     SPDLOG_DEBUG("OpenglShader build");
     createGlobalUbo(); 
     buildShaders();
+    prepared = true;
 }
 
 void  OpenglShader::bind(){

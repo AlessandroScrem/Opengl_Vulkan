@@ -27,7 +27,7 @@ EngineType parser(int argc, const char** argv)
 int main(int argc, char const **argv)
 {
     #ifdef _DEBUG
-        spdlog::set_level(spdlog::level::debug);
+        spdlog::set_level(spdlog::level::trace);
     #else 
         spdlog::set_level(spdlog::level::info);
     #endif

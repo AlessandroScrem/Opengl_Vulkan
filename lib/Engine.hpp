@@ -37,7 +37,25 @@ public:
 protected:
 
     void init_shaders();
+    void init_fixed();
+    void init_renderables();
     void draw_UiOverlay();
+ 
+    /**
+     * @brief Get the Shader object from shaders collection
+     * 
+     * @param name shader name
+     * @return VulkanShader& 
+     */
+    Shader & getShader(std::string name) 
+    {
+        auto got = shaders_.find (name);
+        if ( got == shaders_.end() ){
+            throw std::runtime_error("failed to find shader!");
+        }
+        return (*got->second);
+    }  
+
     UniformBufferObject getMVP();
 
     ngn::MultiplatformInput input_{};

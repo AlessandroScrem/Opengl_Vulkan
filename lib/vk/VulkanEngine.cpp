@@ -1,7 +1,6 @@
 #include "VulkanEngine.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
-#include "VulkanUbo.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanShader.hpp"
 #include "vk_initializers.h"
@@ -42,12 +41,12 @@ void VulkanEngine::init()
 {
     device_ = std::make_unique<VulkanDevice>(*window_);
     swapchain_ = std::make_unique<VulkanSwapchain>(*device_, *window_); 
-    Shader::addBuilder(std::make_unique<ShaderBuilder>(*device_, *swapchain_));
+    Shader::addBuilder(std::make_unique<VulkanShaderBuilder>(*device_, *swapchain_));
+    RenderObject::addBuilder(std::make_unique<VulkanObjectBuilder>(*device_));
 
     Engine::init_shaders(); 
-       
-    init_fixed();           
-    init_renderables();
+    Engine::init_fixed();           
+    Engine::init_renderables();
 
     init_commands();    
     init_UiOverlay();            
@@ -142,82 +141,17 @@ void VulkanEngine::init_UiOverlay()
         
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
-}
-
-void VulkanEngine::init_renderables()
-{ 
-    SPDLOG_TRACE("init_randerables");
-
-    {
-        Model model("data/models/viking_room.obj", Model::UP::ZUP);
-        // rotate toward camera
-        glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model.set_transform(trasf);
-
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, model);
-        object->shader = "texture";
-        object->model = model.get_tranform();
-        renderables_.push_back(std::move(object));
-    }
-
-    {
-        Model model("data/models/suzanne.obj", Model::UP::YUP);
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, model);
-        object->shader = "normalmap";
-        object->model = model.get_tranform();
-        renderables_.push_back(std::move(object));
-
-    }
-}
-
-void VulkanEngine::init_fixed()
-{
-    SPDLOG_TRACE("init_fixed"); 
-
-    {
-        std::unique_ptr<RenderObject> object = std::make_unique<VulkanVertexBuffer>(*device_, Model::axis());
-        object->shader = "axis";
-        object->model = glm::mat4(1.0f);
-        fixed_objects_.emplace("axis", std::move(object)); 
-    }    
-
-}
-
-
-VulkanShader & VulkanEngine::getShader(std::string name) 
-{
-    auto got = shaders_.find (name);
-    if ( got == shaders_.end() ){
-        throw std::runtime_error("failed to find shader!");
-    }
-    return static_cast<VulkanShader&>(*got->second);
-}  
- 
-void VulkanEngine::updateUbo(VulkanUbo &ubo)
-{
-
-    ubo.view = ourCamera.GetViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 1.0f, 11.0f);
-    ubo.proj[1][1] *= -1;
-
-    ubo.viewPos = ourCamera.GetPosition();
 } 
-
 
 void VulkanEngine::recreateSwapChain() 
 {  
     SPDLOG_DEBUG("recreateSwapChain");
 
     vkDeviceWaitIdle(device_->getDevice());
-
     // destroy 
-    //global_ubo.cleanupUniformBuffers();  
     swapchain_->cleanupSwapChain();
-
     // create 
     swapchain_->createAllSwapchian();
-    //global_ubo.createUniformBuffers();
-
 }
 
 void VulkanEngine::init_sync_structures()
@@ -387,7 +321,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
     // for(  auto & ro : _renderables){
 
         RenderObject & ro                   = *renderables_.at(model_index_);
-        VulkanShader &shader                = getShader(ro.shader);
+        VulkanShader &shader                = static_cast<VulkanShader&>(Engine::getShader(ro.shader));
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
 
         UniformBufferObject mvp = Engine::getMVP();        
@@ -395,7 +329,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, uint32_t imageIndex)
         shader.updateUbo(mvp);
         
         shader.bind(cmd, imageIndex);
-        vertexbuffer.bind(cmd, imageIndex);
+        vertexbuffer.draw(cmd, imageIndex);
     // }   
 }
 
@@ -403,7 +337,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
 {
         
     RenderObject & ro                   = *fixed_objects_.at("axis");
-    VulkanShader & shader               = getShader(ro.shader);
+    VulkanShader & shader               = static_cast<VulkanShader&>(Engine::getShader(ro.shader));
     VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
     auto[x, y] = window_->extents();
@@ -421,7 +355,7 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex)
     shader.updateUbo(mvp);
 
     shader.bind(cmd, imageIndex);
-    vertexbuffer.bind(cmd, imageIndex);       
+    vertexbuffer.draw(cmd, imageIndex);       
 }
 
 void VulkanEngine::draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex)

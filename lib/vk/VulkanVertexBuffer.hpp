@@ -39,11 +39,26 @@
 
 class VulkanDevice;
 class Model;
+class VulkanVertexBuffer;
+
+class VulkanObjectBuilder : public ObjectBuilder{
+private:
+    VulkanDevice &device;
+    std::unique_ptr<VulkanVertexBuffer> renderobject;
+public:
+
+    VulkanObjectBuilder(VulkanDevice &device);
+
+    ObjectBuilder& Reset();
+    virtual std::unique_ptr<RenderObject> build(Model &model, std::string shader) override;
+
+};
+
 
 class VulkanVertexBuffer : public RenderObject
 {
 public:
-    VulkanVertexBuffer(VulkanDevice &device, Model &model);
+    VulkanVertexBuffer(VulkanDevice &device);
     ~VulkanVertexBuffer();
 
     VkBuffer getVertexBuffer() { return vertexBuffer._buffer; }
@@ -51,7 +66,8 @@ public:
 
     size_t getIndexSize() { return indices_size; }
 
-    void bind(VkCommandBuffer cmd, uint32_t imgeIndex);
+    void draw(VkCommandBuffer cmd, uint32_t imgeIndex);
+    void build(Model &model);
 
 private:
 

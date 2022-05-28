@@ -27,7 +27,6 @@ class VulkanDevice;
 class VulkanSwapchain;
 class VulkanShader;
 class ShaderBuilder;
-class VulkanUbo;
 
 class VulkanEngine : public Engine
 {
@@ -42,8 +41,6 @@ private:
     // -----------------------
     void init();
     void init_UiOverlay();
-    void init_fixed();
-    void init_renderables();
     void init_commands();
     void init_sync_structures();
 
@@ -53,16 +50,7 @@ private:
     void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
     void draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex);
 
-    void updateUbo(VulkanUbo &ubo);
     void recreateSwapChain();
-
-    /**
-     * @brief Get the Shader object from shaders collection
-     * 
-     * @param name shader name
-     * @return VulkanShader& 
-     */
-    VulkanShader & getShader(std::string name); 
 
     // -----------------------
     std::unique_ptr<VulkanDevice> device_;

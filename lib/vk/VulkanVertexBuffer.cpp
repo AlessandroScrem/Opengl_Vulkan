@@ -5,9 +5,33 @@
 #include <vertex.h>
 #include <model.hpp>
 
-VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, Model &model) : device{device}
+VulkanObjectBuilder::VulkanObjectBuilder(VulkanDevice &device)
+: device{device}
+{
+}
+
+ObjectBuilder& VulkanObjectBuilder::Reset(){
+    this->renderobject = std::make_unique<VulkanVertexBuffer>(device);
+    return *this;
+}
+
+std::unique_ptr<RenderObject> 
+VulkanObjectBuilder::build(Model &model, std::string shadername)
+{
+    this->renderobject->shader = shadername;
+    this->renderobject->model = model.get_tranform();
+    this->renderobject->build(model);
+    std::unique_ptr<RenderObject> result = std::move(this->renderobject);
+    return result;
+}
+
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device) : device{device}
 { 
     SPDLOG_DEBUG("constructor");
+}
+
+void VulkanVertexBuffer::build(Model &model) 
+{ 
     createIndexBuffer(model);   
     createVertexBuffer(model); 
 
@@ -17,12 +41,12 @@ VulkanVertexBuffer::VulkanVertexBuffer(VulkanDevice &device, Model &model) : dev
 VulkanVertexBuffer::~VulkanVertexBuffer() 
 {   
     SPDLOG_DEBUG("destructor");
-
-    device.destroyVmaBuffer(vertexBuffer._buffer, vertexBuffer._allocation);
-    SPDLOG_TRACE("Vertex vmaDestroyBuffer");
-    device.destroyVmaBuffer(indexBuffer._buffer, indexBuffer._allocation);
-    SPDLOG_TRACE("Index vmaDestroyBuffer");
-
+    if(prepared){
+        device.destroyVmaBuffer(vertexBuffer._buffer, vertexBuffer._allocation);
+        SPDLOG_TRACE("Vertex vmaDestroyBuffer");
+        device.destroyVmaBuffer(indexBuffer._buffer, indexBuffer._allocation);
+        SPDLOG_TRACE("Index vmaDestroyBuffer");
+    }
 } 
 
 
@@ -57,7 +81,7 @@ void VulkanVertexBuffer::createIndexBuffer(Model &model)
 	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
 }
 
-void VulkanVertexBuffer::bind(VkCommandBuffer cmd, uint32_t imgeIndex)
+void VulkanVertexBuffer::draw(VkCommandBuffer cmd, uint32_t imgeIndex)
 {
     if(!prepared){
         return;

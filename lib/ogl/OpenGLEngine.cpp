@@ -26,11 +26,10 @@ OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
     init_UiOverlay();
 
     Shader::addBuilder(std::make_unique<OpenglShaderBuilder>());
+    RenderObject::addBuilder(std::make_unique<OpenglObjectBuilder>());
     Engine::init_shaders(); 
-
-
-    init_renderables();
-    init_fixed();
+    Engine::init_renderables();
+    Engine::init_fixed();
 }
 
 OpenGLEngine::~OpenGLEngine() 
@@ -107,50 +106,6 @@ void OpenGLEngine::init_UiOverlay()
     }
 }
 
-void OpenGLEngine::init_fixed()
-{ 
-    auto & model = Model::axis();
-    std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(Model::axis());
-    object->shader = "axis";
-    object->model = model.get_tranform();
-    fixed_objects_.emplace("axis", std::move(object));    
-}
-
-void OpenGLEngine::init_renderables()
-{
-
-    {
-        Model model("data/models/viking_room.obj", Model::UP::ZUP);
-        // rotate toward camera
-        glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model.set_transform(trasf);
-
-        std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>(model);
-        object->shader = "texture";
-        object->model = model.get_tranform();
-        renderables_.push_back(std::move(object));
-    }
-
-    {
-        Model model("data/models/suzanne.obj", Model::UP::YUP);
-        std::unique_ptr<RenderObject> object = std::make_unique<OpenglVertexBuffer>( model);
-        object->shader = "normalmap";
-        object->model = model.get_tranform();
-        renderables_.push_back(std::move(object));
-
-    } 
-}
-
-OpenglShader & OpenGLEngine::getShader(std::string name) 
-{
-    auto got = shaders_.find (name);
-    if ( got == shaders_.end() ){
-        throw std::runtime_error("failed to find shader!");
-    }
-    return static_cast<OpenglShader&>(*got->second);
-} 
-
-
 void OpenGLEngine::updateframebuffersize() 
 {
     auto [w, h] = window_->extents();
@@ -194,7 +149,7 @@ void OpenGLEngine::draw_UiOverlay()
 void OpenGLEngine::draw_fixed()
 {
     RenderObject & ro                   = *fixed_objects_.at("axis");
-    OpenglShader &shader                = getShader(ro.shader);
+    OpenglShader &shader                = static_cast<OpenglShader&>(Engine::getShader(ro.shader));
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
     auto [x, y] = window_->extents();
@@ -219,7 +174,7 @@ void OpenGLEngine::draw_fixed()
 void OpenGLEngine::draw_objects()
 {
     RenderObject & ro                   = *renderables_.at(model_index_);
-    OpenglShader &shader                = getShader(ro.shader);
+    OpenglShader &shader                = static_cast<OpenglShader&>(Engine::getShader(ro.shader));
     OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
 
    

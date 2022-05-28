@@ -57,19 +57,19 @@ struct UboBindings{
 };
 
 
-class ShaderBuilder : public Builder{
+class VulkanShaderBuilder : public ShaderBuilder{
 private:
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
     std::unique_ptr<VulkanShader> shader;
 public:
 
-    ShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain);
+    VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain);
 
-    void Reset();
-    virtual Builder& type(GLSL::ShaderType id)  override;
-    virtual Builder& addTexture(std::string image, uint32_t binding)  override;
-    virtual Builder& setPolygonMode(uint32_t mode) override;
+    virtual ShaderBuilder& Reset()override;
+    virtual ShaderBuilder& type(GLSL::ShaderType id)  override;
+    virtual ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
+    virtual ShaderBuilder& setPolygonMode(uint32_t mode) override;
     virtual std::unique_ptr<Shader> build() override;
 
 };
@@ -83,7 +83,7 @@ struct ShaderBindigs{
 }shaderBindings;
 
 public:
-    friend class ShaderBuilder;
+    friend class VulkanShaderBuilder;
 
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();

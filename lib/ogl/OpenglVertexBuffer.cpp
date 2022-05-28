@@ -2,7 +2,28 @@
 // common
 #include <model.hpp>
 
-OpenglVertexBuffer::OpenglVertexBuffer(Model &model)
+
+ObjectBuilder& OpenglObjectBuilder::Reset(){
+    this->renderobject = std::make_unique<OpenglVertexBuffer>();
+    return *this;
+}
+
+std::unique_ptr<RenderObject> 
+OpenglObjectBuilder::build(Model &model, std::string shadername)
+{
+    this->renderobject->shader = shadername;
+    this->renderobject->model = model.get_tranform();
+    this->renderobject->build(model);
+    std::unique_ptr<RenderObject> result = std::move(this->renderobject);
+    return result;
+}
+
+OpenglVertexBuffer::OpenglVertexBuffer()
+{
+ 
+}
+
+void OpenglVertexBuffer::build(Model &model)
 {
     _indices_size       = static_cast<GLsizei>(model.indicesSize());
     auto vertices_size  = model.verticesSize();
@@ -24,18 +45,25 @@ OpenglVertexBuffer::OpenglVertexBuffer(Model &model)
     setVertexAttribPointer();
 
     // You can unbind the buffers 
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    prepared = true; 
 }
 
 OpenglVertexBuffer::~OpenglVertexBuffer()
-{   
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+{ 
+    if (prepared){
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }  
 }
 
 void OpenglVertexBuffer::draw(GLenum mode)
 {
+    if(!prepared){
+        return;
+    }
     glBindVertexArray(VAO); 
     glDrawElements(mode, (GLsizei) _indices_size , GL_UNSIGNED_INT, 0);
 }

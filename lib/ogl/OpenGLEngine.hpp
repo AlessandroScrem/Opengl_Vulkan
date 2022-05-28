@@ -25,13 +25,9 @@ private:
     void initOpenglGlobalStates();
     void init_UiOverlay();
     void cleanup_UiOverlay();
-    void init_fixed();
-    void init_renderables();
     void draw_UiOverlay();
     void draw_fixed();
     void draw_objects();
-
-    OpenglShader & getShader(std::string name); 
 
     void clearBackground();
     void updateframebuffersize();

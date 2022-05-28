@@ -28,6 +28,18 @@ struct VertexInputAttributeDescription {
 };
 
 class Model;
+class OpenglVertexBuffer;
+
+class OpenglObjectBuilder : public ObjectBuilder{
+private:
+    std::unique_ptr<OpenglVertexBuffer> renderobject;
+public:
+
+    ObjectBuilder& Reset();
+    virtual std::unique_ptr<RenderObject> build(Model &model, std::string shader) override;
+
+};
+
 
 class OpenglVertexBuffer : public RenderObject
 {
@@ -65,14 +77,16 @@ public:
         return attributeDescriptions;
     }
 
-    OpenglVertexBuffer(Model &model);
+    OpenglVertexBuffer();
     ~OpenglVertexBuffer();
 
+    void build(Model &model);
     void draw(GLenum mode);
 
 private:
 
     void setVertexAttribPointer();
+    bool prepared = false;
     
     unsigned int VBO, VAO, EBO;
     GLsizei _indices_size;

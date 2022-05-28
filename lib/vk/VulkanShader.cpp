@@ -51,22 +51,22 @@ std::vector<char> compileGlslToSvp(std::string &source, shaderc_shader_kind kind
     return {data.cbegin(), data.cend()};
 }
 
-ShaderBuilder::ShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain)
+VulkanShaderBuilder::VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain)
 : device{device}, swapchain{swapchain}
 {
-    this->Reset();
 }
 
-void ShaderBuilder::Reset(){
+ShaderBuilder&  VulkanShaderBuilder::Reset(){
     this->shader = std::make_unique<VulkanShader>(device, swapchain);
+    return *this;
 }
 
-Builder& ShaderBuilder::type(GLSL::ShaderType id) {
+ShaderBuilder& VulkanShaderBuilder::type(GLSL::ShaderType id) {
      this->shader->shaderType = id;
      return *this; 
 }
 
-Builder& ShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
+ShaderBuilder& VulkanShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
     size_t swapchainImageSize = swapchain.getSwapchianImageSize();
 
     auto image =  std::make_unique<VulkanImage>(device, imagepath);
@@ -75,7 +75,7 @@ Builder& ShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
     return *this;
 }
 
-Builder& ShaderBuilder::setPolygonMode(uint32_t mode) {
+ShaderBuilder& VulkanShaderBuilder::setPolygonMode(uint32_t mode) {
     switch (mode)
     {
     case 0:
@@ -92,10 +92,9 @@ Builder& ShaderBuilder::setPolygonMode(uint32_t mode) {
     return *this;
 }
 
-std::unique_ptr<Shader> ShaderBuilder::build() {
+std::unique_ptr<Shader> VulkanShaderBuilder::build() {
     this->shader->buid();
     std::unique_ptr<Shader> result = std::move(this->shader);
-    this->Reset();
     return result;
 }
 
