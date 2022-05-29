@@ -129,11 +129,11 @@ void VulkanSwapchain::createSwapchain()
     }
 
     // get swapchain images number
-    VK_CHECK(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr) );
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr) );
     swapChainImages.resize(imageCount);
     
     // get swapchain images to vector
-    VK_CHECK(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, swapChainImages.data()) );
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, swapChainImages.data()) );
 
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
@@ -225,7 +225,7 @@ void VulkanSwapchain::createImageViews()
                 swapChainImages[i], 
                 VK_IMAGE_ASPECT_COLOR_BIT, 
                 mipmap_one);
-        VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &swapChainImageViews[i]) );
+        VK_CHECK_RESULT(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &swapChainImageViews[i]) );
     }    
 } 
 
@@ -334,7 +334,7 @@ void VulkanSwapchain::createRenderPass()
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    VK_CHECK(vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) );
+    VK_CHECK_RESULT(vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) );
 }
 
 void VulkanSwapchain::createFramebuffers() 
@@ -355,7 +355,7 @@ void VulkanSwapchain::createFramebuffers()
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
 
-        VK_CHECK(vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) );
+        VK_CHECK_RESULT(vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) );
     }
 }
 
@@ -391,7 +391,7 @@ void VulkanSwapchain::createColorResources()
         mipmap_one);
 
     //build a image-view for the color image to use for rendering
-    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &colorImageView));   
+    VK_CHECK_RESULT(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &colorImageView));   
 }
 
 void VulkanSwapchain::createDepthResources() 
@@ -422,7 +422,7 @@ void VulkanSwapchain::createDepthResources()
         mipmap_one);
 
 	//create a image-view for the depth image to use for rendering
-    VK_CHECK(vkCreateImageView(device.getDevice(), &view_info, nullptr, &depthImageView));
+    VK_CHECK_RESULT(vkCreateImageView(device.getDevice(), &view_info, nullptr, &depthImageView));
 
 }
 

@@ -82,7 +82,7 @@ void VulkanEngine::init_UiOverlay()
     int                      g_ImageCount       = g_MinImageCount + 1;
     VkRenderPass             g_RenderPass       = swapchain_->getRenderpass();
     VkSampleCountFlagBits    g_MSAASamples      = device_->getMsaaSamples();
-    auto                     g_CheckVkResultFn  = [](VkResult x){ VK_CHECK(x);};            
+    auto                     g_CheckVkResultFn  = [](VkResult x){ VK_CHECK_RESULT(x);};            
     VkAllocationCallbacks*   g_Allocator        = NULL;
     VkPipelineCache          g_PipelineCache    = VK_NULL_HANDLE;
 
@@ -108,7 +108,7 @@ void VulkanEngine::init_UiOverlay()
         pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
-        VK_CHECK(vkCreateDescriptorPool(g_Device, &pool_info, NULL, &_gui_DescriptorPool));
+        VK_CHECK_RESULT(vkCreateDescriptorPool(g_Device, &pool_info, NULL, &_gui_DescriptorPool));
     }
 
     // init ImGui_ImplVulkan
@@ -170,9 +170,9 @@ void VulkanEngine::init_sync_structures()
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
     
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_CHECK(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
-        VK_CHECK(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore[i]));
-	    VK_CHECK(vkCreateFence(device_->getDevice(), &fenceCreateInfo, nullptr, &_renderFence[i]));
+        VK_CHECK_RESULT(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_presentSemaphore[i]));
+        VK_CHECK_RESULT(vkCreateSemaphore(device_->getDevice(), &semaphoreCreateInfo, nullptr, &_renderSemaphore[i]));
+	    VK_CHECK_RESULT(vkCreateFence(device_->getDevice(), &fenceCreateInfo, nullptr, &_renderFence[i]));
 
         //enqueue the destruction of semaphores
         _mainDeletionQueue.push_function([=]() {
@@ -199,7 +199,7 @@ void VulkanEngine::init_commands()
 
         //allocate the default command buffer that we will use for rendering
         VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool[i], 1);
-	    VK_CHECK(vkAllocateCommandBuffers(device_->getDevice(), &cmdAllocInfo, &_mainCommandBuffer[i]));
+	    VK_CHECK_RESULT(vkAllocateCommandBuffers(device_->getDevice(), &cmdAllocInfo, &_mainCommandBuffer[i]));
 
         _mainDeletionQueue.push_function([=]() {
             vkDestroyCommandPool(device_->getDevice(), _commandPool[i], nullptr);
@@ -215,11 +215,11 @@ void VulkanEngine::begin_frame()
     }
 
 	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
-	VK_CHECK(vkWaitForFences(device_->getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
-	VK_CHECK(vkResetFences(device_->getDevice(), 1, &_renderFence[_currentFrame]) );
+	VK_CHECK_RESULT(vkWaitForFences(device_->getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
+	VK_CHECK_RESULT(vkResetFences(device_->getDevice(), 1, &_renderFence[_currentFrame]) );
 
 	//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-	VK_CHECK(vkResetCommandBuffer(_mainCommandBuffer[_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
+	VK_CHECK_RESULT(vkResetCommandBuffer(_mainCommandBuffer[_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
 	//request image from the swapchain
 	VkResult  result = vkAcquireNextImageKHR(device_->getDevice(), 
@@ -235,7 +235,7 @@ void VulkanEngine::begin_frame()
 
 	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	VK_CHECK(vkBeginCommandBuffer(_mainCommandBuffer[_currentFrame], &cmdBeginInfo)); 
+	VK_CHECK_RESULT(vkBeginCommandBuffer(_mainCommandBuffer[_currentFrame], &cmdBeginInfo)); 
 
     //initialize the viewport
     VkViewport viewport{};
@@ -253,7 +253,7 @@ void VulkanEngine::begin_frame()
 void VulkanEngine::end_frame()
 {
     //finalize the command buffer (we can no longer add commands, but it can now be executed)
-	VK_CHECK(vkEndCommandBuffer(_mainCommandBuffer[_currentFrame]));
+	VK_CHECK_RESULT(vkEndCommandBuffer(_mainCommandBuffer[_currentFrame]));
 
 	//prepare the submission to the queue. 
 	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -268,7 +268,7 @@ void VulkanEngine::end_frame()
 
 	//submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
-	VK_CHECK(vkQueueSubmit(device_->getPresentQueue(), 1, &submit, _renderFence[_currentFrame]));
+	VK_CHECK_RESULT(vkQueueSubmit(device_->getPresentQueue(), 1, &submit, _renderFence[_currentFrame]));
 
 	//prepare present
 	// this will put the image we just rendered to into the visible window.

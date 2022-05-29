@@ -4,6 +4,7 @@ add_library(vk_lib "")
 target_sources(vk_lib
     PRIVATE
         vktypes.h
+        vktools.cpp
         vk_initializers.h
         vk_initializers.cpp
         VulkanEngine.hpp

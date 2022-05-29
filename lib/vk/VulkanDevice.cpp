@@ -489,7 +489,7 @@ void VulkanDevice::createCommandPool(VkCommandPool *pool)
     VkCommandPoolCreateInfo poolInfo = vkinit::command_pool_create_info(
         queueFamilyIndex,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
       
-    VK_CHECK(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, pool) );
+    VK_CHECK_RESULT(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, pool) );
 
 }
 
@@ -503,7 +503,7 @@ void VulkanDevice::createVmaBuffer(
         VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
         VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize)
 {
-    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &dest_buffer, &allocation, nullptr) );
+    VK_CHECK_RESULT(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &dest_buffer, &allocation, nullptr) );
 
     //copy  data
     void* data;
@@ -576,7 +576,7 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
 // kind of helper function
 void VulkanDevice::createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation)   
 {
-    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &vmaallocInfo, &dest_image, &allocation, nullptr) );
+    VK_CHECK_RESULT(vmaCreateImage(_allocator, &imageInfo, &vmaallocInfo, &dest_image, &allocation, nullptr) );
 }
 
 void VulkanDevice::destroyVmaImage(VkImage &image, VmaAllocation &allocation)

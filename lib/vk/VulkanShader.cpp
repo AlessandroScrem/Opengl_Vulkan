@@ -98,21 +98,6 @@ std::unique_ptr<Shader> VulkanShaderBuilder::build() {
     return result;
 }
 
-class PipelineBuilder2 {
-public:
-
-	std::vector<VkPipelineShaderStageCreateInfo> *_shaderStages;
-	VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
-	VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
-	VkPipelineRasterizationStateCreateInfo _rasterizer;
-	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
-	VkPipelineMultisampleStateCreateInfo _multisampling;
-	VkPipelineLayout _pipelineLayout;
-    VkPipelineDepthStencilStateCreateInfo _depthStencil;
-
-	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
-};
-
 VulkanShader::VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type /* = GLSL::PHONG */)
     : device{device}
     , swapchain{swapchain}
@@ -243,34 +228,33 @@ void VulkanShader::createDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings{};
 
     for(auto& imageBinding : shaderBindings.imageBindings){
-        VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.binding = imageBinding.first;
-        samplerLayoutBinding.descriptorCount = 1;
-        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        samplerLayoutBinding.pImmutableSamplers = nullptr;
-
+        auto samplerLayoutBinding = vkinit::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            imageBinding.first);
         layoutBindings.push_back(samplerLayoutBinding);
     }
     for(auto& uboBinding : shaderBindings.uboBindings){
-        VkDescriptorSetLayoutBinding uboLayoutBinding{};
-        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.binding = uboBinding.first;
-        uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
+        auto uboLayoutBinding =  vkinit::descriptorSetLayoutBinding(
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            uboBinding.first);
         layoutBindings.push_back(uboLayoutBinding);
     }
 
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
-    layoutInfo.pBindings = layoutBindings.data();
+    VkDescriptorSetLayoutCreateInfo layoutInfo = vkinit::descriptorSetLayoutCreateInfo(
+        layoutBindings.data(),
+        static_cast<uint32_t>(layoutBindings.size()));
 
-    if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout));
+
+    VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
+        vkinit::pipelineLayoutCreateInfo(
+            &descriptorSetLayout,
+            1);
+
+    VK_CHECK_RESULT(vkCreatePipelineLayout(device.getDevice(), &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
 
@@ -279,33 +263,29 @@ void VulkanShader::createDescriptorPool()
     SPDLOG_TRACE("createDescriptorPool");
 
     auto swapchainImages =  swapchain.getSwapchianImageSize();
-
     std::vector<VkDescriptorPoolSize> poolSize{};
 
     for(auto& imageBinding : shaderBindings.imageBindings){
-        VkDescriptorPoolSize samplerPoolSize{};
-        samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages);
-
+        auto samplerPoolSize = vkinit::descriptorPoolSize(
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            static_cast<uint32_t>(swapchainImages));
         poolSize.push_back(samplerPoolSize);
     }
     for(auto& uboBinding : shaderBindings.uboBindings){
-        VkDescriptorPoolSize uboPoolSize{};
-        uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboPoolSize.descriptorCount = static_cast<uint32_t>(swapchainImages); 
-
+        auto uboPoolSize = vkinit::descriptorPoolSize(
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                static_cast<uint32_t>(swapchainImages)); 
         poolSize.push_back(uboPoolSize);
     }
 
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
-    poolInfo.pPoolSizes = poolSize.data();
-    poolInfo.maxSets = static_cast<uint32_t>(swapchainImages);
+    VkDescriptorPoolCreateInfo poolInfo =
+        vkinit::descriptorPoolCreateInfo(
+            static_cast<uint32_t>(poolSize.size()),
+            poolSize.data(),
+            static_cast<uint32_t>(swapchainImages));
 
-    if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
+    VK_CHECK_RESULT(vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool));
+ 
 }
 
 void VulkanShader::createDescriptorSets() 
@@ -315,16 +295,15 @@ void VulkanShader::createDescriptorSets()
     auto swapchainImages =  swapchain.getSwapchianImageSize();
 
     std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImages);
-    allocInfo.pSetLayouts = layouts.data();
+ 
+    auto allocInfo = vkinit::descriptorSetAllocateInfo(
+        descriptorPool,
+        layouts.data(),
+        static_cast<uint32_t>(swapchainImages)
+    );
 
     descriptorSets.resize(swapchainImages);
-    if (vkAllocateDescriptorSets(device.getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor sets!");
-    }
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getDevice(), &allocInfo, descriptorSets.data()));
 
     // populate every descriptor:
     for (size_t i = 0; i < swapchainImages; i++) {
@@ -334,36 +313,30 @@ void VulkanShader::createDescriptorSets()
             auto& imageview = imageBinding.second->getTextureImageView();
             auto& sampler = imageBinding.second->getTextureSampler();
             VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = imageview;
-            imageInfo.sampler =  sampler;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = imageview;
+                imageInfo.sampler =  sampler;
 
-            VkWriteDescriptorSet imageWrite{};
-            imageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            imageWrite.dstSet = descriptorSets[i];
-            imageWrite.dstBinding = imageBinding.first;
-            imageWrite.dstArrayElement = 0;
-            imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            imageWrite.descriptorCount = 1;
-            imageWrite.pImageInfo = &imageInfo;
+            auto imageWrite = vkinit::writeDescriptorSet(
+                descriptorSets[i],
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                imageBinding.first,
+                &imageInfo
+            );
 
             descriptorWrites.push_back(imageWrite); 
         }
         for(auto& uboBinding : shaderBindings.uboBindings){
             auto& uniformBuffers = uboBinding.second->getUniformBuffers();
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            VkWriteDescriptorSet uboWrite{};
-            uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            uboWrite.dstSet = descriptorSets[i];
-            uboWrite.dstBinding = uboBinding.first;
-            uboWrite.dstArrayElement = 0;
-            uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uboWrite.descriptorCount = 1;
-            uboWrite.pBufferInfo = &bufferInfo;
+                bufferInfo.buffer = uniformBuffers[i];
+                bufferInfo.range = sizeof(UniformBufferObject);
+            auto uboWrite = vkinit::writeDescriptorSet(
+                descriptorSets[i],
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                uboBinding.first,
+                &bufferInfo
+            );
 
             descriptorWrites.push_back(uboWrite);
         }
@@ -388,121 +361,109 @@ void VulkanShader::updateUbo(UniformBufferObject & mvp)
 
 void VulkanShader::createPipeline() 
 { 
-
-    //build the pipeline layout that controls the inputs/outputs of the shader
-	//we are not using descriptor sets or other systems yet, so no need to use anything other than empty default
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-    VK_CHECK(vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) );  
-
-    //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
-	PipelineBuilder2 pipelineBuilder;
-
-    //use the default shaders
-    pipelineBuilder._shaderStages = &shaderStages;
     
-    //use the default layout we created
-    pipelineBuilder._pipelineLayout = pipelineLayout;
-  
-    // Fixed functions
+    // Fixed functions  
     // Vertex input
-    pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
+    // Interleaved vertex attributes 
+	// Multiple bindings (for each attribute buffer) and multiple attribues
+	const std::vector<VkVertexInputBindingDescription> vertexInputBindingsInterleaved = {
+		{ 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX },
+	};
+	const std::vector<VkVertexInputAttributeDescription> vertexInputAttributesInterleaved = {
+		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) },
+		{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) },
+		{ 2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) },
+		{ 3, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(Vertex, texCoord) },
+	};
 
-    //connect the pipeline builder vertex input info to the one we get from Vertex
-    auto bindingDescription = getBindingDescription();
-    auto attributeDescriptions = getAttributeDescriptions();
+    //connect the vertex input info to the one we get from Vertex
+    const std::vector<VkVertexInputBindingDescription> descr{};
+    const std::vector<VkVertexInputAttributeDescription> attr{};
+    auto vertexInputState = vkinit::pipelineVertexInputStateCreateInfo(
+        vertexInputBindingsInterleaved,
+        vertexInputAttributesInterleaved
+    );
 
-    pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescription.size());
-    pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
-    pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-  
-    // Input assembly
-    // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-    pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(topology);
+    // Input assembly 
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
+        vkinit::pipelineInputAssemblyStateCreateInfo(
+            topology, // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+            0,
+            VK_FALSE);
 
-    // Rasterizer
-    // default polygonmode is VK_POLYGON_MODE_FILL
-    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(polygonMode, Opengl_compatible_viewport);
+    // Rasterizer   
+    VkPipelineRasterizationStateCreateInfo rasterizationState =
+        vkinit::pipelineRasterizationStateCreateInfo(
+            polygonMode, // default polygonmode is VK_POLYGON_MODE_FILL
+            VK_CULL_MODE_NONE,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            0);
 
     // Multisampling 
-    pipelineBuilder._multisampling = vkinit::multisampling_state_create_info(device.getMsaaSamples());
-  
-    // Depth and stencil state
-    pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
+    auto samples_count = device.getMsaaSamples();
+    VkPipelineMultisampleStateCreateInfo multisampleState =
+    vkinit::pipelineMultisampleStateCreateInfo(
+        samples_count,
+        0);
 
-    // Color blending
-    pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
+    // Color blending attachements
+    VkPipelineColorBlendAttachmentState blendAttachmentState =
+    vkinit::pipelineColorBlendAttachmentState(
+        VK_COLOR_COMPONENT_R_BIT |
+        VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT | 
+        VK_COLOR_COMPONENT_A_BIT,
+        VK_FALSE);
+
+    // Color blending state
+    VkPipelineColorBlendStateCreateInfo colorBlendState =
+    vkinit::pipelineColorBlendStateCreateInfo(
+        1,
+        &blendAttachmentState);
+
+    // Depth and stencil state
+    VkPipelineDepthStencilStateCreateInfo depthStencilState =
+        vkinit::pipelineDepthStencilStateCreateInfo(
+            VK_TRUE,
+            VK_TRUE,
+            VK_COMPARE_OP_LESS_OR_EQUAL);
+
+    // Vieewport 
+    VkPipelineViewportStateCreateInfo viewportState =
+    vkinit::pipelineViewportStateCreateInfo(1, 1, 0);
+
+    //make viewport state dynamic.
+    std::vector<VkDynamicState> dynamicStateEnables = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+    VkPipelineDynamicStateCreateInfo dynamicState =
+    vkinit::pipelineDynamicStateCreateInfo(
+        dynamicStateEnables.data(),
+        static_cast<uint32_t>(dynamicStateEnables.size()),
+        0);
 
     // end 
     // Fixed functions
-    graphicsPipeline = pipelineBuilder.build_pipeline(device.getDevice(), swapchain.getRenderpass()); 
+
+    //build the actual pipeline    
+    auto renderPass = swapchain.getRenderpass();
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+    vkinit::pipelineCreateInfo(
+        pipelineLayout,
+        renderPass,
+        0);
+
+    pipelineCreateInfo.pVertexInputState = &vertexInputState;
+    pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
+    pipelineCreateInfo.pRasterizationState = &rasterizationState;
+    pipelineCreateInfo.pColorBlendState = &colorBlendState;
+    pipelineCreateInfo.pMultisampleState = &multisampleState;
+    pipelineCreateInfo.pViewportState = &viewportState;
+    pipelineCreateInfo.pDepthStencilState = &depthStencilState;
+    pipelineCreateInfo.pDynamicState = &dynamicState;
+    pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineCreateInfo.pStages = shaderStages.data();
+
+    VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline));
 }
-
-VkPipeline PipelineBuilder2::build_pipeline(VkDevice device, VkRenderPass pass) {
-
-	//make viewport state dynamic.
-	VkPipelineViewportStateCreateInfo viewportState = {};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.pNext = nullptr;
-
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = nullptr;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = nullptr;
-    
-    // Vieewport + Scissor 
-    VkDynamicState dynamicStateEnables[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR}; 
-    VkPipelineDynamicStateCreateInfo dynamicState = {};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.pNext = NULL;
-    dynamicState.pDynamicStates = dynamicStateEnables;
-    dynamicState.dynamicStateCount = 2;
-
-	//setup dummy color blending. We arent using transparent objects yet
-	//the blending is just "no blend", but we do write to the color attachment
-	VkPipelineColorBlendStateCreateInfo colorBlending = {};
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlending.pNext = nullptr;
-
-	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY;
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &_colorBlendAttachment;
-
-	//build the actual pipeline
-	//we now use all of the info structs we have been writing into into this one to create the pipeline
-	VkGraphicsPipelineCreateInfo pipelineInfo = {};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.pNext = nullptr;
-    pipelineInfo.pDynamicState = &dynamicState;
-	pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages->size());
-	pipelineInfo.pStages = _shaderStages->data();
-	pipelineInfo.pVertexInputState = &_vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &_inputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &_rasterizer;
-	pipelineInfo.pMultisampleState = &_multisampling;
-    pipelineInfo.pDepthStencilState = &_depthStencil;
-	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.layout = _pipelineLayout;
-	pipelineInfo.renderPass = pass;
-	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-	//it's easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
-	VkPipeline newPipeline;
-	if (vkCreateGraphicsPipelines(
-		device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
-		spdlog::error("failed to create pipeline");
-		return VK_NULL_HANDLE; // failed to create graphics pipeline
-	}
-	else
-	{
-		return newPipeline;
-	}
-}
-
-

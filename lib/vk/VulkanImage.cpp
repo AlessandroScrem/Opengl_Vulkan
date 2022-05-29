@@ -125,7 +125,7 @@ void VulkanImage::createTextureImageView()
         mipLevels);
 
 	//create a image-view for the texture image to use for rendering
-    VK_CHECK(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &textureImageView));
+    VK_CHECK_RESULT(vkCreateImageView(device.getDevice(), &viewInfo, nullptr, &textureImageView));
 }
 
 void VulkanImage::createTextureSampler() 

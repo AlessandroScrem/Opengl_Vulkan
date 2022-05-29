@@ -2,6 +2,9 @@
 //lib
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
+#include <string>
+//common lib
+#include <mytypes.hpp>
 
 struct AllocatedBuffer {
 	VkBuffer _buffer;
@@ -13,16 +16,23 @@ struct AllocatedImage {
     VmaAllocation _allocation;
 };
 
+#define VK_CHECK_RESULT(f)																				\
+{																										\
+	VkResult res = (f);																					\
+	if (res != VK_SUCCESS)																				\
+	{																									\
+		spdlog::error("Fatal : VkResult is {}  in {}  at line {}", vks::tools::errorString(res) , __FILE__ , __LINE__); \
+		assert(res == VK_SUCCESS);																		\
+	}																									\
+}
 
-//we want to immediately abort when there is an error. 
-//In normal engines this would give an error message to the user, or perform a dump of state.
- #define VK_CHECK(x)                                                 \
-	do                                                              \
-	{                                                               \
-		VkResult err = x;                                           \
-		if (err)                                                    \
-		{                                                           \
-			throw std::runtime_error("Detected Vulkan error: " + std::to_string(err) );       \
-		}                                                           \
-	} while (0)
- 
+
+namespace vks
+{
+	namespace tools
+	{
+		/** @brief Returns an error code as a string */
+		std::string errorString(VkResult errorCode);
+	}
+}
+

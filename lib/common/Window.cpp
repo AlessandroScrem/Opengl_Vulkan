@@ -169,11 +169,11 @@ void Window::registerCallbacks(ngn::MultiplatformInput &input)
         }
     });
 
-    // update global mouse position        
-    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
-    {         
-        // spdlog::info("mouse move.. ");
-    });
+    // // update global mouse position        
+    // glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
+    // {         
+    //     // spdlog::info("mouse move.. ");
+    // });
 
 
     // register window resize
