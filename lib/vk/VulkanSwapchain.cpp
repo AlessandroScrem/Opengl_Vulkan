@@ -124,10 +124,8 @@ void VulkanSwapchain::createSwapchain()
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device.getDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create swap chain!");
-    }
-
+    VK_CHECK_RESULT(vkCreateSwapchainKHR(device.getDevice(), &createInfo, nullptr, &swapChain));
+ 
     // get swapchain images number
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr) );
     swapChainImages.resize(imageCount);

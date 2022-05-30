@@ -138,8 +138,7 @@ void VulkanImage::createTextureSampler()
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties); 
 
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    auto samplerInfo = vkinit::samplerCreateInfo();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR; 
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -156,9 +155,8 @@ void VulkanImage::createTextureSampler()
     samplerInfo.maxLod = static_cast<float>(mipLevels);
     samplerInfo.mipLodBias = 0.0f;
 
-    if (vkCreateSampler(device.getDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
+    VK_CHECK_RESULT(vkCreateSampler(device.getDevice(), &samplerInfo, nullptr, &textureSampler));
+
 }
 
 // move image to be in the right layout
@@ -166,12 +164,9 @@ void VulkanImage::transitionImageLayout(VkImage image, VkImageLayout oldLayout, 
 {
     VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    auto barrier = vkinit::imageMemoryBarrier();
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel = 0;
@@ -187,7 +182,6 @@ void VulkanImage::transitionImageLayout(VkImage image, VkImageLayout oldLayout, 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     }
@@ -198,6 +192,7 @@ void VulkanImage::transitionImageLayout(VkImage image, VkImageLayout oldLayout, 
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
+        spdlog::error("unsupported layout transition! file {} line  {}", __FILE__, __LINE__);
         throw std::invalid_argument("unsupported layout transition!");
     }
 
@@ -260,11 +255,8 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
     
     VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    auto barrier = vkinit::imageMemoryBarrier();
     barrier.image = image;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;

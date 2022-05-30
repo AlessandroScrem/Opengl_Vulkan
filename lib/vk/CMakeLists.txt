@@ -6,7 +6,6 @@ target_sources(vk_lib
         vktypes.h
         vktools.cpp
         vk_initializers.h
-        vk_initializers.cpp
         VulkanEngine.hpp
         makeVulkan.cpp
         VulkanEngine.cpp

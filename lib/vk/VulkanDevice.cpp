@@ -110,9 +110,7 @@ void VulkanDevice::createInstance()
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
+    VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &instance)); 
     
 }
 void VulkanDevice::createLogicalDevice()
@@ -154,9 +152,8 @@ void VulkanDevice::createLogicalDevice()
         createInfo.enabledLayerCount = 0;
     } 
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create logical device!");
-    }
+    VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice));
+
     // Retrieving queue handles
     // Because we’re only creating a single queue from this family, we’ll simply use index 0.
     vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
@@ -357,17 +354,13 @@ void VulkanDevice::setupDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT createInfo{};
     populateDebugMessengerCreateInfo(createInfo);
   
-    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-            throw std::runtime_error("failed to set up debug messenger!");
-    }  
+    VK_CHECK_RESULT(CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger));
 }
 
 
 void VulkanDevice::createSurface() 
 {
-     if (glfwCreateWindowSurface(instance, window.getWindowPtr(), nullptr, &surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+     VK_CHECK_RESULT(glfwCreateWindowSurface(instance, window.getWindowPtr(), nullptr, &surface));
 }
 
 void VulkanDevice::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -451,9 +444,8 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create buffer!");
-    }
+    VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &buffer));
+ 
 
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(logicalDevice, buffer, &memRequirements);
@@ -470,9 +462,8 @@ void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
-    }
+    VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &bufferMemory));
+  
 
     //  Associate Device memory with the buffer
     // The first three parameters are self-explanatory and 
@@ -554,9 +545,7 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(logicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image!");
-    }
+    VK_CHECK_RESULT(vkCreateImage(logicalDevice, &imageInfo, nullptr, &image));
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(logicalDevice, image, &memRequirements);
@@ -566,9 +555,7 @@ void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLeve
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate image memory!");
-    }
+    VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMemory));
 
     vkBindImageMemory(logicalDevice, image, imageMemory, 0);
 } 
