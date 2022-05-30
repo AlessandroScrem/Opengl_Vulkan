@@ -238,13 +238,8 @@ void VulkanEngine::begin_frame()
 	VK_CHECK_RESULT(vkBeginCommandBuffer(_mainCommandBuffer[_currentFrame], &cmdBeginInfo)); 
 
     //initialize the viewport
-    VkViewport viewport{};
-    VkRect2D scissor{};
-    scissor.extent = swapchain_->getExtent();
-    viewport.height = static_cast<float>(scissor.extent.height);
-    viewport.width  = static_cast<float>(scissor.extent.width);
-    viewport.maxDepth = 1.0f;
-
+    VkViewport viewport = vkinit::viewport(swapchain_->getExtent(), 0.0f, 1.0f);
+    VkRect2D scissor = vkinit::rect2D(swapchain_->getExtent(), 0, 0);
     vkCmdSetViewport(_mainCommandBuffer[_currentFrame], 0, 1, &viewport);
     vkCmdSetScissor(_mainCommandBuffer[_currentFrame], 0, 1, &scissor);   
 
@@ -303,7 +298,7 @@ void VulkanEngine::begin_renderpass()
                                             );
     // set the background color       
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{Engine::background.red, Engine::background.green, Engine::background.blue, Engine::background.alpha}};
+    clearValues[0].color = {{Engine::background.r, Engine::background.g, Engine::background.b, Engine::background.a}};
     clearValues[1].depthStencil.depth = {1.0f};
     //connect clear values
     rpInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());

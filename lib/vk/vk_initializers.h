@@ -169,6 +169,60 @@ namespace vkinit {
 		return info;		
 	}
 
+    inline VkViewport viewport(
+        float width,
+        float height,
+        float minDepth,
+        float maxDepth)
+    {
+        VkViewport viewport {};
+        viewport.width = width;
+        viewport.height = height;
+        viewport.minDepth = minDepth;
+        viewport.maxDepth = maxDepth;
+        return viewport;
+    }
+
+    inline VkViewport viewport(
+        VkExtent2D extent,
+        float minDepth,
+        float maxDepth)
+    {
+        VkViewport viewport {};
+        viewport.width = extent.width;
+        viewport.height = extent.height;
+        viewport.minDepth = minDepth;
+        viewport.maxDepth = maxDepth;
+        return viewport;
+    }
+
+    inline VkRect2D rect2D(
+        VkExtent2D extent,
+        int32_t offsetX,
+        int32_t offsetY)
+    {
+        VkRect2D rect2D {};
+        rect2D.extent.width = extent.width;
+        rect2D.extent.height = extent.height;
+        rect2D.offset.x = offsetX;
+        rect2D.offset.y = offsetY;
+        return rect2D;
+    }
+
+    inline VkRect2D rect2D(
+        int32_t width,
+        int32_t height,
+        int32_t offsetX,
+        int32_t offsetY)
+    {
+        VkRect2D rect2D {};
+        rect2D.extent.width = width;
+        rect2D.extent.height = height;
+        rect2D.offset.x = offsetX;
+        rect2D.offset.y = offsetY;
+        return rect2D;
+    }
+
 	inline VkPresentInfoKHR present_info()
 	{
 		VkPresentInfoKHR info = {};

@@ -64,7 +64,7 @@ private:
 
     //------------------------------------
     int _currentFrame {0};
-    const int MAX_FRAMES_IN_FLIGHT = 2;
+    const int MAX_FRAMES_IN_FLIGHT = 1;
     uint32_t swapchainImageIndex_;
     std::vector<VkSemaphore> _presentSemaphore;
     std::vector<VkSemaphore> _renderSemaphore;

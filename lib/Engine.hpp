@@ -12,14 +12,6 @@
 #include <memory>
 
 
-struct Color
-{
-    float red = 0.2f;;
-    float green = 0.3f;;
-    float blue = 0.3f;
-    float alpha = 1.0f;
-};
-
 class Window;
 
 class Engine
@@ -62,7 +54,7 @@ protected:
     std::unordered_map< std::string, std::unique_ptr<RenderObject> > fixed_objects_;
     std::vector< std::unique_ptr<RenderObject> > renderables_;
     
-    Color background{};
+    glm::vec4 background{0.2f, 0.3f, 0.3f, 1.0f};
     Camera ourCamera{};
     std::unique_ptr<Window> window_;
 

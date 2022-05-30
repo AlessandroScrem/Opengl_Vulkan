@@ -189,11 +189,7 @@ void OpenGLEngine::draw_objects()
 void OpenGLEngine::clearBackground()
 {
     // set the background color
-    float r = Engine::background.red;
-    float g = Engine::background.green;
-    float b = Engine::background.blue;
-    float a = Engine::background.alpha;
-    glClearColor(r, g, b, a);
+    glClearColor( Engine::background.r,  Engine::background.g,  Engine::background.b,  Engine::background.a);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
 }
 
