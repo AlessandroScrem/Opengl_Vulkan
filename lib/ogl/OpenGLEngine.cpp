@@ -6,9 +6,6 @@
 #include <model.hpp>
 #include <Window.hpp>
 //libs
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
 #include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -22,31 +19,38 @@ namespace ogl
 OpenGLEngine::OpenGLEngine(EngineType type) : Engine(type)
 {    
     SPDLOG_DEBUG("constructor"); 
-    initOpenglGlobalStates();  
-    init_UiOverlay();
+    init();
+}
+
+OpenGLEngine::~OpenGLEngine() 
+{
+    SPDLOG_DEBUG("destructor");
+    cleanup();
+}
+
+void OpenGLEngine::init()
+{
+    initOpenglGlobalStates();
 
     Shader::addBuilder(std::make_unique<OpenglShaderBuilder>());
     RenderObject::addBuilder(std::make_unique<OpenglObjectBuilder>());
     Engine::init_shaders(); 
     Engine::init_renderables();
     Engine::init_fixed();
+
+    if(ui_Overlay_){
+        UIoverlay.windowPtr = window_->getWindowPtr();
+        UIoverlay.init();
+    }  
 }
 
-OpenGLEngine::~OpenGLEngine() 
-{
-    SPDLOG_DEBUG("destructor");
-    cleanup_UiOverlay();
-}
+void OpenGLEngine::cleanup() 
+{ 
+    if(ui_Overlay_){
+        UIoverlay.cleanup();
+    }   
 
-void OpenGLEngine::cleanup_UiOverlay() 
-{   
-    SPDLOG_TRACE("cleanup_UiOverlay");
-    
-    // Cleanup ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
 }
-
 
 void OpenGLEngine::initOpenglGlobalStates() 
 {
@@ -76,10 +80,10 @@ void OpenGLEngine::initOpenglGlobalStates()
     glEnable(GL_MULTISAMPLE);
 
     //check opengl internals
-    GLint maxSamples;
-    GLint samples;
-    GLint max_uniform_buffer_bindings;
-    GLint max_uniform_blocksize;
+    GLint maxSamples{};
+    GLint samples{};
+    GLint max_uniform_buffer_bindings{};
+    GLint max_uniform_blocksize{};
     glGetIntegerv ( GL_MAX_SAMPLES, &maxSamples );
     glGetIntegerv ( GL_SAMPLES, &samples );
     glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &max_uniform_buffer_bindings);  
@@ -92,21 +96,9 @@ void OpenGLEngine::initOpenglGlobalStates()
     glfwSwapInterval(0);
 }
 
-void OpenGLEngine::init_UiOverlay()
-{
-	// Setup Platform/Renderer bindings
-    // TODO update glsl_version acconrdigly with opengl context creation
-	if(!ImGui_ImplGlfw_InitForOpenGL(window_->getWindowPtr(), true)){
-        throw std::runtime_error("failed to initialize ImGui_ImplGlfw_InitForOpenGL!");
-    }
 
-    const char *glsl_version = "#version 450 core";
-	if(!ImGui_ImplOpenGL3_Init(glsl_version)){
-        throw std::runtime_error("failed to initialize ImGui_ImplOpenGL3_Init!");
-    }
-}
 
-void OpenGLEngine::updateframebuffersize() 
+void OpenGLEngine::resizeFrame() 
 {
     auto [w, h] = window_->extents();
     glViewport(0, 0, w, h);
@@ -115,51 +107,48 @@ void OpenGLEngine::updateframebuffersize()
 
 void OpenGLEngine::draw()
 {
-    if (window_->is_Resized()){
-        updateframebuffersize();
-    }
-
-    // init frame
-    clearBackground();
+    begin_frame();
     
-    draw_fixed();
-    draw_objects();
+        draw_fixed();
+        draw_objects();
 
-    draw_UiOverlay();
+        if(ui_Overlay_){
+            UIoverlay.newFrame();
+            Engine::draw_UiOverlay();
+            UIoverlay.draw();
+        }
 
-    // end frame
+    end_frame();
+}
+
+void OpenGLEngine::begin_frame()
+{
+    // set the background color
+    glClearColor( Engine::background.r,  Engine::background.g,  Engine::background.b,  Engine::background.a);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
+}
+
+
+void OpenGLEngine::end_frame()
+{
     window_->swapBuffers();  
 }
 
-void OpenGLEngine::draw_UiOverlay()
-{
-        if(!ui_Overlay_){
-            return;
-        }
-
-        // feed inputs to dear imgui, start new frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-
-            Engine::draw_UiOverlay();
-
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
 
 void OpenGLEngine::draw_fixed()
 {
     RenderObject & ro                   = *fixed_objects_.at("axis");
-    OpenglShader &shader                = static_cast<OpenglShader&>(Engine::getShader(ro.shader));
-    OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
+    OpenglShader &shader                = dynamic_cast<OpenglShader&>(Engine::getShader(ro.shader));
+    OpenglVertexBuffer &vertexbuffer    = dynamic_cast<OpenglVertexBuffer&>(ro);
 
     auto [x, y] = window_->extents();
 
     // set new world origin to bottom left + offset
-    float offset = 50; 
-    float left   = -offset;
-    float right  = x-offset;
-    float bottom = -offset;
-    float top    = y-offset;
+    const float offset = 50; 
+    const float left   = -offset;
+    const float right  = x-offset;
+    const float bottom = -offset;
+    const float top    = y-offset;
 
     UniformBufferObject mvp{};
     mvp.view = ourCamera.GetViewMatrix();
@@ -173,25 +162,20 @@ void OpenGLEngine::draw_fixed()
 
 void OpenGLEngine::draw_objects()
 {
-    RenderObject & ro                   = *renderables_.at(model_index_);
-    OpenglShader &shader                = static_cast<OpenglShader&>(Engine::getShader(ro.shader));
-    OpenglVertexBuffer &vertexbuffer    = static_cast<OpenglVertexBuffer&>(ro);
+    for(  auto & ro : renderables_){
 
+        OpenglShader &shader                = dynamic_cast<OpenglShader&>(Engine::getShader(ro->shader));
+        OpenglVertexBuffer &vertexbuffer    = dynamic_cast<OpenglVertexBuffer&>(*ro);
    
-    UniformBufferObject mvp = Engine::getMVP();        
-    mvp.model = ro.model;
-    shader.updateUbo(mvp);
+        UniformBufferObject mvp = Engine::getMVP();        
+        mvp.model = ro->model;
+        shader.updateUbo(mvp);
 
-    shader.bind();
-    vertexbuffer.draw(shader.getTopology());
+        shader.bind();
+        vertexbuffer.draw(shader.getTopology());
+    }
 }
 
-void OpenGLEngine::clearBackground()
-{
-    // set the background color
-    glClearColor( Engine::background.r,  Engine::background.g,  Engine::background.b,  Engine::background.a);
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );    
-}
 
 }//namespace ogl
 

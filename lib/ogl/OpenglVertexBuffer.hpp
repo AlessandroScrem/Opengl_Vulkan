@@ -77,7 +77,7 @@ public:
         return attributeDescriptions;
     }
 
-    OpenglVertexBuffer();
+    OpenglVertexBuffer() = default;
     ~OpenglVertexBuffer();
 
     void build(Model &model);

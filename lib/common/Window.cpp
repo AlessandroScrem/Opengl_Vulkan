@@ -92,7 +92,6 @@ void Window::createWindow()
     // there is no maximum size
     glfwSetWindowSizeLimits(window_, 32, 32, GLFW_DONT_CARE, GLFW_DONT_CARE);
     is_resized = true;
-    is_initialized = true;
 }
 
 void Window::initGUI()
@@ -245,7 +244,7 @@ void Window::update()
 }
 
 GLFWwindow* Window::getWindowPtr() {
-    if(!is_initialized) {
+    if(!window_) {
         throw std::runtime_error("glfw Window in not yet created!");
     }
     return window_; 

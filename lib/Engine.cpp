@@ -71,7 +71,6 @@ void Engine::run()
             draw();
         ngn::Time::end();
 
-        window_->update();        
         updateEvents();
         timestamp();
 
@@ -88,6 +87,12 @@ void Engine::updateEvents()
     for(auto const& command : commands_){
         command.second->Execute();
     }
+
+    window_->update();
+    if (window_->is_Resized()){
+        resizeFrame(); 
+    }
+
 }
 
 UniformBufferObject Engine::getMVP()

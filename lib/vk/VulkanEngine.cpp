@@ -128,11 +128,13 @@ void VulkanEngine::init_commands()
 }
 
 
+void VulkanEngine::resizeFrame()
+{
+    recreateSwapChain(); 
+}
+
 void VulkanEngine::begin_frame()
 {
-    if (window_->is_Resized()){
-        recreateSwapChain(); 
-    }
 
 	//wait until the gpu has finished rendering the last frame. Timeout of 1 second
 	VK_CHECK_RESULT(vkWaitForFences(device_->getDevice(), 1, &_renderFence[_currentFrame], true, 1000000000) );
@@ -252,7 +254,6 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
 {
     for(  auto & ro : renderables_){
 
-        // RenderObject & ro                   = *renderables_.at(model_index_);
         VulkanShader &shader                = static_cast<VulkanShader&>(Engine::getShader(ro->shader));
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(*ro);
 

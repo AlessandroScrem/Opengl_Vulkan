@@ -13,6 +13,8 @@ target_sources(ogl_lib
         OpenglShader.hpp
         OpenglShader.cpp
         OpenglUbo.hpp
+        OpenglUIOverlay.h
+        OpenglUIOverlay.cpp
 )
 
 

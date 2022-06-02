@@ -21,17 +21,17 @@ public:
     Window &operator=(const Window &) = delete;
 
     bool shouldClose();
-    bool is_Resized() { return is_resized; }
+    inline bool is_Resized() { return is_resized; }
 
     void init(EngineType type);
     void update();
-    void registerCallbacks(ngn::MultiplatformInput &input);
     void swapBuffers();
-    void setWindowMessage(std::string msg) { SetWindowTitle(msg); }
+    void registerCallbacks(ngn::MultiplatformInput &input);
+    inline void setWindowMessage(std::string msg) { SetWindowTitle(msg); }
 
     GLFWwindow* getWindowPtr();
-    float getWindowAspect() { return (float) width_ / height_; }
-    std::pair<uint32_t, uint32_t> extents() { return {width_ ,height_}; }
+    inline float getWindowAspect() { return (float) width_ / height_; }
+    inline std::pair<uint32_t, uint32_t> extents() { return {width_ ,height_}; }
 
 
 
@@ -49,7 +49,6 @@ private:
     ngn::MultiplatformInput *Input;
 
     bool is_resized = false;
-    bool is_initialized = false;
 
     GLFWwindow* window_ = nullptr;
 };

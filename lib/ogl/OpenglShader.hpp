@@ -22,11 +22,11 @@ private:
 
 public:
 
-    virtual ShaderBuilder& Reset() override;
-    virtual ShaderBuilder& type(GLSL::ShaderType id)  override;
-    virtual ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
-    virtual ShaderBuilder& setPolygonMode(uint32_t mode) override;
-    virtual std::unique_ptr<Shader> build() override;
+    ShaderBuilder& Reset() override;
+    ShaderBuilder& type(GLSL::ShaderType id)  override;
+    ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
+    ShaderBuilder& setPolygonMode(uint32_t mode) override;
+    std::unique_ptr<Shader> build() override;
 
 };
 

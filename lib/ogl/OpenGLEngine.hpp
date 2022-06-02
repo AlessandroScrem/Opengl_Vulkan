@@ -1,6 +1,7 @@
 #pragma once
 
 #include "..\Engine.hpp"
+#include "OpenglUIOverlay.h"
 // common
 #include <baseclass.hpp>
 
@@ -19,18 +20,22 @@ public:
     OpenGLEngine(EngineType type);
     ~OpenGLEngine();
 
+protected:
     void draw() override;
-
+    void resizeFrame() override;
 private:
+
     void initOpenglGlobalStates();
-    void init_UiOverlay();
-    void cleanup_UiOverlay();
-    void draw_UiOverlay();
+    void init();
+    void begin_frame();
     void draw_fixed();
     void draw_objects();
+    void end_frame();
+    void cleanup();
 
-    void clearBackground();
-    void updateframebuffersize();
+
+
+    OpenglUIOverlay UIoverlay{};
 
 };
 }//namespace ogl

@@ -35,7 +35,9 @@ public:
     VulkanEngine(EngineType type);
     ~VulkanEngine();
 
+protected:
     void draw() override;
+    void resizeFrame() override;
 
 private:
 
@@ -73,8 +75,6 @@ private:
 
     //------------------------------------
     DeletionQueue _mainDeletionQueue;
-
- 
 };
 
 

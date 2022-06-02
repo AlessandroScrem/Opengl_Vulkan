@@ -18,11 +18,6 @@ OpenglObjectBuilder::build(Model &model, std::string shadername)
     return result;
 }
 
-OpenglVertexBuffer::OpenglVertexBuffer()
-{
- 
-}
-
 void OpenglVertexBuffer::build(Model &model)
 {
     _indices_size       = static_cast<GLsizei>(model.indicesSize());

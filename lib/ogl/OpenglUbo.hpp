@@ -24,6 +24,6 @@ public:
     }
 
 private:
-    const int binding_point = 0;
-    unsigned int ubo;
+    const int binding_point{0};
+    unsigned int ubo{0};
 };

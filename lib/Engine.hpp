@@ -64,6 +64,8 @@ protected:
 private:
 
     virtual void draw() = 0;
+    virtual void resizeFrame() = 0;
+
     void updateEvents();
     void MapActions();
     void setWindowMessage(std::string msg);
