@@ -21,6 +21,8 @@ target_sources(vk_lib
         VulkanUbo.cpp
         VulkanShader.hpp
         VulkanShader.cpp
+        VulkanUIOverlay.h
+        VulkanUIOverlay.cpp
 )
 
 target_link_libraries(vk_lib 

@@ -2,6 +2,7 @@
 
 #include "../Engine.hpp"
 #include "vktypes.h"
+#include "VulkanUIOverlay.h"
 //common lib
 #include <baseclass.hpp>
 #include <deque>
@@ -40,32 +41,30 @@ private:
 
     // -----------------------
     void init();
-    void init_UiOverlay();
     void init_commands();
     void init_sync_structures();
-
-    void cleanup_UiOverlay();
+    void cleanup();
 
     void begin_frame();
     void end_frame();
     void begin_renderpass();
     void end_renderpass();
 
-    void draw_objects(VkCommandBuffer cmd, uint32_t imageIndex);  
-    void draw_fixed(VkCommandBuffer cmd, uint32_t imageIndex); 
-    void draw_UiOverlay(VkCommandBuffer cmd, uint32_t imageIndex);
+    void draw_objects(VkCommandBuffer cmd);  
+    void draw_fixed(VkCommandBuffer cmd); 
 
     void recreateSwapChain();
 
     // -----------------------
     std::unique_ptr<VulkanDevice> device_;
     std::unique_ptr<VulkanSwapchain> swapchain_;
-
+    VulkanUIOverlay UIoverlay;
 
     //------------------------------------
     int _currentFrame {0};
     const int MAX_FRAMES_IN_FLIGHT = 1;
     uint32_t swapchainImageIndex_;
+    
     std::vector<VkSemaphore> _presentSemaphore;
     std::vector<VkSemaphore> _renderSemaphore;
 	std::vector<VkFence> _renderFence;
@@ -75,10 +74,7 @@ private:
     //------------------------------------
     DeletionQueue _mainDeletionQueue;
 
-    //------------------------------------
-    // GUI globals
-    VkDescriptorPool _gui_DescriptorPool = VK_NULL_HANDLE; 
-
+ 
 };
 
 

@@ -7,18 +7,19 @@ class VulkanDevice;
 class VulkanUbo : public  UniformBufferObject
 {
 public:
-    VulkanUbo(VulkanDevice &device, size_t sc_images);
+   VulkanUbo(VulkanDevice &device);
     ~VulkanUbo();
-    void createUniformBuffers();
-    void cleanupUniformBuffers();
-    void bind(uint32_t currentImage);
+    void create();
+    void cleanup();
+    void map();
 
-    const std::vector<VkBuffer>& getUniformBuffers(){return uniformBuffers;}
+    const VkBuffer& getUniformBuffer(){return uniformBuffer._buffer;}
 private:
 
     VulkanDevice &device;
-    size_t swapchainImages{};
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    // VkBuffer uniformBuffer;
+    // VkDeviceMemory uniformBuffersMemory;
+
+    AllocatedBuffer  uniformBuffer;
 };

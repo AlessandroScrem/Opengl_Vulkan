@@ -135,8 +135,7 @@ void VulkanImage::createTextureSampler()
     // You can either query the properties at the beginning of your program 
     // and pass them around to the functions that need them, 
     // or query them in the createTextureSampler function itself.
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties); 
+    VkPhysicalDeviceProperties properties = device.getPhysicalDeviceProperties(); 
 
     auto samplerInfo = vkinit::samplerCreateInfo();
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -245,12 +244,8 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
  
     SPDLOG_TRACE("generateMipmaps");
  
-    // Check if image format supports linear blitting
-    VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
-
-    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        throw std::runtime_error("texture image format does not support linear blitting!");
+    if (!device.findSupportedFormat({imageFormat}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)){
+        spdlog::error("texture image format does not support linear blitting!");
     }
     
     VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();

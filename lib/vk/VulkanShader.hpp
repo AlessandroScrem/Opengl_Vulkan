@@ -88,11 +88,10 @@ public:
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();
 
-    const VkDescriptorSet & getDescriptorSet(size_t index) const { return descriptorSets[index]; }
     VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
     const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
     void updateUbo(UniformBufferObject & mpv);
-    void bind(VkCommandBuffer cmd, uint32_t imageIndex);
+    void bind(VkCommandBuffer cmd);
 
 private:
 
@@ -112,7 +111,7 @@ private:
 
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorSet descriptorSet;
 
     // ----------------------------
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

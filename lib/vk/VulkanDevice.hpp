@@ -54,19 +54,20 @@ public:
     VkQueue getGraphicsQueue() {return graphicsQueue; }
     VkQueue getPresentQueue() {return presentQueue; } 
     VkFormat getDepthFormat() {return findDepthFormat(); }
-    const VkSampleCountFlagBits getMsaaSamples() { return msaaSamples; }
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }   
+    const VkSampleCountFlagBits getMsaaSamples() { return _msaaSamples; }
+    void setMsaaValue(VkSampleCountFlagBits value); 
 
+    VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }
+    VkPhysicalDeviceProperties getPhysicalDeviceProperties() {return _physicalDeviceProperties;}
 
-    // used by VulkanVertexBuffer
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
-                VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
 
     void createVmaBuffer(        
         VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
         VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
+    void mapVmaBuffer(VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
     void destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation);
 
     void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
@@ -82,6 +83,10 @@ public:
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 private:
+
+    void init();
+    void cleanup();
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -90,7 +95,6 @@ private:
     void createVulkanAllocator();
     void createDefaultCommandPool();
 
-    void setMsaaValue(VkSampleCountFlagBits value); 
 
     std::vector<const char*> getRequiredExtensions();
     VkSampleCountFlagBits getMaxUsableSampleCount();
@@ -100,7 +104,7 @@ private:
 
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
     VkFormat findDepthFormat();  
 
     bool checkValidationLayerSupport();
@@ -119,10 +123,13 @@ private:
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkSampleCountFlagBits maxMsaaSamples, msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkDevice logicalDevice;
+    VkPhysicalDeviceProperties _physicalDeviceProperties;
 
-    VmaAllocator _allocator; //vma lib allocator
+    VkSampleCountFlagBits _msaaSamples;
+    
+    //vma lib allocator
+    VmaAllocator _allocator; 
 
     VkCommandPool defaultcommandPool;
     
@@ -135,5 +142,6 @@ private:
 
     // Opengl compatible Viewport (SashaWillems)
     // needs: VK_KHR_MAINTENANCE1_EXTENSION_NAME extension 
+    // TODO remove unused extension
     const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MAINTENANCE1_EXTENSION_NAME};
 };

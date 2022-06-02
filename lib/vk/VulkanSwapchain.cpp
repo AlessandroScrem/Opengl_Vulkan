@@ -35,6 +35,13 @@ void VulkanSwapchain::createAllSwapchian()
     createColorResources(); // needs only for multisampling
     createDepthResources();
     createFramebuffers();
+
+    spdlog::info(" ");
+    spdlog::info("Swapchain report");
+    spdlog::info("image format    = {}", vks::tools::enumString(swapChainImageFormat) );
+    spdlog::info("swapChainImages = {}", swapChainImages.size() );
+    spdlog::info("swapChainExtent = {} x {}", swapChainExtent.width, swapChainExtent.height );
+    spdlog::info(" ");
 }
 
 void VulkanSwapchain::cleanupSwapChain() 
@@ -424,3 +431,23 @@ void VulkanSwapchain::createDepthResources()
 
 }
 
+
+VkResult VulkanSwapchain::acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex)
+{
+	// By setting timeout to UINT64_MAX we will always wait until the next image has been acquired or an actual error is thrown
+	// With that we don't have to handle VK_NOT_READY
+	return vkAcquireNextImageKHR(device.getDevice(), swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
+}
+
+VkResult VulkanSwapchain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore)
+{
+    VkPresentInfoKHR presentInfo = vkinit::present_info();
+	presentInfo.pSwapchains = &swapChain;
+	presentInfo.pImageIndices = &imageIndex;
+	// Check if a wait semaphore has been specified to wait for before presenting the image
+	if (waitSemaphore != VK_NULL_HANDLE)
+	{
+		presentInfo.pWaitSemaphores = &waitSemaphore;
+	}
+	return vkQueuePresentKHR(queue, &presentInfo);
+}

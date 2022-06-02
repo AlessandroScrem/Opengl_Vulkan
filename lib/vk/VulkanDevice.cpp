@@ -27,57 +27,60 @@ VulkanDevice::VulkanDevice(Window &window) : window{window}
 {
     SPDLOG_DEBUG("constructor");
 
-    createInstance();
-    SPDLOG_TRACE("createInstance");
-    setupDebugMessenger();
-    SPDLOG_TRACE("setupDebugMessenger");
-    createSurface();
-    SPDLOG_TRACE("createSurface");
-    pickPhysicalDevice();
-    SPDLOG_TRACE("pickPhysicalDevice");
-    createLogicalDevice();
-    SPDLOG_TRACE("createLogicalDevice");
-
-    createVulkanAllocator();
-    SPDLOG_TRACE("createVulkanAllocator");
-
-    createDefaultCommandPool();
-    SPDLOG_TRACE("createDefaultCommandPool");
-
-    setMsaaValue(VK_SAMPLE_COUNT_2_BIT);
+    init();
+ 
 }
+
+
 
 VulkanDevice::~VulkanDevice() 
 {
     SPDLOG_DEBUG("destructor");
 
+    cleanup();
+}
+
+void VulkanDevice::init()
+{
+    SPDLOG_TRACE("init VulkanDevice");
+
+    createInstance();
+    setupDebugMessenger();
+    createSurface();
+    pickPhysicalDevice();
+    createLogicalDevice();
+    createVulkanAllocator();
+    createDefaultCommandPool();
+
+    // Cap msaa 
+    setMsaaValue(VK_SAMPLE_COUNT_2_BIT);
+    
+}
+
+void VulkanDevice::cleanup()
+{
+    SPDLOG_TRACE("cleanup VulkanDevice");
+
     //make sure the gpu has stopped doing its things
 	vkDeviceWaitIdle(logicalDevice);
 
     vkDestroyCommandPool(logicalDevice, defaultcommandPool, nullptr); 
-    SPDLOG_TRACE("vkDestroyCommandPool");
-
     vmaDestroyAllocator(_allocator);
-    SPDLOG_TRACE("vmaDestroyAllocator");
-
     vkDestroyDevice(logicalDevice, nullptr);
-    SPDLOG_TRACE("vkDestroyDevice");
- 
+
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        SPDLOG_TRACE("DestroyDebugUtilsMessengerEXT");
     }
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
-    SPDLOG_TRACE("vkDestroySurfaceKHR");
     vkDestroyInstance(instance, nullptr);
-    SPDLOG_TRACE("vkDestroyInstance");
 }
+
 
 void VulkanDevice::createInstance() 
 {
     if (enableValidationLayers && !checkValidationLayerSupport()) {
-        throw std::runtime_error("validation layers requested, but not available!");
+        spdlog::error("validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
@@ -185,8 +188,8 @@ void VulkanDevice::pickPhysicalDevice()
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
             physicalDevice = device;
-            msaaSamples = maxMsaaSamples = getMaxUsableSampleCount();
-            setMsaaValue(maxMsaaSamples); // set to max
+            vkGetPhysicalDeviceProperties(physicalDevice, &_physicalDeviceProperties);
+            _msaaSamples =  getMaxUsableSampleCount();
             break;
         }
     }
@@ -414,65 +417,6 @@ uint32_t VulkanDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-/*  
-    It should be noted that in a real world application,
-    you’re not supposed to actually call vkAllocateMemory for every individual buffer. 
-    The maximum number of simultaneous memory allocations is limited by the maxMemoryAllocationCount physical device limit, 
-    which may be as low as 4096 even on high end hardware like an NVIDIA GTX 1080. 
-    The right way to allocate memory for a large number of objects at the same time is to create a custom allocator 
-    that splits up a single allocation among many different objects by using the offset parameters that we’ve seen in many functions.
-
-    You can either implement such an allocator yourself, 
-    or use the VulkanMemoryAllocator library provided by the GPUOpen initiative.
-*/ 
-
-/**
- * @brief Create Buffer Memory from Device
- * 
- * @param size : is the size in bytes of the buffer to be created.
- * @param usage: is a bitmask of VkBufferUsageFlagBits specifying allowed usages of the buffer. 
- * @param properties : (VkMemoryPropertyFlags) is a bitmask type for setting a mask of zero or more
- * @param buffer        : the buffer we need to create 
- * @param bufferMemory  : the momory we need to associated with the buffer 
- */
-void VulkanDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
-                VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
-{
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &buffer));
- 
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(logicalDevice, buffer, &memRequirements);
-    // The VkMemoryRequirements struct has three fields:
-
-    // size:           The size of the required amount of memory in bytes, may differ from bufferInfo.size.
-    // alignment:      The offset in bytes where the buffer begins in the allocated region of memory, 
-    //                     depends on bufferInfo.usage and bufferInfo.flags.
-    // memoryTypeBits: Bit field of the memory types that are suitable for the buffer.
-
-    // Memory allocation
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-    VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &bufferMemory));
-  
-
-    //  Associate Device memory with the buffer
-    // The first three parameters are self-explanatory and 
-    // the fourth parameter is the offset within the region of memory. 
-    // Since this memory is allocated specifically for this the vertex buffer, the offset is simply 0. 
-    // If the offset is non-zero, then it is required to be divisible by memRequirements.alignment.
-    vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
-    
-}
 
 void VulkanDevice::createCommandPool(VkCommandPool *pool) 
 {
@@ -489,7 +433,16 @@ void VulkanDevice::createDefaultCommandPool()
     createCommandPool(&defaultcommandPool);   
 }
 
-
+/**
+ * @brief Create Buffer Memory from Vulkan Memory Allocator
+ * 
+ * @param bufferInfo    Structure specifying the parameters of a newly created buffer object
+ * @param vmaallocInfo  Parameters of new VmaAllocation
+ * @param dest_buffer   destination Buffer
+ * @param allocation    VmaAllocation allcation structure
+ * @param src_buffer    source Buffer
+ * @param buffersize    Buffer size
+ */
 void VulkanDevice::createVmaBuffer(
         VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
         VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize)
@@ -498,19 +451,51 @@ void VulkanDevice::createVmaBuffer(
 
     //copy  data
     void* data;
-	vmaMapMemory(_allocator, allocation, &data);
+	VK_CHECK_RESULT(vmaMapMemory(_allocator, allocation, &data));
 
 	    memcpy(data, src_buffer, buffersize);
 
 	vmaUnmapMemory(_allocator, allocation);
 }
 
+/**
+ * @brief Map Buffer to  Allocated Buffer using Vulkan Memory Allocator
+ * 
+ * @param allocation VmaAllocation allcation structure
+ * @param src_buffer source Buffer
+ * @param buffersize Buffer size
+ */
+void VulkanDevice::mapVmaBuffer(VmaAllocation &allocation, const void *src_buffer, size_t buffersize)
+{
+    //copy  data
+    void* data;
+	VK_CHECK_RESULT(vmaMapMemory(_allocator, allocation, &data));
+
+	    memcpy(data, src_buffer, buffersize);
+
+	vmaUnmapMemory(_allocator, allocation);
+}
+
+/**
+ * @brief Free allocated memory from Vulkan Memory Allocator
+ * 
+ * @param buffer     Buffer to be free
+ * @param allocation VmaAllocation allcation structure
+ */
 void VulkanDevice::destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation)
 {
     vmaDestroyBuffer(_allocator, buffer, allocation);
 }
 
 
+ /**
+  * @brief Find Image Format supporting tiling features
+  * 
+  * @param candidates VkFormats image candidates
+  * @param tiling     VK_IMAGE_TILING_LINEAR or  VK_IMAGE_TILING_OPTIMAL
+  * @param features   feature requested
+  * @return VkFormat  
+  */
  VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
@@ -571,11 +556,9 @@ void VulkanDevice::destroyVmaImage(VkImage &image, VmaAllocation &allocation)
     vmaDestroyImage(_allocator, image, allocation);
 }
 
-VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() {
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-
-    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() 
+{
+    VkSampleCountFlags counts = _physicalDeviceProperties.limits.framebufferColorSampleCounts & _physicalDeviceProperties.limits.framebufferDepthSampleCounts;
     if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
     if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
     if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
@@ -587,9 +570,8 @@ VkSampleCountFlagBits VulkanDevice::getMaxUsableSampleCount() {
 }
 
 void VulkanDevice::setMsaaValue(VkSampleCountFlagBits value){
-    if(value <= maxMsaaSamples){
-        msaaSamples = value;
-        spdlog::info("mssaaSamples = {}", msaaSamples);
+    if(value <= getMaxUsableSampleCount()){
+        _msaaSamples = value;
     }
 }
 

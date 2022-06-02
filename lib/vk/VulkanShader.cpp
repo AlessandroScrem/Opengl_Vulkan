@@ -67,8 +67,6 @@ ShaderBuilder& VulkanShaderBuilder::type(GLSL::ShaderType id) {
 }
 
 ShaderBuilder& VulkanShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
-    size_t swapchainImageSize = swapchain.getSwapchianImageSize();
-
     auto image =  std::make_unique<VulkanImage>(device, imagepath);
 
     this->shader->shaderBindings.imageBindings.emplace(id, std::move(image));
@@ -139,18 +137,10 @@ void VulkanShader::buid()
     prepared = true;             
 }
 
- void VulkanShader::bind(VkCommandBuffer cmd, uint32_t imageIndex)
+ void VulkanShader::bind(VkCommandBuffer cmd)
  {
-    if(!prepared){
-        return;
-    }
-
-    for(auto& uboBinding : shaderBindings.uboBindings){
-        uboBinding.second->bind(imageIndex);     
-    }
-
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[imageIndex], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
  }   
 
 void VulkanShader::cleanupDescriptorPool()
@@ -215,7 +205,7 @@ void VulkanShader::buildShaders(){
 
 void VulkanShader::createGlobalUbo() {
     size_t swapchainImageSize = swapchain.getSwapchianImageSize();
-    auto ubo = std::make_unique<VulkanUbo>(device, swapchainImageSize); 
+    auto ubo = std::make_unique<VulkanUbo>(device); 
     shaderBindings.uboBindings.emplace(globalUboBinding, std::move(ubo) );
 }
 
@@ -291,62 +281,49 @@ void VulkanShader::createDescriptorSets()
 {
     SPDLOG_TRACE("createDescriptorSets");
 
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-
-    std::vector<VkDescriptorSetLayout> layouts(swapchainImages, descriptorSetLayout);
- 
     auto allocInfo = vkinit::descriptorSetAllocateInfo(
         descriptorPool,
-        layouts.data(),
-        static_cast<uint32_t>(swapchainImages)
-    );
+        &descriptorSetLayout,
+        1);
 
-    descriptorSets.resize(swapchainImages);
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getDevice(), &allocInfo, descriptorSets.data()));
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getDevice(), &allocInfo, &descriptorSet));
+    
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets{};
+    for(auto& imageBinding : shaderBindings.imageBindings){
+        auto& imageview = imageBinding.second->getTextureImageView();
+        auto& sampler = imageBinding.second->getTextureSampler();
+        VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = imageview;
+            imageInfo.sampler =  sampler;
 
-    // populate every descriptor:
-    for (size_t i = 0; i < swapchainImages; i++) {
-        
-        std::vector<VkWriteDescriptorSet> descriptorWrites{};
-        for(auto& imageBinding : shaderBindings.imageBindings){
-            auto& imageview = imageBinding.second->getTextureImageView();
-            auto& sampler = imageBinding.second->getTextureSampler();
-            VkDescriptorImageInfo imageInfo{};
-                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = imageview;
-                imageInfo.sampler =  sampler;
+        auto imageWrite = vkinit::writeDescriptorSet(
+            descriptorSet,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            imageBinding.first,
+            &imageInfo);
 
-            auto imageWrite = vkinit::writeDescriptorSet(
-                descriptorSets[i],
-                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                imageBinding.first,
-                &imageInfo
-            );
-
-            descriptorWrites.push_back(imageWrite); 
-        }
-        for(auto& uboBinding : shaderBindings.uboBindings){
-            auto& uniformBuffers = uboBinding.second->getUniformBuffers();
-            VkDescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = uniformBuffers[i];
-                bufferInfo.range = sizeof(UniformBufferObject);
-            auto uboWrite = vkinit::writeDescriptorSet(
-                descriptorSets[i],
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                uboBinding.first,
-                &bufferInfo
-            );
-
-            descriptorWrites.push_back(uboWrite);
-        }
-
-        vkUpdateDescriptorSets(device.getDevice(), 
-                static_cast<uint32_t>(descriptorWrites.size()), 
-                descriptorWrites.data(), 
-                0, nullptr);
+        writeDescriptorSets.push_back(imageWrite); 
     }
+    for(auto& uboBinding : shaderBindings.uboBindings){
+        auto& uniformBuffer = uboBinding.second->getUniformBuffer();
+        VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = uniformBuffer;
+            bufferInfo.range = sizeof(UniformBufferObject);
+        auto uboWrite = vkinit::writeDescriptorSet(
+            descriptorSet,
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            uboBinding.first,
+            &bufferInfo);
+
+        writeDescriptorSets.push_back(uboWrite);
+    }
+
+    vkUpdateDescriptorSets(device.getDevice(), 
+            static_cast<uint32_t>(writeDescriptorSets.size()), 
+            writeDescriptorSets.data(), 
+            0, nullptr);
 }
- 
 
 void VulkanShader::updateUbo(UniformBufferObject & mvp)
 {
@@ -356,6 +333,8 @@ void VulkanShader::updateUbo(UniformBufferObject & mvp)
     ubo.view  = mvp.view;
     ubo.proj  = mvp.proj;
     ubo.proj[1][1] *= -1;
+
+    ubo.map();
 }
 
 void VulkanShader::createPipeline() 

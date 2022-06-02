@@ -16,8 +16,9 @@ public:
     VkExtent2D getExtent(){ return swapChainExtent;}
     VkRenderPass getRenderpass() { return renderPass; }
     VkFramebuffer getFramebuffer(size_t index) { return swapChainFramebuffers[index];}
-    VkSwapchainKHR  getSwapchain() { return swapChain; }
     size_t getSwapchianImageSize() { return swapChainImages.size(); }
+    VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex);
+    VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore);
 
     void cleanupSwapChain();
     void createAllSwapchian();

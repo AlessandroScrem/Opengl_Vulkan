@@ -37,5 +37,31 @@ namespace vks
 				return "UNKNOWN_ERROR";
 			}
 		}
+
+		std::string enumString(VkFormat format)
+		{
+			switch (format)
+			{
+#define STR(r) case VK_ ##r: return #r
+   				STR(FORMAT_R8G8B8A8_UNORM); // = 37,
+    			STR(FORMAT_R8G8B8A8_SNORM);
+    			STR(FORMAT_R8G8B8A8_USCALED);
+				STR(FORMAT_R8G8B8A8_SSCALED);
+				STR(FORMAT_R8G8B8A8_UINT);
+				STR(FORMAT_R8G8B8A8_SINT);
+				STR(FORMAT_R8G8B8A8_SRGB);
+				STR(FORMAT_B8G8R8A8_UNORM);
+				STR(FORMAT_B8G8R8A8_SNORM);
+				STR(FORMAT_B8G8R8A8_USCALED);
+				STR(FORMAT_B8G8R8A8_SSCALED);
+				STR(FORMAT_B8G8R8A8_UINT);
+				STR(FORMAT_B8G8R8A8_SINT);
+				STR(FORMAT_B8G8R8A8_SRGB); // 50	
+#undef STR
+			default:
+				return "UNKNOWN_FORMAT = " + std::to_string(format);
+			}
+		}			
 	}
 }
+

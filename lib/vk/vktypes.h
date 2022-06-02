@@ -33,6 +33,8 @@ namespace vks
 	{
 		/** @brief Returns an error code as a string */
 		std::string errorString(VkResult errorCode);
+		/** @brief Returns vkformat enum as a string */
+		std::string enumString(VkFormat format);
 	}
 }
 

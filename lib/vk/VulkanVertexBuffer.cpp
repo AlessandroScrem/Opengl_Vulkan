@@ -81,7 +81,7 @@ void VulkanVertexBuffer::createIndexBuffer(Model &model)
 	device.createVmaBuffer(bufferInfo, vmaallocInfo, indexBuffer._buffer, indexBuffer._allocation, bufferdata, buffersize);
 }
 
-void VulkanVertexBuffer::draw(VkCommandBuffer cmd, uint32_t imgeIndex)
+void VulkanVertexBuffer::draw(VkCommandBuffer cmd)
 {
     if(!prepared){
         return;

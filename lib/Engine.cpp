@@ -160,13 +160,16 @@ void Engine::init_fixed()
 
 void Engine::init_renderables()
 {
-    SPDLOG_TRACE("Engine init_renderables"); 
+   SPDLOG_TRACE("Engine init_renderables"); 
 
    {
         Model model("data/models/viking_room.obj", Model::UP::ZUP);
         // rotate toward camera
-        glm::mat4 trasf = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model.set_transform(trasf);
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        // move right
+        glm::mat4 trasl = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // trasf = traslation * rotation * scale
+        model.set_transform(trasl*rot);
 
         auto object = RenderObject::make().build(model, "texture");
         renderables_.push_back(std::move(object));
@@ -174,7 +177,9 @@ void Engine::init_renderables()
 
     {
         Model model("data/models/suzanne.obj", Model::UP::YUP);
-
+        // move left
+        glm::mat4 trasf = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+        model.set_transform(trasf);
         auto object = RenderObject::make().build(model, "normalmap");
         renderables_.push_back(std::move(object));
 

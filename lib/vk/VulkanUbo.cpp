@@ -1,52 +1,41 @@
 #include "VulkanDevice.hpp"
 #include "VulkanUbo.hpp"
+#include "vk_initializers.h"
 
-VulkanUbo::VulkanUbo(VulkanDevice &device, size_t sc_images) : device{device}, swapchainImages{sc_images}
+VulkanUbo::VulkanUbo(VulkanDevice &device) : device{device}
 {
     SPDLOG_TRACE("constructor");
-    createUniformBuffers();
+    create();
 }
 
 VulkanUbo::~VulkanUbo()
 {
     SPDLOG_TRACE("destructor");
-    cleanupUniformBuffers();
+    cleanup();
 }
 
-void VulkanUbo::cleanupUniformBuffers() 
+void VulkanUbo::cleanup() 
 {   
     SPDLOG_TRACE("cleanupUniformBuffers");
-    for (size_t i = 0; i < swapchainImages ; i++) {
-        vkDestroyBuffer(device.getDevice(), uniformBuffers[i], nullptr);
-        vkFreeMemory(device.getDevice(), uniformBuffersMemory[i], nullptr);
-    }
+    device.destroyVmaBuffer(uniformBuffer._buffer, uniformBuffer._allocation);
 }
 
 
-void VulkanUbo::createUniformBuffers() 
+void VulkanUbo::create() 
 {
     SPDLOG_TRACE("createUniformBuffers");
 
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize buffersize = sizeof(UniformBufferObject);
+    VkBufferCreateInfo bufferInfo = vkinit::bufferCreateInfo(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffersize );
 
-    uniformBuffers.resize(swapchainImages);
-    uniformBuffersMemory.resize(swapchainImages);
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    for (size_t i = 0; i < swapchainImages; i++) {
-        device.createBuffer(bufferSize, 
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            uniformBuffers[i], 
-            uniformBuffersMemory[i]);
-        }
+    device.createVmaBuffer(bufferInfo, vmaallocInfo, uniformBuffer._buffer, uniformBuffer._allocation, static_cast<UniformBufferObject*>(this), buffersize);
+
 }
 
-//lib
-#include <glm/gtc/type_ptr.hpp>
-void VulkanUbo::bind(uint32_t currentImage) 
+void VulkanUbo::map() 
 {
-    void* data;
-    vkMapMemory(device.getDevice(), uniformBuffersMemory[currentImage], 0, sizeof(UniformBufferObject), 0, &data);
-        memcpy(data, glm::value_ptr(model), sizeof(UniformBufferObject));
-    vkUnmapMemory(device.getDevice(), uniformBuffersMemory[currentImage]);
+    device.mapVmaBuffer(uniformBuffer._allocation, static_cast<UniformBufferObject*>(this), sizeof(UniformBufferObject));
 }

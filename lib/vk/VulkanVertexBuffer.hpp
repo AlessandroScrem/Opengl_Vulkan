@@ -66,7 +66,7 @@ public:
 
     size_t getIndexSize() { return indices_size; }
 
-    void draw(VkCommandBuffer cmd, uint32_t imgeIndex);
+    void draw(VkCommandBuffer cmd);
     void build(Model &model);
 
 private:

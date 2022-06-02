@@ -137,7 +137,18 @@ namespace vkinit {
 	}
 
     // *********** BUFFER  **************//
-    // 
+    //
+    inline VkBufferCreateInfo bufferCreateInfo(
+        VkBufferUsageFlags usage,
+        VkDeviceSize size)
+    {
+        VkBufferCreateInfo bufCreateInfo {};
+        bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufCreateInfo.usage = usage;
+        bufCreateInfo.size = size;
+        return bufCreateInfo;
+    }
+    
     inline	VkBufferCreateInfo vertex_input_state_create_info(
         VkDeviceSize size, 
         VkBufferUsageFlags usage)
@@ -189,8 +200,8 @@ namespace vkinit {
         float maxDepth)
     {
         VkViewport viewport {};
-        viewport.width = extent.width;
-        viewport.height = extent.height;
+        viewport.width = static_cast<float>(extent.width);
+        viewport.height = static_cast<float>(extent.height);
         viewport.minDepth = minDepth;
         viewport.maxDepth = maxDepth;
         return viewport;
