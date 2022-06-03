@@ -53,6 +53,5 @@ public:
     std::string shader;
 
     std::string objName;
-    Node transf{};
-    glm::mat4 modelMatrix;
+    Node objNode{};
 };

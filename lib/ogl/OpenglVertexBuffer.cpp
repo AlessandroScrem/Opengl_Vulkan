@@ -12,7 +12,7 @@ std::unique_ptr<RenderObject>
 OpenglObjectBuilder::build(Model &model, std::string shadername)
 {
     renderobject->shader = shadername;
-    renderobject->transf = model.get_Node();
+    renderobject->objNode = model.get_Node();
     renderobject->build(model);
     std::unique_ptr<RenderObject> result = std::move(this->renderobject);
     return result;

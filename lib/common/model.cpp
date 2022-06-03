@@ -4,8 +4,6 @@
 #include <tiny_obj_loader.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 // std
 #include <unordered_map>
 
@@ -21,28 +19,11 @@ namespace std {
     };
 }  
 
-
-Model::Model(UP up /* = UP::YUP */ ) 
-{   
-    init_tranform(up);
-}
-
 Model::Model(const char * modelpath /*  = defmodel */, UP up /* = UP::YUP */ ) 
-    : Model(up)
 {    
 
+    init_tranform(up);
     load(modelpath); 
-}
-
-Model::Model(const std::vector<Vertex> &vertices, std::vector<uint16_t> &indices,  UP up /* = UP::YUP */ ) 
-    : Model(up)
-{
-
-    this->vertices.resize(vertices.size());
-    this->vertices.assign(vertices.begin(), vertices.end());
-
-    this->indices.resize(indices.size());
-    this->indices.assign(indices.begin(), indices.end());
 }
 
 Model::~Model(){}
@@ -51,14 +32,16 @@ void Model::init_tranform(UP up){
    if(up == UP::ZUP) 
     {   
         // rotate model to y up
-        // transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         node.upMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        // trs.rotate(glm::vec3(-90.f, 0.0f, 0.0f));
     }    
 }
 
 void Model::load(const char *modelpath)
 {
+    if(!modelpath){
+        return;
+    }
+
     spdlog::info("loading {} ... ", modelpath);
 
     tinyobj::attrib_t attrib;

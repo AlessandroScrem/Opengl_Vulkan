@@ -124,7 +124,6 @@ void Engine::draw_UiOverlay()
             for( auto & obj : renderables_){
                 items.push_back(obj->objName);
             }
-            // const char* items[] = { "0", "1"};
             const char* combo_preview_value = items[item_current_idx].c_str();
             if (ImGui::BeginCombo("Model", combo_preview_value, 0))
             {
@@ -134,7 +133,7 @@ void Engine::draw_UiOverlay()
                     if (ImGui::Selectable(items[n].c_str(), is_selected))
                         item_current_idx = n;
 
-                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    // Set the initial focus 
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();
                 }
@@ -143,13 +142,18 @@ void Engine::draw_UiOverlay()
         }
 
         {
-            Node &trs = renderables_.at(item_current_idx)->transf;
+            auto &node = renderables_.at(item_current_idx)->objNode;
+            glm::vec3 T = node.T;
+            glm::vec3 R = node.R;
             const float R_min = 0.0f;  const float R_max = 360.0f;const float R_step = 1.0f;
             const float T_min = -1.0f; const float T_max = 1.0f;  const float T_step = 0.1f;
-            ImGui::DragFloat3("rotation", glm::value_ptr(trs.R), R_step, R_min, R_max);
-            ImGui::DragFloat3("position", glm::value_ptr(trs.T), T_step, T_min, T_max);
+            if(ImGui::DragFloat3("rotation", glm::value_ptr(R), R_step, R_min, R_max)){
+                node.rotate(R);    
+            }
+            if(ImGui::DragFloat3("position", glm::value_ptr(T), T_step, T_min, T_max)){
+                node.translate(T);    
+            }
             
-            renderables_.at(item_current_idx)->modelMatrix = trs.apply(); 
         }
     ImGui::End();
   
