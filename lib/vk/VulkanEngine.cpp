@@ -258,7 +258,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(*ro);
 
         UniformBufferObject mvp = Engine::getMVP();        
-        mvp.model = ro->model;
+        mvp.model = ro->modelMatrix;
         shader.updateUbo(mvp);
         
         shader.bind(cmd);

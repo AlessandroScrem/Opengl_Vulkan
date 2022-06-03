@@ -4,16 +4,16 @@
 
 
 ObjectBuilder& OpenglObjectBuilder::Reset(){
-    this->renderobject = std::make_unique<OpenglVertexBuffer>();
+    renderobject = std::make_unique<OpenglVertexBuffer>();
     return *this;
 }
 
 std::unique_ptr<RenderObject> 
 OpenglObjectBuilder::build(Model &model, std::string shadername)
 {
-    this->renderobject->shader = shadername;
-    this->renderobject->model = model.get_tranform();
-    this->renderobject->build(model);
+    renderobject->shader = shadername;
+    renderobject->transf = model.get_Node();
+    renderobject->build(model);
     std::unique_ptr<RenderObject> result = std::move(this->renderobject);
     return result;
 }

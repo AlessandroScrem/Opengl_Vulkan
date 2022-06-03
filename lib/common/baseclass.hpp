@@ -1,6 +1,7 @@
 #pragma once
 //common
 #include "glsl_constants.h"
+#include "model.hpp"
 //libs
 #include <glm/glm.hpp>
 //std
@@ -50,5 +51,8 @@ public:
     static inline ObjectBuilder& make() { return builder_->Reset();}
 
     std::string shader;
-    glm::mat4 model;
+
+    std::string objName;
+    Node transf{};
+    glm::mat4 modelMatrix;
 };

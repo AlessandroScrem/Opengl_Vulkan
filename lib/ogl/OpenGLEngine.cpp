@@ -168,7 +168,7 @@ void OpenGLEngine::draw_objects()
         OpenglVertexBuffer &vertexbuffer    = dynamic_cast<OpenglVertexBuffer&>(*ro);
    
         UniformBufferObject mvp = Engine::getMVP();        
-        mvp.model = ro->model;
+        mvp.model = ro->modelMatrix;
         shader.updateUbo(mvp);
 
         shader.bind();

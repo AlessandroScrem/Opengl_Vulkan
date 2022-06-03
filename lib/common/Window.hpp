@@ -4,6 +4,8 @@
 //std
 #include <string>
 
+const int WIDTH = 800;
+const int HEIGTH = 600;
 
 struct GLFWwindow;
 namespace ngn
@@ -30,7 +32,7 @@ public:
     inline void setWindowMessage(std::string msg) { SetWindowTitle(msg); }
 
     GLFWwindow* getWindowPtr();
-    inline float getWindowAspect() { return (float) width_ / height_; }
+    inline float getWindowAspect() { return (float) width_ / (float) height_; }
     inline std::pair<uint32_t, uint32_t> extents() { return {width_ ,height_}; }
 
 
@@ -42,8 +44,8 @@ private:
     void SetWindowTitle(std::string msg = "");
 
 
-    int width_{800};
-    int height_{600};
+    int width_{WIDTH};
+    int height_{HEIGTH};
     std::string windowName_ = {};
     EngineType  engineType;
     ngn::MultiplatformInput *Input;

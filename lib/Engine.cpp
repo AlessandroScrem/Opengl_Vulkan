@@ -5,13 +5,14 @@
 #include <model.hpp>
 //lib
 #include <imgui.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/euler_angles.hpp>
 // std
 #include <memory>
 
-Engine::Engine(EngineType type){
+Engine::Engine(EngineType type) : engine_type_{type}
+{
     SPDLOG_DEBUG("constructor");
-
-    engine_type_ = type;
 
     // provide input manager
     ngn::ServiceLocator::Provide();
@@ -98,9 +99,11 @@ void Engine::updateEvents()
 UniformBufferObject Engine::getMVP()
 {   
     UniformBufferObject mvp{};
+    const float NEAR = 1.0;
+    const float FAR = 11.0;
 
     mvp.view = ourCamera.GetViewMatrix();
-    mvp.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), 1.0f, 11.0f);
+    mvp.proj = glm::perspective(glm::radians(ourCamera.GetFov()), window_->getWindowAspect(), NEAR, FAR);
 
     mvp.viewPos = ourCamera.GetPosition();
 
@@ -112,17 +115,44 @@ void Engine::draw_UiOverlay()
 {
     // render your GUI
     ImGui::NewFrame();
- 
-    ImGui::Begin("Triangle Position/Color");
-        static float rotation = 0.0;
-        ImGui::SliderFloat("rotation", &rotation, 0, 2 * 3.14f);
-        static float translation[] = {0.0, 0.0};
-        ImGui::SliderFloat2("position", translation, -1.0, 1.0);
-        static float color[4] = { 1.0f,1.0f,1.0f,1.0f };
-        // color picker
-        ImGui::ColorEdit3("color", color);
+
+    ImGui::Begin("Model trasfromations");
+        static int item_current_idx = 0;
+          
+        {
+            std::vector<std::string> items{};
+            for( auto & obj : renderables_){
+                items.push_back(obj->objName);
+            }
+            // const char* items[] = { "0", "1"};
+            const char* combo_preview_value = items[item_current_idx].c_str();
+            if (ImGui::BeginCombo("Model", combo_preview_value, 0))
+            {
+                for (int n = 0; n < items.size() ; n++)
+                {
+                    const bool is_selected = (item_current_idx == n);
+                    if (ImGui::Selectable(items[n].c_str(), is_selected))
+                        item_current_idx = n;
+
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+        }
+
+        {
+            Node &trs = renderables_.at(item_current_idx)->transf;
+            const float R_min = 0.0f;  const float R_max = 360.0f;const float R_step = 1.0f;
+            const float T_min = -1.0f; const float T_max = 1.0f;  const float T_step = 0.1f;
+            ImGui::DragFloat3("rotation", glm::value_ptr(trs.R), R_step, R_min, R_max);
+            ImGui::DragFloat3("position", glm::value_ptr(trs.T), T_step, T_min, T_max);
+            
+            renderables_.at(item_current_idx)->modelMatrix = trs.apply(); 
+        }
     ImGui::End();
-    
+  
     ImGui::Render();
 }
 
@@ -170,22 +200,23 @@ void Engine::init_renderables()
    {
         Model model("data/models/viking_room.obj", Model::UP::ZUP);
         // rotate toward camera
-        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        // move right
-        glm::mat4 trasl = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        // trasf = traslation * rotation * scale
-        model.set_transform(trasl*rot);
+        Node &node = model.get_Node();
+        node.rotate(glm::vec3(0.0, 270.0, 0.0));
+        node.translate(glm::vec3(1.0, 0.0, 0.0));
 
         auto object = RenderObject::make().build(model, "texture");
+        object->objName = "viking_room";
         renderables_.push_back(std::move(object));
     }
 
     {
         Model model("data/models/suzanne.obj", Model::UP::YUP);
+        Node &node = model.get_Node();
         // move left
-        glm::mat4 trasf = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-        model.set_transform(trasf);
+        node.translate(glm::vec3(-1.0f, 0.0f, 0.0f));
+
         auto object = RenderObject::make().build(model, "normalmap");
+        object->objName = "suzanne";
         renderables_.push_back(std::move(object));
 
     } 
@@ -276,7 +307,8 @@ void Engine::MapActions()
 
             if (value){
                 // speed = 180° / sec
-                value *= ( ngn::Time::getFrameTime() / 3.14f  );
+                const float PI = 3.14f; 
+                value *= ( ngn::Time::getFrameTime() / PI  );
                 commands_.emplace("orbit left/right", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(value, 0.f)) );  
                 shouldupdate = true;
                 
@@ -294,7 +326,8 @@ void Engine::MapActions()
 
             if (value){
                 // speed = 180° / sec
-                value *= ( ngn::Time::getFrameTime() / (3.14f )  );
+                const float PI = 3.14f;
+                value *= ( ngn::Time::getFrameTime() / PI  );
                 commands_.emplace("orbit up/down", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(0.f, value)) );  
                 shouldupdate = true;
             }else{
@@ -311,7 +344,8 @@ void Engine::MapActions()
 
             if (value){
                 // step = 10 / sec
-                float step = 2.0f * Time::getFrameTime();
+                const float MULT = 2.0f;
+                float step = MULT * Time::getFrameTime();
                 value *= step;
                 commands_.emplace("cam fov", std::make_unique<CmdFov>(ourCamera, glm::vec2(value)) ); 
                 shouldupdate = true;

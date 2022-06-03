@@ -11,16 +11,17 @@ VulkanObjectBuilder::VulkanObjectBuilder(VulkanDevice &device)
 }
 
 ObjectBuilder& VulkanObjectBuilder::Reset(){
-    this->renderobject = std::make_unique<VulkanVertexBuffer>(device);
+    renderobject = std::make_unique<VulkanVertexBuffer>(device);
     return *this;
 }
 
 std::unique_ptr<RenderObject> 
 VulkanObjectBuilder::build(Model &model, std::string shadername)
 {
-    this->renderobject->shader = shadername;
-    this->renderobject->model = model.get_tranform();
-    this->renderobject->build(model);
+    renderobject->shader = shadername;
+    renderobject->modelMatrix = model.get_Node().apply();
+    renderobject->transf = model.get_Node();
+    renderobject->build(model);
     std::unique_ptr<RenderObject> result = std::move(this->renderobject);
     return result;
 }

@@ -51,7 +51,9 @@ void Model::init_tranform(UP up){
    if(up == UP::ZUP) 
     {   
         // rotate model to y up
-        transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // transform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        node.upMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // trs.rotate(glm::vec3(-90.f, 0.0f, 0.0f));
     }    
 }
 
