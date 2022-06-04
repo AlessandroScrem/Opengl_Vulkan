@@ -32,7 +32,7 @@ void Model::init_tranform(UP up){
    if(up == UP::ZUP) 
     {   
         // rotate model to y up
-        node.upMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        node.set_upperMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
     }    
 }
 

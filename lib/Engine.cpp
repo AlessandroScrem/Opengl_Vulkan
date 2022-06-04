@@ -1,10 +1,11 @@
 #include "Engine.hpp"
+#include "GUI.h"
 // common lib
 #include <Window.hpp>
 #include <service_locator.hpp>
 #include <model.hpp>
 //lib
-#include <imgui.h>
+// #include <imgui.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/euler_angles.hpp>
 // std
@@ -113,51 +114,18 @@ UniformBufferObject Engine::getMVP()
 
 void Engine::draw_UiOverlay()
 {
-    // render your GUI
-    ImGui::NewFrame();
-
-    ImGui::Begin("Model trasfromations");
-        static int item_current_idx = 0;
-          
-        {
-            std::vector<std::string> items{};
-            for( auto & obj : renderables_){
-                items.push_back(obj->objName);
-            }
-            const char* combo_preview_value = items[item_current_idx].c_str();
-            if (ImGui::BeginCombo("Model", combo_preview_value, 0))
-            {
-                for (int n = 0; n < items.size() ; n++)
-                {
-                    const bool is_selected = (item_current_idx == n);
-                    if (ImGui::Selectable(items[n].c_str(), is_selected))
-                        item_current_idx = n;
-
-                    // Set the initial focus 
-                    if (is_selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-        }
-
-        {
-            auto &node = renderables_.at(item_current_idx)->objNode;
-            glm::vec3 T = node.T;
-            glm::vec3 R = node.R;
-            const float R_min = 0.0f;  const float R_max = 360.0f;const float R_step = 1.0f;
-            const float T_min = -1.0f; const float T_max = 1.0f;  const float T_step = 0.1f;
-            if(ImGui::DragFloat3("rotation", glm::value_ptr(R), R_step, R_min, R_max)){
-                node.rotate(R);    
-            }
-            if(ImGui::DragFloat3("position", glm::value_ptr(T), T_step, T_min, T_max)){
-                node.translate(T);    
-            }
-            
-        }
-    ImGui::End();
-  
-    ImGui::Render();
+    static size_t selected = 0;
+ 
+    std::vector<std::string> items{};
+    for( auto & obj : renderables_){
+        items.push_back(obj->objName);
+    }
+    
+    Transformations t = renderables_.at(selected)->objNode.get();
+ 
+    if(GUI::ObjectNode(t, items, selected)){
+        renderables_.at(selected)->objNode.set(t);
+    }  
 }
 
 void Engine::init_shaders()
@@ -204,9 +172,11 @@ void Engine::init_renderables()
    {
         Model model("data/models/viking_room.obj", Model::UP::ZUP);
         // rotate toward camera
-        Node &node = model.get_Node();
-        node.rotate(glm::vec3(0.0, 270.0, 0.0));
-        node.translate(glm::vec3(1.0, 0.0, 0.0));
+        Transformations tra{};
+        tra.R ={0.0f, 270.0f, 0.0f};
+        // move right
+        tra.T = {1.0f, 0.0f, 0.0f};
+        model.node.set(tra);
 
         auto object = RenderObject::make().build(model, "texture");
         object->objName = "viking_room";
@@ -215,9 +185,10 @@ void Engine::init_renderables()
 
     {
         Model model("data/models/suzanne.obj", Model::UP::YUP);
-        Node &node = model.get_Node();
+        Transformations tra{};
         // move left
-        node.translate(glm::vec3(-1.0f, 0.0f, 0.0f));
+        tra.T = {-1.0f, 0.0f, 0.0f};
+        model.node.set(tra);
 
         auto object = RenderObject::make().build(model, "normalmap");
         object->objName = "suzanne";

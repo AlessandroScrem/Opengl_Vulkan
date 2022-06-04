@@ -11,6 +11,8 @@ target_sources(engine_lib
         Engine.hpp
         Engine.cpp
         ngn_command.hpp
+        GUI.h
+        GUI.cpp
 )
 
 target_link_libraries(engine_lib
