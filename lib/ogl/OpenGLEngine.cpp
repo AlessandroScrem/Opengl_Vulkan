@@ -73,7 +73,6 @@ void OpenGLEngine::initOpenglGlobalStates()
 
     // configure global opengl state
     // -----------------------------
-    glEnable(GL_CULL_FACE); 
     glEnable(GL_DEPTH_TEST);
 
   // using multisample

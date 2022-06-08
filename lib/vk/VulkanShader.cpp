@@ -332,6 +332,8 @@ void VulkanShader::updateUbo(UniformBufferObject & mvp)
     ubo.model = mvp.model;
     ubo.view  = mvp.view;
     ubo.proj  = mvp.proj;
+    ubo.viewPos = mvp.viewPos;
+    
     ubo.proj[1][1] *= -1;
 
     ubo.map();

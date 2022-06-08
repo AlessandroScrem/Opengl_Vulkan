@@ -51,6 +51,9 @@ void Window::init(EngineType type)
 
 void Window::initWindow() 
 {
+
+    glfwSetErrorCallback( [](int error, const char * description) { spdlog::error("GLFW ERROR  {} {}", error, description );});
+    
     // Initialise GLFW
 	if( !glfwInit() )
 	{

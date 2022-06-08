@@ -17,9 +17,5 @@ public:
 private:
 
     VulkanDevice &device;
-
-    // VkBuffer uniformBuffer;
-    // VkDeviceMemory uniformBuffersMemory;
-
     AllocatedBuffer  uniformBuffer;
 };
