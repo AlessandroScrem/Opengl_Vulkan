@@ -1,4 +1,7 @@
 #pragma once
+#include <GL/glew.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 //std
 #include <string>
 
@@ -10,7 +13,9 @@ public:
 
     void bind();
 private:
-    unsigned int id;
+    GLuint textureID;
+
+    const int num_of_textures = 1;
     
 };    
 
