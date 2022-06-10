@@ -59,7 +59,7 @@ OpenglImage::~OpenglImage()
 
 void OpenglImage::bind(){
     const GLuint  binding = 1;
-    glBindTextures(binding, num_of_textures, &textureID);
+    glBindTextureUnit(binding, textureID);
 }
 
 
