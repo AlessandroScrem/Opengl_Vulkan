@@ -21,26 +21,25 @@ OpenglObjectBuilder::build(Model &model, std::string shadername)
 void OpenglVertexBuffer::build(Model &model)
 {
     _indices_size       = static_cast<GLsizei>(model.indicesSize());
+    _stride             = sizeof(Vertex);
     auto vertices_size  = model.verticesSize();
     auto vertices_data  = model.verticesData();
     auto indices_data   = model.indicesData();
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    glCreateBuffers(1, &VBO);
+    glNamedBufferStorage(VBO, vertices_size * sizeof(Vertex), vertices_data, GL_DYNAMIC_STORAGE_BIT);
+    
+    glCreateBuffers(1, &IBO);
+    glNamedBufferStorage(IBO, _indices_size * sizeof(Index), indices_data, GL_DYNAMIC_STORAGE_BIT);
 
-    glBindVertexArray(VAO);
+    glCreateVertexArrays(1, &VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices_size * sizeof(Vertex), vertices_data, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices_size * sizeof(Index), indices_data, GL_STATIC_DRAW);
+    //offset of the first element of the buffer
+    const GLintptr offset = 0;
+    glVertexArrayVertexBuffer(VAO, bindingIndex, VBO, offset, _stride);
+    glVertexArrayElementBuffer(VAO, IBO);
     
     setVertexAttribPointer();
-
-    // You can unbind the buffers 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     prepared = true; 
 }
@@ -50,7 +49,7 @@ OpenglVertexBuffer::~OpenglVertexBuffer()
     if (prepared){
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
+        glDeleteBuffers(1, &IBO);
     }  
 }
 
@@ -67,14 +66,15 @@ void OpenglVertexBuffer::draw(GLenum mode)
 void OpenglVertexBuffer::setVertexAttribPointer(){
     auto attributes =  OpenglVertexBuffer::getAttributeDescriptions();
     for( const auto & attribute : attributes){
-        glEnableVertexAttribArray(attribute.location); 
-        glVertexAttribPointer(
+        glEnableVertexArrayAttrib(VAO, attribute.location); 
+        glVertexArrayAttribFormat( 
+            VAO,
             attribute.location, 
             attribute.size, 
             attribute.type, 
             attribute.normalized, 
-            attribute.stride, 
-            attribute.offset 
+            attribute.reloffset 
         );
+        glVertexArrayAttribBinding(VAO, attribute.location, bindingIndex);
     }
 }
