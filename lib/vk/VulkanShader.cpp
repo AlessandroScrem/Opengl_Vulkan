@@ -368,7 +368,6 @@ void VulkanShader::createPipeline()
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
         vkinit::pipelineInputAssemblyStateCreateInfo(
             topology, // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-            0,
             VK_FALSE);
 
     // Rasterizer   
@@ -415,7 +414,7 @@ void VulkanShader::createPipeline()
     //make viewport state dynamic.
     std::vector<VkDynamicState> dynamicStateEnables = {
         VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
+        VK_DYNAMIC_STATE_SCISSOR,
     };
     VkPipelineDynamicStateCreateInfo dynamicState =
     vkinit::pipelineDynamicStateCreateInfo(

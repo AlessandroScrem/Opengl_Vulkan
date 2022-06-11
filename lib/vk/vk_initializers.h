@@ -409,13 +409,12 @@ namespace vkinit {
 
     inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo(
         VkPrimitiveTopology topology,
-        VkPipelineInputAssemblyStateCreateFlags flags,
         VkBool32 primitiveRestartEnable)
     {
         VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo {};
         pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         pipelineInputAssemblyStateCreateInfo.topology = topology;
-        pipelineInputAssemblyStateCreateInfo.flags = flags;
+        pipelineInputAssemblyStateCreateInfo.flags = VK_FALSE;
         pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = primitiveRestartEnable;
         return pipelineInputAssemblyStateCreateInfo;
     }
