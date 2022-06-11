@@ -141,13 +141,14 @@ void Engine::init_shaders()
     }
     {
         auto shader = Shader::make().type(GLSL::NORMALMAP)
+                                    .setPolygonMode(GLSL::LINES)
                                     .build();
 
         shaders_.emplace("normalmap", std::move(shader));
     }
     {
         auto shader = Shader::make().type(GLSL::AXIS)
-                                    .setPolygonMode(1)
+                                    .setPolygonMode(GLSL::LINES)
                                     .build();
 
         shaders_.emplace("axis", std::move(shader));

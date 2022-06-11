@@ -69,7 +69,7 @@ public:
     virtual ShaderBuilder& Reset()override;
     virtual ShaderBuilder& type(GLSL::ShaderType id)  override;
     virtual ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
-    virtual ShaderBuilder& setPolygonMode(uint32_t mode) override;
+    virtual ShaderBuilder& setPolygonMode(GLSL::PolygonMode mode) override;
     virtual std::unique_ptr<Shader> build() override;
 
 };

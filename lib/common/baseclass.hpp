@@ -17,7 +17,7 @@ public:
     virtual ~ShaderBuilder(){}
     virtual ShaderBuilder& type(GLSL::ShaderType id)  = 0;
     virtual ShaderBuilder& addTexture(std::string image, uint32_t binding)  = 0;
-    virtual ShaderBuilder& setPolygonMode(uint32_t mode)  = 0;
+    virtual ShaderBuilder& setPolygonMode(GLSL::PolygonMode mode)  = 0;
     virtual std::unique_ptr<Shader> build()  = 0;
     virtual ShaderBuilder& Reset() = 0;
 };

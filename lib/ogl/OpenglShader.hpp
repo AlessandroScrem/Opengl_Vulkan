@@ -25,7 +25,7 @@ public:
     ShaderBuilder& Reset() override;
     ShaderBuilder& type(GLSL::ShaderType id)  override;
     ShaderBuilder& addTexture(std::string image, uint32_t binding)  override;
-    ShaderBuilder& setPolygonMode(uint32_t mode) override;
+    ShaderBuilder& setPolygonMode(GLSL::PolygonMode mode) override;
     std::unique_ptr<Shader> build() override;
 
 };

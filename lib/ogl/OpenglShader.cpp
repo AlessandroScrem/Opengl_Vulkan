@@ -22,14 +22,14 @@ ShaderBuilder& OpenglShaderBuilder::addTexture(std::string imagepath, uint32_t b
     return *this;
 }
 
-ShaderBuilder& OpenglShaderBuilder::setPolygonMode(uint32_t mode) {
+ShaderBuilder& OpenglShaderBuilder::setPolygonMode(GLSL::PolygonMode mode) {
     switch (mode)
     {
-    case 0:
+    case GLSL::TRIANGLES:
         this->shader->topology = GL_TRIANGLES;
         this->shader->polygonMode = GL_FILL;
         break;
-    case 1:
+    case GLSL::LINES:
         this->shader->topology = GL_LINES;
         this->shader->polygonMode = GL_LINE;
         break;
@@ -73,7 +73,8 @@ void OpenglShader::buid()
 
 void  OpenglShader::bind(){
     //TODO : set polygonmode & topology
-    // glPolygonMode(GL_FRONT_AND_BACK ,polygonMode);
+    
+    glPolygonMode(GL_FRONT_AND_BACK ,polygonMode);
 
     glUseProgram(shaderProgram);
 

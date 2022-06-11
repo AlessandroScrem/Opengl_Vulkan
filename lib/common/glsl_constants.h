@@ -12,6 +12,11 @@ enum ShaderType{
     NORMALMAP
 };
 
+enum PolygonMode{
+    TRIANGLES,
+    LINES
+};
+
 constexpr const char * prefixpath = "data/shaders/";
 static std::string getName(ShaderType type);
 static std::string getPath(ShaderType type) { return prefixpath + getName(type); }

@@ -73,14 +73,14 @@ ShaderBuilder& VulkanShaderBuilder::addTexture(std::string imagepath, uint32_t i
     return *this;
 }
 
-ShaderBuilder& VulkanShaderBuilder::setPolygonMode(uint32_t mode) {
+ShaderBuilder& VulkanShaderBuilder::setPolygonMode(GLSL::PolygonMode mode) {
     switch (mode)
     {
-    case 0:
+    case GLSL::TRIANGLES:
         this->shader->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         this->shader->polygonMode = VK_POLYGON_MODE_FILL;
         break;
-    case 1:
+    case GLSL::LINES:
         this->shader->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
         this->shader->polygonMode = VK_POLYGON_MODE_LINE;
         break;   
