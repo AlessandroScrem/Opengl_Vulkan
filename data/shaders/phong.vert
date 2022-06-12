@@ -25,9 +25,10 @@ layout(binding = 0) uniform UniformBufferObject {
 void main() {
     vs_out.fragTexCoord = inTexCoord;
     vs_out.fragColor = inColor;
-    vs_out.Normal = mat3(transpose(inverse(ubo.model))) * inNormal; 
-    vs_out.FragPos = vec3(ubo.model * vec4(inPosition, 1.0));
     vs_out.viewPos = ubo.viewPos;
+
+    vs_out.FragPos = vec3(ubo.model * vec4(inPosition, 1.0));
+    vs_out.Normal = mat3(transpose(inverse(ubo.model))) * inNormal; 
 
     gl_Position = ubo.proj * ubo.view * vec4(vs_out.FragPos, 1.0);
 }

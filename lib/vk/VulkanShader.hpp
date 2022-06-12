@@ -88,10 +88,8 @@ public:
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();
 
-    VkPipeline getGraphicsPipeline(){ return graphicsPipeline;}
-    const VkPipelineLayout & getPipelineLayout() const { return pipelineLayout; }
     void updateUbo(UniformBufferObject & mpv);
-    void bind(VkCommandBuffer cmd);
+    void bind(VkCommandBuffer cmd, GLSL::PolygonMode mode);
 
 private:
 
@@ -100,7 +98,7 @@ private:
     void buid();
     void cleanupDescriptorPool();
     void cleanupPipeline();
-    void createPipeline();
+    void createPipeline(GLSL::PolygonMode mode);
 
     // ----------------------------
     void createGlobalUbo();
@@ -115,9 +113,9 @@ private:
 
     // ----------------------------
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL; 
+    // VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL; 
     VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;  
+    std::array<VkPipeline, 2> graphicsPipeline;  
 
     VulkanDevice &device;
     VulkanSwapchain &swapchain;

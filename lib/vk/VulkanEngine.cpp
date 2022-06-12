@@ -237,7 +237,7 @@ void VulkanEngine::draw()
             vkCmdSetScissor(_mainCommandBuffer[_currentFrame], 0, 1, &scissor);   
 
             draw_objects(_mainCommandBuffer[_currentFrame]);
-            draw_fixed(_mainCommandBuffer[_currentFrame]);
+            // draw_fixed(_mainCommandBuffer[_currentFrame]);
 
             if(ui_Overlay_){
                 UIoverlay.newFrame();
@@ -259,10 +259,16 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd)
 
         UniformBufferObject mvp = Engine::getMVP();        
         mvp.model = ro->objNode.getfinal();
+        mvp.drawLines.x = 0;
         shader.updateUbo(mvp);
         
-        shader.bind(cmd);
+        shader.bind(cmd, GLSL::TRIANGLES);
         vertexbuffer.draw(cmd);
+
+        // mvp.drawLines.x = 1;
+        // shader.updateUbo(mvp);
+        // shader.bind(cmd, GLSL::LINES);
+        // vertexbuffer.draw(cmd);
      }   
 }
 
@@ -287,6 +293,6 @@ void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
     mvp.proj[1][1] *= -1;
     shader.updateUbo(mvp);
 
-    shader.bind(cmd);
+    shader.bind(cmd, GLSL::LINES);
     vertexbuffer.draw(cmd);       
 }

@@ -141,10 +141,15 @@ void Engine::init_shaders()
     }
     {
         auto shader = Shader::make().type(GLSL::NORMALMAP)
-                                    .setPolygonMode(GLSL::LINES)
                                     .build();
 
         shaders_.emplace("normalmap", std::move(shader));
+    }
+    {
+        auto shader = Shader::make().type(GLSL::PHONG)
+                                    .build();
+
+        shaders_.emplace("phong", std::move(shader));
     }
     {
         auto shader = Shader::make().type(GLSL::AXIS)
@@ -170,6 +175,21 @@ void Engine::init_renderables()
 {
    SPDLOG_TRACE("Engine init_renderables"); 
 
+//    {
+//         Model model("data/models/sphere/sphere_scaled.obj", Model::UP::ZUP);
+//         Transformations tra{};
+//         // tra.S ={0.01f, 0.01f, 0.01f};
+//          // rotate toward camera
+//         // Transformations tra{};
+//         // tra.R ={0.0f, 270.0f, 0.0f};
+//         // // move right
+//         // tra.T = {1.0f, 0.0f, 0.0f};
+//         model.node.set(tra);
+
+//         auto object = RenderObject::make().build(model, "phong");
+//         object->objName = "sphere";
+//         renderables_.push_back(std::move(object));
+//     }
    {
         Model model("data/models/viking_room.obj", Model::UP::ZUP);
         // rotate toward camera
@@ -191,7 +211,7 @@ void Engine::init_renderables()
         tra.T = {-1.0f, 0.0f, 0.0f};
         model.node.set(tra);
 
-        auto object = RenderObject::make().build(model, "normalmap");
+        auto object = RenderObject::make().build(model, "phong");
         object->objName = "suzanne";
         renderables_.push_back(std::move(object));
 
@@ -205,6 +225,7 @@ void Engine::MapActions()
 
     using namespace ngn;
 
+    const float MULT = 0.01f;
     auto* inputManager_ = ServiceLocator::GetInputManager();
 
     if(!inputManager_){
@@ -282,9 +303,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // speed = 180° / sec
-                const float PI = 3.14f; 
-                value *= ( ngn::Time::getFrameTime() / PI  );
+                float step = MULT * ngn::Time::getFrameTime();
+                value *= step;
                 commands_.emplace("orbit left/right", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(value, 0.f)) );  
                 shouldupdate = true;
                 
@@ -301,9 +321,8 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // speed = 180° / sec
-                const float PI = 3.14f;
-                value *= ( ngn::Time::getFrameTime() / PI  );
+                float step = MULT * ngn::Time::getFrameTime();
+                value *= step;
                 commands_.emplace("orbit up/down", std::make_unique<CmdOrbit>(ourCamera, glm::vec2(0.f, value)) );  
                 shouldupdate = true;
             }else{
@@ -319,9 +338,7 @@ void Engine::MapActions()
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
-                // step = 10 / sec
-                const float MULT = 2.0f;
-                float step = MULT * Time::getFrameTime();
+                float step = MULT * 10 * Time::getFrameTime();
                 value *= step;
                 commands_.emplace("cam fov", std::make_unique<CmdFov>(ourCamera, glm::vec2(value)) ); 
                 shouldupdate = true;
@@ -337,9 +354,8 @@ void Engine::MapActions()
         .Ref = "YoutubeGame",
         .Func = [this](InputSource source, int sourceIndex, float value) {
 
-            if (value){
-                // step = 10 / sec
-                float step = 2.0f * Time::getFrameTime();
+            if (value){               
+                float step = MULT * Time::getFrameTime();
                 value *= step;
                 commands_.emplace("dolly in/out", std::make_unique<CmdDolly>(ourCamera, glm::vec2(value)) ); 
                 shouldupdate = true;

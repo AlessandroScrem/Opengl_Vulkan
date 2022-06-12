@@ -78,11 +78,11 @@ ShaderBuilder& VulkanShaderBuilder::setPolygonMode(GLSL::PolygonMode mode) {
     {
     case GLSL::TRIANGLES:
         this->shader->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        this->shader->polygonMode = VK_POLYGON_MODE_FILL;
+        // this->shader->polygonMode = VK_POLYGON_MODE_FILL;
         break;
     case GLSL::LINES:
         this->shader->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        this->shader->polygonMode = VK_POLYGON_MODE_LINE;
+        // this->shader->polygonMode = VK_POLYGON_MODE_LINE;
         break;   
     default:
         break;
@@ -132,14 +132,15 @@ void VulkanShader::buid()
     createDescriptorPool();        
     createDescriptorSets();         
 
-    createPipeline(); 
+    createPipeline(GLSL::TRIANGLES); 
+    createPipeline(GLSL::LINES); 
 
     prepared = true;             
 }
 
- void VulkanShader::bind(VkCommandBuffer cmd)
+ void VulkanShader::bind(VkCommandBuffer cmd, GLSL::PolygonMode mode)
  {
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[mode]);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
  }   
 
@@ -152,7 +153,9 @@ void VulkanShader::cleanupDescriptorPool()
 void VulkanShader::cleanupPipeline()
 {
     SPDLOG_TRACE("vkDestroyPipeline");
-    vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
+    for( auto & pipeline : graphicsPipeline){
+        vkDestroyPipeline(device.getDevice(), pipeline, nullptr);
+    }
     SPDLOG_TRACE("vkDestroyPipelineLayout");
     vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);    
 }
@@ -333,15 +336,35 @@ void VulkanShader::updateUbo(UniformBufferObject & mvp)
     ubo.view  = mvp.view;
     ubo.proj  = mvp.proj;
     ubo.viewPos = mvp.viewPos;
+    ubo.drawLines = mvp.drawLines;
     
     ubo.proj[1][1] *= -1;
 
     ubo.map();
 }
 
-void VulkanShader::createPipeline() 
+void VulkanShader::createPipeline(GLSL::PolygonMode mode) 
 { 
+    struct DrawMode{
+        VkPrimitiveTopology topology;
+        VkPolygonMode polygonMode;
+
+    }drawMode;
+
+    switch (mode)
+    {
+    case GLSL::TRIANGLES:
+        drawMode.topology = VulkanShader::topology;
+        drawMode.polygonMode = VK_POLYGON_MODE_FILL;
+        break;
     
+    case GLSL::LINES:
+        drawMode.topology = VulkanShader::topology;
+        drawMode.polygonMode = VK_POLYGON_MODE_LINE;
+        break;
+    }
+
+
     // Fixed functions  
     // Vertex input
     // Interleaved vertex attributes 
@@ -367,13 +390,13 @@ void VulkanShader::createPipeline()
     // Input assembly 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
         vkinit::pipelineInputAssemblyStateCreateInfo(
-            topology, // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+            drawMode.topology, // default topogy is topology is VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
             VK_FALSE);
 
     // Rasterizer   
     VkPipelineRasterizationStateCreateInfo rasterizationState =
         vkinit::pipelineRasterizationStateCreateInfo(
-            polygonMode, // default polygonmode is VK_POLYGON_MODE_FILL
+            drawMode.polygonMode, // default polygonmode is VK_POLYGON_MODE_FILL
             VK_CULL_MODE_NONE,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
             0);
@@ -444,5 +467,5 @@ void VulkanShader::createPipeline()
     pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineCreateInfo.pStages = shaderStages.data();
 
-    VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline));
+    VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline[mode]));
 }
