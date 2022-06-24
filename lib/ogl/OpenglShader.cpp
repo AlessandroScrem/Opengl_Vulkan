@@ -71,10 +71,10 @@ void OpenglShader::buid()
     prepared = true;
 }
 
-void  OpenglShader::bind(){
+void  OpenglShader::bind(GLenum mode){
     //TODO : set polygonmode & topology
     
-    glPolygonMode(GL_FRONT_AND_BACK ,polygonMode);
+    glPolygonMode(GL_FRONT_AND_BACK ,mode);
 
     glUseProgram(shaderProgram);
 
@@ -168,6 +168,7 @@ void OpenglShader::updateUbo(UniformBufferObject & mvp)
     ubo.view  = mvp.view;
     ubo.proj  = mvp.proj;
     ubo.viewPos = mvp.viewPos;
+    ubo.drawLines = mvp.drawLines;
     
 }
 

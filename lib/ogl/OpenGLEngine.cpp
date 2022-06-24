@@ -70,12 +70,11 @@ void OpenGLEngine::initOpenglGlobalStates()
         // glBindBuffer(GL_VERTEX_ARRAY, 0);
     }
 
-
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-  // using multisample
+    // using multisample
     glEnable(GL_MULTISAMPLE);
 
     //check opengl internals
@@ -154,7 +153,7 @@ void OpenGLEngine::draw_fixed()
     mvp.proj = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
     shader.updateUbo(mvp);
 
-    shader.bind();
+    shader.bind(GL_LINE);
     vertexbuffer.draw(shader.getTopology());
     
 }
@@ -168,9 +167,10 @@ void OpenGLEngine::draw_objects()
    
         UniformBufferObject mvp = Engine::getMVP();        
         mvp.model = ro->objNode.getfinal();
+        mvp.drawLines.x = 0.0;
         shader.updateUbo(mvp);
 
-        shader.bind();
+        shader.bind(GL_FILL);
         vertexbuffer.draw(shader.getTopology());
     }
 }

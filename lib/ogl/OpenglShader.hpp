@@ -45,7 +45,7 @@ public:
     ~OpenglShader();
 
     void buid();  
-    void bind();
+    void bind(GLenum mode);
     void updateUbo(UniformBufferObject & mvp);
     void addConstant(uint32_t binding);
 

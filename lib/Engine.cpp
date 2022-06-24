@@ -175,21 +175,21 @@ void Engine::init_renderables()
 {
    SPDLOG_TRACE("Engine init_renderables"); 
 
-//    {
-//         Model model("data/models/sphere/sphere_scaled.obj", Model::UP::ZUP);
-//         Transformations tra{};
-//         // tra.S ={0.01f, 0.01f, 0.01f};
-//          // rotate toward camera
-//         // Transformations tra{};
-//         // tra.R ={0.0f, 270.0f, 0.0f};
-//         // // move right
-//         // tra.T = {1.0f, 0.0f, 0.0f};
-//         model.node.set(tra);
+   {
+        Model model("data/models/sphere/sphere_scaled.obj", Model::UP::ZUP);
+        Transformations tra{};
+        // tra.S ={0.01f, 0.01f, 0.01f};
+         // rotate toward camera
+        // Transformations tra{};
+        // tra.R ={0.0f, 270.0f, 0.0f};
+        // // move right
+        // tra.T = {1.0f, 0.0f, 0.0f};
+        model.node.set(tra);
 
-//         auto object = RenderObject::make().build(model, "phong");
-//         object->objName = "sphere";
-//         renderables_.push_back(std::move(object));
-//     }
+        auto object = RenderObject::make().build(model, "phong");
+        object->objName = "sphere";
+        renderables_.push_back(std::move(object));
+    }
    {
         Model model("data/models/viking_room.obj", Model::UP::ZUP);
         // rotate toward camera
@@ -211,7 +211,7 @@ void Engine::init_renderables()
         tra.T = {-1.0f, 0.0f, 0.0f};
         model.node.set(tra);
 
-        auto object = RenderObject::make().build(model, "phong");
+        auto object = RenderObject::make().build(model, "normalmap");
         object->objName = "suzanne";
         renderables_.push_back(std::move(object));
 

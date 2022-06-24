@@ -9,6 +9,7 @@ layout(location = 0) in VS_OUT {
     vec3 Normal;
     vec3 FragPos;
     vec3 viewPos;
+    vec3 drawLines;
 } fs_in;
 
 layout(location = 0) out vec4 outColor;
@@ -46,6 +47,8 @@ void main(){
     // vec3 lightPos = fs_in.viewPos;
 
     vec3 color = Phong(fs_in.Normal, fs_in.FragPos, lightPos, fs_in.fragColor);
+    // if wireframe color is black    
+    color = fs_in.drawLines.x > 0 ? vec3(0.0) : color;
 
     outColor = vec4(color, 1.0);
 }
