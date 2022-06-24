@@ -7,7 +7,6 @@ class App(ConanFile):
 				("glm/0.9.9.5"),
 				("glew/2.2.0"),
                 ("spdlog/1.9.2"),
-                ("shaderc/2021.1"),
                 ("imgui/1.87")]
     generators = "cmake_find_package_multi"
     default_options = "shaderc:shared=False"

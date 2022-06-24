@@ -18,7 +18,6 @@ endif()
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(shaderc REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(imgui REQUIRED)
 
