@@ -17,6 +17,12 @@ enum PolygonMode{
     LINES
 };
 
+enum ShaderBinding{
+    UNIFORM_BUFFER = 0,
+    IMAGE_SAMPLER,
+    UNIFORM_BUFFER_DYNAMIC
+};
+
 constexpr const char * prefixpath = "data/shaders/";
 static std::string getName(ShaderType type);
 static std::string getPath(ShaderType type) { return prefixpath + getName(type); }

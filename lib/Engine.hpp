@@ -61,6 +61,12 @@ protected:
     size_t model_index_{0};
     const bool ui_Overlay_ = true;
 
+    UniformBufferObject uniformBuffer_;
+    
+    struct UboDataDynamic {
+		glm::mat4 *model = nullptr;
+	} uboDataDynamic_;
+
 private:
 
     virtual void draw() = 0;

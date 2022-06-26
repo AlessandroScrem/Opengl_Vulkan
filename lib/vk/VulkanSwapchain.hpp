@@ -20,10 +20,11 @@ public:
     VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex);
     VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore);
 
-    void cleanupSwapChain();
-    void createAllSwapchian();
+    void recreateSwapChain();
 
 private:
+    void cleanupSwapChain();
+    void createAllSwapchian();
     void createSwapchain();
     void createImageViews();
     void createRenderPass();

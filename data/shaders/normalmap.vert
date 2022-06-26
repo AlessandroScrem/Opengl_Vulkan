@@ -16,8 +16,13 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 drawLines;
 } ubo;
 
+layout (binding = 2) uniform UboInstance {
+	mat4 model; 
+} uboInstance;
+
+
 void main() {
-    mat4 modelView = ubo.view * ubo.model;
+    mat4 modelView = ubo.view * uboInstance.model;
     mat4 normalMatrix = transpose(inverse(modelView));
     vec3 Normal = normalize(vec3(normalMatrix * vec4(inNormal, 1.0)));
         

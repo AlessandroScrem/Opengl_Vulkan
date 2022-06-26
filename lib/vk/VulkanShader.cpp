@@ -8,13 +8,16 @@
 // std
 #include <string>
 
-VulkanShaderBuilder::VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain)
-: device{device}, swapchain{swapchain}
+VulkanShaderBuilder::VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain, VkDescriptorSetLayout* dslayout)
+: device{device}, 
+swapchain{swapchain},
+dsLayout{dslayout}
 {
 }
 
 ShaderBuilder&  VulkanShaderBuilder::Reset(){
     this->shader = std::make_unique<VulkanShader>(device, swapchain);
+    this->shader->descriptorSetLayout = dsLayout;
     return *this;
 }
 
@@ -24,9 +27,6 @@ ShaderBuilder& VulkanShaderBuilder::type(GLSL::ShaderType id) {
 }
 
 ShaderBuilder& VulkanShaderBuilder::addTexture(std::string imagepath, uint32_t id ) {
-    auto image =  std::make_unique<VulkanImage>(device, imagepath);
-
-    this->shader->shaderBindings.imageBindings.emplace(id, std::move(image));
     return *this;
 }
 
@@ -68,9 +68,6 @@ VulkanShader::~VulkanShader(){
         SPDLOG_DEBUG("destroy shader");
 
         cleanupPipeline();
-        cleanupDescriptorPool();
-        vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout, nullptr);
-        SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
 
         vkDestroyShaderModule(device.getDevice(), vertModule, nullptr);
         vkDestroyShaderModule(device.getDevice(), fragModule, nullptr);
@@ -83,11 +80,7 @@ void VulkanShader::buid()
     SPDLOG_DEBUG("VulkanShader build");
 
     buildShaders();                 
-
-    createGlobalUbo();
-    createDescriptorSetLayout();    
-    createDescriptorPool();        
-    createDescriptorSets();         
+    createPipelineLayout();        
 
     createPipeline(GLSL::TRIANGLES); 
     createPipeline(GLSL::LINES); 
@@ -95,17 +88,12 @@ void VulkanShader::buid()
     prepared = true;             
 }
 
- void VulkanShader::bind(VkCommandBuffer cmd, GLSL::PolygonMode mode)
+ void VulkanShader::bind(VkCommandBuffer cmd, GLSL::PolygonMode mode, VkDescriptorSet* descriptorSet,uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets)
  {
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[mode]);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, dynamicOffsetCount, pDynamicOffsets);
  }   
 
-void VulkanShader::cleanupDescriptorPool()
-{
-    SPDLOG_TRACE("cleanupDescriptorPool");
-    vkDestroyDescriptorPool(device.getDevice(), descriptorPool, nullptr);
-}
 
 void VulkanShader::cleanupPipeline()
 {
@@ -149,140 +137,16 @@ void VulkanShader::buildShaders(){
 
 }
 
-void VulkanShader::createGlobalUbo() {
-    auto ubo = std::make_unique<VulkanUbo>(device); 
-    shaderBindings.uboBindings.emplace(globalUboBinding, std::move(ubo) );
-}
 
-
-void VulkanShader::createDescriptorSetLayout()
+void VulkanShader::createPipelineLayout()
 {
-    SPDLOG_TRACE("createDescriptorSetLayout");
-
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings{};
-
-    for(auto& imageBinding : shaderBindings.imageBindings){
-        auto samplerLayoutBinding = vkinit::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            VK_SHADER_STAGE_FRAGMENT_BIT,
-            imageBinding.first);
-        layoutBindings.push_back(samplerLayoutBinding);
-    }
-    for(auto& uboBinding : shaderBindings.uboBindings){
-        auto uboLayoutBinding =  vkinit::descriptorSetLayoutBinding(
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            VK_SHADER_STAGE_VERTEX_BIT,
-            uboBinding.first);
-        layoutBindings.push_back(uboLayoutBinding);
-    }
-
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo = vkinit::descriptorSetLayoutCreateInfo(
-        layoutBindings.data(),
-        static_cast<uint32_t>(layoutBindings.size()));
-
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout));
-
     VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
         vkinit::pipelineLayoutCreateInfo(
-            &descriptorSetLayout,
+            descriptorSetLayout,
             1);
 
     VK_CHECK_RESULT(vkCreatePipelineLayout(device.getDevice(), &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
-}
 
-
-void VulkanShader::createDescriptorPool() 
-{
-    SPDLOG_TRACE("createDescriptorPool");
-
-    auto swapchainImages =  swapchain.getSwapchianImageSize();
-    std::vector<VkDescriptorPoolSize> poolSize{};
-
-    for(auto& imageBinding : shaderBindings.imageBindings){
-        auto samplerPoolSize = vkinit::descriptorPoolSize(
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            static_cast<uint32_t>(swapchainImages));
-        poolSize.push_back(samplerPoolSize);
-    }
-    for(auto& uboBinding : shaderBindings.uboBindings){
-        auto uboPoolSize = vkinit::descriptorPoolSize(
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                static_cast<uint32_t>(swapchainImages)); 
-        poolSize.push_back(uboPoolSize);
-    }
-
-    VkDescriptorPoolCreateInfo poolInfo =
-        vkinit::descriptorPoolCreateInfo(
-            static_cast<uint32_t>(poolSize.size()),
-            poolSize.data(),
-            static_cast<uint32_t>(swapchainImages));
-
-    VK_CHECK_RESULT(vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool));
- 
-}
-
-void VulkanShader::createDescriptorSets() 
-{
-    SPDLOG_TRACE("createDescriptorSets");
-
-    auto allocInfo = vkinit::descriptorSetAllocateInfo(
-        descriptorPool,
-        &descriptorSetLayout,
-        1);
-
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getDevice(), &allocInfo, &descriptorSet));
-    
-    std::vector<VkWriteDescriptorSet> writeDescriptorSets{};
-    for(auto& imageBinding : shaderBindings.imageBindings){
-        auto& imageview = imageBinding.second->getTextureImageView();
-        auto& sampler = imageBinding.second->getTextureSampler();
-        VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = imageview;
-            imageInfo.sampler =  sampler;
-
-        auto imageWrite = vkinit::writeDescriptorSet(
-            descriptorSet,
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            imageBinding.first,
-            &imageInfo);
-
-        writeDescriptorSets.push_back(imageWrite); 
-    }
-    for(auto& uboBinding : shaderBindings.uboBindings){
-        auto& uniformBuffer = uboBinding.second->getUniformBuffer();
-        VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffer;
-            bufferInfo.range = sizeof(UniformBufferObject);
-        auto uboWrite = vkinit::writeDescriptorSet(
-            descriptorSet,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            uboBinding.first,
-            &bufferInfo);
-
-        writeDescriptorSets.push_back(uboWrite);
-    }
-
-    vkUpdateDescriptorSets(device.getDevice(), 
-            static_cast<uint32_t>(writeDescriptorSets.size()), 
-            writeDescriptorSets.data(), 
-            0, nullptr);
-}
-
-void VulkanShader::updateUbo(UniformBufferObject & mvp)
-{
-    auto& ubo = *(shaderBindings.uboBindings.at(globalUboBinding));
-
-    ubo.model = mvp.model;
-    ubo.view  = mvp.view;
-    ubo.proj  = mvp.proj;
-    ubo.viewPos = mvp.viewPos;
-    ubo.drawLines = mvp.drawLines;
-    
-    ubo.proj[1][1] *= -1;
-
-    ubo.map();
 }
 
 void VulkanShader::createPipeline(GLSL::PolygonMode mode) 

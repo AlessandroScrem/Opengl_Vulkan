@@ -3,6 +3,8 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanVertexBuffer.hpp"
 #include "VulkanShader.hpp"
+#include "VulkanImage.hpp"
+#include "VulkanUbo.hpp"
 #include "vk_initializers.h"
 //common lib
 #include <Window.hpp>
@@ -10,6 +12,31 @@
 //std
 #include <vector>
 #include <memory>
+
+
+// Wrapper functions for aligned memory allocation
+// There is currently no standard for this in C++ that works across all platforms and vendors, so we abstract this
+void* alignedAlloc(size_t size, size_t alignment)
+{
+	void *data = nullptr;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+	data = _aligned_malloc(size, alignment);
+#else
+	int res = posix_memalign(&data, alignment, size);
+	if (res != 0)
+		data = nullptr;
+#endif
+	return data;
+}
+
+void alignedFree(void* data)
+{
+#if	defined(_MSC_VER) || defined(__MINGW32__)
+	_aligned_free(data);
+#else
+	free(data);
+#endif
+}
 
 VulkanEngine::VulkanEngine(EngineType type) : Engine(type)
 { 
@@ -25,14 +52,24 @@ VulkanEngine::~VulkanEngine()
 
 void VulkanEngine::init()
 {
+
     device_ = std::make_unique<VulkanDevice>(*window_);
-    swapchain_ = std::make_unique<VulkanSwapchain>(*device_, *window_); 
-    Shader::addBuilder(std::make_unique<VulkanShaderBuilder>(*device_, *swapchain_));
+    swapchain_ = std::make_unique<VulkanSwapchain>(*device_, *window_);
+    image_ =  std::make_unique<VulkanImage>(*device_); 
+    vulkanUbo_.view = std::make_unique<VulkanUbo>(*device_, sizeof(UniformBufferObject), &uniformBuffer_); 
+
+    createDescriptorSetLayout();    
+
+    Shader::addBuilder(std::make_unique<VulkanShaderBuilder>(*device_, *swapchain_, &descriptorSetLayout));
     RenderObject::addBuilder(std::make_unique<VulkanObjectBuilder>(*device_));
 
     Engine::init_shaders(); 
     Engine::init_fixed();           
     Engine::init_renderables();
+
+    prepareUniformBuffers();
+    createDescriptorPool();        
+    createDescriptorSets();
 
     init_commands();               
 	init_sync_structures();
@@ -48,6 +85,10 @@ void VulkanEngine::init()
 
 void VulkanEngine::cleanup() 
 {
+    if (uboDataDynamic_.model) {
+			alignedFree(uboDataDynamic_.model);
+	}
+
     vkDeviceWaitIdle(device_->getDevice()); 
 
     // cleanup_UiOverlay();
@@ -61,17 +102,35 @@ void VulkanEngine::cleanup()
     Engine::shaders_.clear();
     Engine::renderables_.clear();
     Engine::fixed_objects_.clear();
+
+
+    vkDestroyDescriptorPool(device_->getDevice(), descriptorPool, nullptr);
+    SPDLOG_TRACE("cleanupDescriptorPool");
+    vkDestroyDescriptorSetLayout(device_->getDevice(), descriptorSetLayout, nullptr);
+    SPDLOG_TRACE("vkDestroyDescriptorSetLayout");
+
 }
 
-void VulkanEngine::recreateSwapChain() 
-{  
-    SPDLOG_DEBUG("recreateSwapChain");
 
-    vkDeviceWaitIdle(device_->getDevice());
-    // destroy 
-    swapchain_->cleanupSwapChain();
-    // create 
-    swapchain_->createAllSwapchian();
+void VulkanEngine::prepareUniformBuffers()
+{
+    // Calculate required alignment based on minimum device offset alignment
+	size_t minUboAlignment = device_->getPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;   
+    vulkanUbo_.dynamicAlignment = sizeof(glm::mat4);
+    if (minUboAlignment > 0) {
+        vulkanUbo_.dynamicAlignment = (vulkanUbo_.dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+    }
+    const size_t object_instances = renderables_.size();
+    size_t bufferSize = object_instances * vulkanUbo_.dynamicAlignment;
+
+    uboDataDynamic_.model = (glm::mat4*)alignedAlloc(bufferSize, vulkanUbo_.dynamicAlignment);
+    assert(uboDataDynamic_.model);
+
+    spdlog::info("minUniformBufferOffsetAlignment = {}" , minUboAlignment);
+	spdlog::info("dynamicAlignment = {}" , vulkanUbo_.dynamicAlignment);
+
+    vulkanUbo_.dynamic = std::make_unique<VulkanUbo>(*device_, bufferSize, uboDataDynamic_.model); 
+    vulkanUbo_.dynamic->setDescriptorRange(vulkanUbo_.dynamicAlignment);
 }
 
 void VulkanEngine::init_sync_structures()
@@ -130,7 +189,7 @@ void VulkanEngine::init_commands()
 
 void VulkanEngine::resizeFrame()
 {
-    recreateSwapChain(); 
+    swapchain_->recreateSwapChain(); 
 }
 
 void VulkanEngine::begin_frame()
@@ -146,7 +205,7 @@ void VulkanEngine::begin_frame()
 	//request image from the swapchain
     VkResult  result = swapchain_->acquireNextImage(_presentSemaphore[_currentFrame], &swapchainImageIndex_);
 	if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
-		recreateSwapChain();
+		swapchain_->recreateSwapChain();
 	}
 	else {
 		VK_CHECK_RESULT(result);
@@ -185,7 +244,7 @@ void VulkanEngine::end_frame()
 	if (!((result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR))) {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			// Swap chain is no longer compatible with the surface and needs to be recreated
-			recreateSwapChain();
+			swapchain_->recreateSwapChain();
 			return;
 		} else {
 			VK_CHECK_RESULT(result);
@@ -252,47 +311,137 @@ void VulkanEngine::draw()
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd)
 {
+
+    updateUbo();
+    
+    uint32_t index = 0;
     for(  auto & ro : renderables_){
 
         VulkanShader &shader                = static_cast<VulkanShader&>(Engine::getShader(ro->shader));
         VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(*ro);
 
-        UniformBufferObject mvp = Engine::getMVP();        
-        mvp.model = ro->objNode.getfinal();
-        mvp.drawLines.x = 0;
-        shader.updateUbo(mvp);
-        
-        shader.bind(cmd, GLSL::TRIANGLES);
-        vertexbuffer.draw(cmd);
 
-        // mvp.drawLines.x = 1;
-        // shader.updateUbo(mvp);
-        // shader.bind(cmd, GLSL::LINES);
-        // vertexbuffer.draw(cmd);
-     }   
+        // Aligned offset
+        uint32_t dynamicOffset = index * static_cast<uint32_t>(vulkanUbo_.dynamicAlignment);
+		glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic_.model + dynamicOffset));
+        *modelMat = ro->objNode.getfinal();
+        index++;
+
+        
+        shader.bind(cmd, GLSL::TRIANGLES, &descriptorSet, 1, &dynamicOffset);
+        vertexbuffer.draw(cmd);
+    }
 }
 
 void VulkanEngine::draw_fixed(VkCommandBuffer cmd)
 {
         
-    RenderObject & ro                   = *fixed_objects_.at("axis");
-    VulkanShader & shader               = static_cast<VulkanShader&>(Engine::getShader(ro.shader));
-    VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
+    // RenderObject & ro                   = *fixed_objects_.at("axis");
+    // VulkanShader & shader               = static_cast<VulkanShader&>(Engine::getShader(ro.shader));
+    // VulkanVertexBuffer &vertexbuffer    = static_cast<VulkanVertexBuffer&>(ro);
     
-    auto[x, y] = window_->extents();
-    //set new world origin to bottom left + offset
-    float offset = 50; 
-    float left   = -offset;
-    float right  = x-offset;
-    float bottom = y-offset;
-    float top    = -offset;
+    // auto[x, y] = window_->extents();
+    // //set new world origin to bottom left + offset
+    // float offset = 50; 
+    // float left   = -offset;
+    // float right  = x-offset;
+    // float bottom = y-offset;
+    // float top    = -offset;
 
-    UniformBufferObject mvp{};
-    mvp.view = ourCamera.GetViewMatrix();
-    mvp.proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
-    mvp.proj[1][1] *= -1;
-    shader.updateUbo(mvp);
+    // UniformBufferObject mvp{};
+    // mvp.view = ourCamera.GetViewMatrix();
+    // mvp.proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
+    // mvp.proj[1][1] *= -1;
+    // updateUbo(mvp);
 
-    shader.bind(cmd, GLSL::LINES);
-    vertexbuffer.draw(cmd);       
+    // shader.bind(cmd, GLSL::LINES, &descriptorSet);
+    // vertexbuffer.draw(cmd);       
+}
+
+void VulkanEngine::createDescriptorSetLayout()
+{
+    SPDLOG_TRACE("createDescriptorSetLayout");
+
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings =
+    {
+        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, GLSL::ShaderBinding::UNIFORM_BUFFER),
+        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, GLSL::ShaderBinding::IMAGE_SAMPLER),
+        vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, GLSL::ShaderBinding::UNIFORM_BUFFER_DYNAMIC)
+    };
+
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = 
+        vkinit::descriptorSetLayoutCreateInfo(
+            layoutBindings.data(),
+            static_cast<uint32_t>(layoutBindings.size()));
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device_->getDevice(), &layoutInfo, nullptr, &descriptorSetLayout));
+}
+
+void VulkanEngine::createDescriptorPool() 
+{
+    SPDLOG_TRACE("createDescriptorPool");
+
+    uint32_t size =  static_cast<uint32_t>(swapchain_->getSwapchianImageSize());
+    std::vector<VkDescriptorPoolSize> poolSize =
+    {
+        vkinit::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
+        vkinit::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1),
+        vkinit::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+    };
+
+
+    VkDescriptorPoolCreateInfo poolInfo =
+        vkinit::descriptorPoolCreateInfo(
+            static_cast<uint32_t>(poolSize.size()),
+            poolSize.data(),
+            1);
+
+    VK_CHECK_RESULT(vkCreateDescriptorPool(device_->getDevice(), &poolInfo, nullptr, &descriptorPool));
+ 
+}
+
+void VulkanEngine::createDescriptorSets() 
+{
+    SPDLOG_TRACE("createDescriptorSets");
+
+    auto allocInfo = vkinit::descriptorSetAllocateInfo(
+        descriptorPool,
+        &descriptorSetLayout,
+        1);
+
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(device_->getDevice(), &allocInfo, &descriptorSet));
+  
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets = 
+    {   
+        // Binding 0 : Uniform Buffer
+        vkinit::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, GLSL::ShaderBinding::UNIFORM_BUFFER, vulkanUbo_.view->getDescriptor()),
+        // Binding 1 : Image Sampler
+        vkinit::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, GLSL::ShaderBinding::IMAGE_SAMPLER, image_->getDescriptor()),
+        // Binding 2 : Uniform Buffer Dynamic
+        vkinit::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, GLSL::ShaderBinding::UNIFORM_BUFFER_DYNAMIC ,vulkanUbo_.dynamic->getDescriptor())
+    };
+
+    vkUpdateDescriptorSets(device_->getDevice(), 
+        static_cast<uint32_t>(writeDescriptorSets.size()), 
+        writeDescriptorSets.data(), 
+        0, nullptr);
+}
+
+void VulkanEngine::updateUbo()
+{
+    // update 
+    UniformBufferObject mvp = Engine::getMVP(); 
+
+    vulkanUbo_.dynamic->map(uboDataDynamic_.model);
+    uniformBuffer_.model = mvp.model;
+    uniformBuffer_.view  = mvp.view;
+    uniformBuffer_.proj  = mvp.proj;
+    uniformBuffer_.viewPos = mvp.viewPos;
+    uniformBuffer_.drawLines = mvp.drawLines;
+
+    uniformBuffer_.proj[1][1] *= -1;
+
+    vulkanUbo_.view->map(&uniformBuffer_);
+    vulkanUbo_.dynamic->map(uboDataDynamic_.model);
 }

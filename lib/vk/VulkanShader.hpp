@@ -46,25 +46,16 @@ class VulkanImage;
 
 class VulkanShader;
 
-struct ImageBindings{
-    std::unique_ptr<VulkanImage> image;
-    uint32_t    binding = 0;
-};
-
-struct UboBindings{
-    std::unique_ptr<VulkanUbo>   ubo;
-    uint32_t    binding = 0;
-};
-
 
 class VulkanShaderBuilder : public ShaderBuilder{
 private:
     VulkanDevice &device;
     VulkanSwapchain &swapchain;
+    VkDescriptorSetLayout* dsLayout;
     std::unique_ptr<VulkanShader> shader;
 public:
 
-    VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain);
+    VulkanShaderBuilder(VulkanDevice &device, VulkanSwapchain &swapchain, VkDescriptorSetLayout* dslayout);
 
     virtual ShaderBuilder& Reset()override;
     virtual ShaderBuilder& type(GLSL::ShaderType id)  override;
@@ -76,43 +67,28 @@ public:
 
 class VulkanShader : public Shader
 { 
-struct ShaderBindigs{
-    std::map<uint32_t, std::unique_ptr<VulkanImage> > imageBindings;
-    std::map<uint32_t, std::unique_ptr<VulkanUbo> >   uboBindings; 
-
-}shaderBindings;
-
 public:
     friend class VulkanShaderBuilder;
 
     VulkanShader(VulkanDevice &device, VulkanSwapchain &swapchain, GLSL::ShaderType type = GLSL::PHONG);
     ~VulkanShader();
 
-    void updateUbo(UniformBufferObject & mpv);
-    void bind(VkCommandBuffer cmd, GLSL::PolygonMode mode);
+    void bind(VkCommandBuffer cmd, GLSL::PolygonMode mode, VkDescriptorSet* descriptorSet, uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets);
 
 private:
 
     void buildShaders();  
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void buid();
-    void cleanupDescriptorPool();
-    void cleanupPipeline();
+
+    void createPipelineLayout();
     void createPipeline(GLSL::PolygonMode mode);
 
-    // ----------------------------
-    void createGlobalUbo();
-    void createDescriptorSetLayout();
-    void createDescriptorPool();
-    void createDescriptorSets();
-
-
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSet descriptorSet;
+    void cleanupPipeline();
 
     // ----------------------------
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    VkDescriptorSetLayout* descriptorSetLayout;
     // VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL; 
     VkPipelineLayout pipelineLayout;
     std::array<VkPipeline, 2> graphicsPipeline;  
@@ -122,10 +98,7 @@ private:
     GLSL::ShaderType shaderType;
 
     const bool Opengl_compatible_viewport = false; 
-    bool precompiled = true;
     bool prepared = false;
-
-    const uint32_t globalUboBinding = 0;
 
     VkShaderModule vertModule;
     VkShaderModule fragModule;

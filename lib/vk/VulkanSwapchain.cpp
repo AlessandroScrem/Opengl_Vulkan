@@ -74,6 +74,16 @@ void VulkanSwapchain::cleanupSwapChain()
 
 }
 
+void VulkanSwapchain::recreateSwapChain() 
+{  
+    SPDLOG_DEBUG("recreateSwapChain");
+
+    vkDeviceWaitIdle(device.getDevice());
+    // destroy 
+    cleanupSwapChain();
+    // create 
+    createAllSwapchian();
+}
 
 void VulkanSwapchain::createSwapchain()
  {

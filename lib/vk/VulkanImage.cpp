@@ -13,6 +13,7 @@ VulkanImage::VulkanImage(VulkanDevice &device,  std::string imagepath /*  = "dat
     createTexture();
     createTextureImageView();   
     createTextureSampler();
+    setupDescriptor();
 }
 
 VulkanImage::~VulkanImage() 
@@ -349,4 +350,11 @@ void VulkanImage::generateMipmaps(VkImage image, const VkFormat imageFormat, int
 
 
     device.endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanImage::setupDescriptor()
+{
+		descriptor.sampler = textureSampler;
+		descriptor.imageView = textureImageView;
+		descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }

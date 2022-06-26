@@ -24,9 +24,9 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 drawLines;
 } ubo;
 
-// layout (binding = 1) uniform UboInstance {
-// 	mat4 model; 
-// } uboInstance;
+layout (binding = 2) uniform UboInstance {
+	mat4 model; 
+} uboInstance;
 
 void main() {
     vs_out.fragTexCoord = inTexCoord;
@@ -34,8 +34,8 @@ void main() {
     vs_out.viewPos = ubo.viewPos;
     vs_out.drawLines = ubo.drawLines;
 
-    vs_out.FragPos = vec3(ubo.model * vec4(inPosition, 1.0));
-    vs_out.Normal = mat3(transpose(inverse(ubo.model))) * inNormal; 
+    vs_out.FragPos = vec3(uboInstance.model * vec4(inPosition, 1.0));
+    vs_out.Normal = mat3(transpose(inverse(uboInstance.model))) * inNormal; 
 
     gl_Position = ubo.proj * ubo.view * vec4(vs_out.FragPos, 1.0);
 }

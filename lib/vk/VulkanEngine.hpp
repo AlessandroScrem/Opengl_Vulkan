@@ -27,6 +27,8 @@ struct DeletionQueue
 class VulkanDevice;
 class VulkanSwapchain;
 class VulkanShader;
+class VulkanImage;
+class VulkanUbo;
 class ShaderBuilder;
 
 class VulkanEngine : public Engine
@@ -55,12 +57,30 @@ private:
     void draw_objects(VkCommandBuffer cmd);  
     void draw_fixed(VkCommandBuffer cmd); 
 
-    void recreateSwapChain();
+    void createDescriptorSetLayout();
+    void createDescriptorPool();
+    void createDescriptorSets();
+
+    void prepareUniformBuffers();
+
+    void updateUbo();
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    VkDescriptorSet descriptorSet;
 
     // -----------------------
     std::unique_ptr<VulkanDevice> device_;
     std::unique_ptr<VulkanSwapchain> swapchain_;
+    std::unique_ptr<VulkanImage> image_;
     VulkanUIOverlay UIoverlay;
+
+    struct {
+        std::unique_ptr<VulkanUbo> view;
+        std::unique_ptr<VulkanUbo> dynamic;
+        size_t dynamicAlignment;
+    }vulkanUbo_;
+
 
     //------------------------------------
     int _currentFrame {0};
@@ -75,6 +95,7 @@ private:
 
     //------------------------------------
     DeletionQueue _mainDeletionQueue;
+
 };
 
 

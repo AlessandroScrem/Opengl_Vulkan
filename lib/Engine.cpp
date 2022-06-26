@@ -178,12 +178,11 @@ void Engine::init_renderables()
    {
         Model model("data/models/sphere/sphere_scaled.obj", Model::UP::ZUP);
         Transformations tra{};
-        // tra.S ={0.01f, 0.01f, 0.01f};
-         // rotate toward camera
-        // Transformations tra{};
-        // tra.R ={0.0f, 270.0f, 0.0f};
-        // // move right
-        // tra.T = {1.0f, 0.0f, 0.0f};
+        tra.S ={1.0f, 1.0f, 1.0f};
+        //rotate toward camera
+        tra.R ={0.0f, 270.0f, 0.0f};
+        // move right
+        tra.T = {1.0f, 0.0f, 0.0f};
         model.node.set(tra);
 
         auto object = RenderObject::make().build(model, "phong");

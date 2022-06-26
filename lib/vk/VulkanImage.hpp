@@ -12,6 +12,7 @@ public:
 
     VkImageView& getTextureImageView() { return textureImageView; }
     VkSampler& getTextureSampler() { return textureSampler; }
+    VkDescriptorImageInfo* getDescriptor(){ return &descriptor; }
 
 private:
 
@@ -24,6 +25,7 @@ private:
 
 
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void setupDescriptor();
     
     VulkanDevice &device;
     std::string texpath{};  
@@ -34,5 +36,5 @@ private:
 
     VkImageView textureImageView;
     VkSampler textureSampler;
+    VkDescriptorImageInfo descriptor;
 };
-

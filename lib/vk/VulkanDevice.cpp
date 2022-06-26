@@ -477,6 +477,20 @@ void VulkanDevice::mapVmaBuffer(VmaAllocation &allocation, const void *src_buffe
 }
 
 /**
+ * @brief Calls vkFlushMappedMemoryRanges() for memory associated with given range of given allocation
+ *        It needs to be called after writing to a mapped memory for memory types that are not HOST_COHERENT
+ * 
+ * @param allocation VmaAllocation allcation structure
+ * @param offset     must be relative to the beginning of allocation.
+ * @param buffersize can be VK_WHOLE_SIZE. It means all memory from offset the the end of given allocation.
+ */
+void VulkanDevice::flushVmaAllocation(VmaAllocation &allocation, size_t offset, size_t buffersize)
+{
+    VK_CHECK_RESULT(vmaFlushAllocation(_allocator, allocation, offset, buffersize));    
+}
+	
+
+/**
  * @brief Free allocated memory from Vulkan Memory Allocator
  * 
  * @param buffer     Buffer to be free
@@ -611,3 +625,189 @@ void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
 
     vkFreeCommandBuffers(logicalDevice, defaultcommandPool, 1, &commandBuffer);
 }
+
+	/**
+	* Create a buffer on the device
+	*
+	* @param usageFlags Usage flag bit mask for the buffer (i.e. index, vertex, uniform buffer)
+	* @param memoryPropertyFlags Memory properties for this buffer (i.e. device local, host visible, coherent)
+	* @param buffer Pointer to a vk::Vulkan buffer object
+	* @param size Size of the buffer in bytes
+	* @param data Pointer to the data that should be copied to the buffer after creation (optional, if not set, no data is copied over)
+	*
+	* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
+	*/
+	VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, vks::Buffer *buffer, VkDeviceSize size, void *data/* = nullptr */)
+	{
+		buffer->device = logicalDevice;
+
+		// Create the buffer handle
+		VkBufferCreateInfo bufferCreateInfo{};
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferCreateInfo.usage = usageFlags;
+		bufferCreateInfo.size = size;
+		VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, &buffer->buffer));
+
+		// Create the memory backing up the buffer handle
+		VkMemoryRequirements memReqs;
+		VkMemoryAllocateInfo memAlloc{};
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		vkGetBufferMemoryRequirements(logicalDevice, buffer->buffer, &memReqs);
+		memAlloc.allocationSize = memReqs.size;
+		// Find a memory type index that fits the properties of the buffer
+		memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+		// If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
+		VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+		if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+			allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+			allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+			memAlloc.pNext = &allocFlagsInfo;
+		}
+		VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, &buffer->memory));
+
+		buffer->alignment = memReqs.alignment;
+		buffer->size = size;
+		buffer->usageFlags = usageFlags;
+		buffer->memoryPropertyFlags = memoryPropertyFlags;
+
+		// If a pointer to the buffer data has been passed, map the buffer and copy over the data
+		if (data != nullptr)
+		{
+			VK_CHECK_RESULT(buffer->map());
+			memcpy(buffer->mapped, data, size);
+			if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+				buffer->flush();
+
+			buffer->unmap();
+		}
+
+		// Initialize a default descriptor that covers the whole buffer size
+		buffer->setupDescriptor();
+
+		// Attach the memory to the buffer object
+		return buffer->bind();
+	}
+
+namespace vks
+{	
+	/** 
+	* Map a memory range of this buffer. If successful, mapped points to the specified buffer range.
+	* 
+	* @param size (Optional) Size of the memory range to map. Pass VK_WHOLE_SIZE to map the complete buffer range.
+	* @param offset (Optional) Byte offset from beginning
+	* 
+	* @return VkResult of the buffer mapping call
+	*/
+	VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset)
+	{
+		return vkMapMemory(device, memory, offset, size, 0, &mapped);
+	}
+
+	/**
+	* Unmap a mapped memory range
+	*
+	* @note Does not return a result as vkUnmapMemory can't fail
+	*/
+	void Buffer::unmap()
+	{
+		if (mapped)
+		{
+			vkUnmapMemory(device, memory);
+			mapped = nullptr;
+		}
+	}
+
+	/** 
+	* Attach the allocated memory block to the buffer
+	* 
+	* @param offset (Optional) Byte offset (from the beginning) for the memory region to bind
+	* 
+	* @return VkResult of the bindBufferMemory call
+	*/
+	VkResult Buffer::bind(VkDeviceSize offset)
+	{
+		return vkBindBufferMemory(device, buffer, memory, offset);
+	}
+
+	/**
+	* Setup the default descriptor for this buffer
+	*
+	* @param size (Optional) Size of the memory range of the descriptor
+	* @param offset (Optional) Byte offset from beginning
+	*
+	*/
+	void Buffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
+	{
+		descriptor.offset = offset;
+		descriptor.buffer = buffer;
+		descriptor.range = size;
+	}
+
+	/**
+	* Copies the specified data to the mapped buffer
+	* 
+	* @param data Pointer to the data to copy
+	* @param size Size of the data to copy in machine units
+	*
+	*/
+	void Buffer::copyTo(void* data, VkDeviceSize size)
+	{
+		assert(mapped);
+		memcpy(mapped, data, size);
+	}
+
+	/** 
+	* Flush a memory range of the buffer to make it visible to the device
+	*
+	* @note Only required for non-coherent memory
+	*
+	* @param size (Optional) Size of the memory range to flush. Pass VK_WHOLE_SIZE to flush the complete buffer range.
+	* @param offset (Optional) Byte offset from beginning
+	*
+	* @return VkResult of the flush call
+	*/
+	VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
+	{
+		VkMappedMemoryRange mappedRange = {};
+		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.memory = memory;
+		mappedRange.offset = offset;
+		mappedRange.size = size;
+		return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+	}
+
+	/**
+	* Invalidate a memory range of the buffer to make it visible to the host
+	*
+	* @note Only required for non-coherent memory
+	*
+	* @param size (Optional) Size of the memory range to invalidate. Pass VK_WHOLE_SIZE to invalidate the complete buffer range.
+	* @param offset (Optional) Byte offset from beginning
+	*
+	* @return VkResult of the invalidate call
+	*/
+	VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
+	{
+		VkMappedMemoryRange mappedRange = {};
+		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.memory = memory;
+		mappedRange.offset = offset;
+		mappedRange.size = size;
+		return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
+	}
+
+	/** 
+	* Release all Vulkan resources held by this buffer
+	*/
+	void Buffer::destroy()
+	{
+		if (buffer)
+		{
+			vkDestroyBuffer(device, buffer, nullptr);
+		}
+		if (memory)
+		{
+			vkFreeMemory(device, memory, nullptr);
+		}
+	}
+};

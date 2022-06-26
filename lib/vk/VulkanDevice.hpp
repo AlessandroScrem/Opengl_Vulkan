@@ -9,6 +9,36 @@
 #include <vector>
 #include <optional>
 
+namespace vks
+{	
+	/**
+	* @brief Encapsulates access to a Vulkan buffer backed up by device memory
+	* @note To be filled by an external source like the VulkanDevice
+	*/
+	struct Buffer
+	{
+		VkDevice device;
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VkDeviceMemory memory = VK_NULL_HANDLE;
+		VkDescriptorBufferInfo descriptor;
+		VkDeviceSize size = 0;
+		VkDeviceSize alignment = 0;
+		void* mapped = nullptr;
+		/** @brief Usage flags to be filled by external source at buffer creation (to query at some later point) */
+		VkBufferUsageFlags usageFlags;
+		/** @brief Memory property flags to be filled by external source at buffer creation (to query at some later point) */
+		VkMemoryPropertyFlags memoryPropertyFlags;
+		VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+		void unmap();
+		VkResult bind(VkDeviceSize offset = 0);
+		void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+		void copyTo(void* data, VkDeviceSize size);
+		VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+		VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+		void destroy();
+	};
+}
+
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily; 
@@ -62,12 +92,15 @@ public:
     VkCommandPool getDeafaultCommadPool() { return defaultcommandPool; }
     VkPhysicalDeviceProperties getPhysicalDeviceProperties() {return _physicalDeviceProperties;}
 
+    VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, 
+            vks::Buffer *buffer, VkDeviceSize size, void *data = nullptr);
 
 
     void createVmaBuffer(        
         VkBufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &vmaallocInfo, 
         VkBuffer &dest_buffer,VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
     void mapVmaBuffer(VmaAllocation &allocation, const void *src_buffer, size_t buffersize);
+    void flushVmaAllocation(VmaAllocation &allocation, size_t offset, size_t buffersize);
     void destroyVmaBuffer(VkBuffer &buffer,VmaAllocation &allocation);
 
     void createVmaImage(VkImageCreateInfo &imageInfo, VmaAllocationCreateInfo &vmaallocInfo, VkImage &dest_image, VmaAllocation &allocation);  
