@@ -66,7 +66,6 @@ OpenglShader::~OpenglShader()
 void OpenglShader::buid()
 {
     SPDLOG_DEBUG("OpenglShader build");
-    createGlobalUbo(); 
     buildShaders();
     prepared = true;
 }
@@ -79,10 +78,6 @@ void  OpenglShader::bind(GLenum mode){
     glUseProgram(shaderProgram);
 
     for(auto& shaderBinding : shaderBindings.image){
-        shaderBinding.second->bind();
-    }
-
-    for(auto& shaderBinding : shaderBindings.ubo){
         shaderBinding.second->bind();
     }
 
@@ -160,27 +155,5 @@ void OpenglShader::compile(GLuint shader, std::vector<char> &glsl, GLenum  kind)
     } 
 }
 
-void OpenglShader::updateUbo(UniformBufferObject & mvp)
-{
-    auto& ubo = *(shaderBindings.ubo.at(globalUboBinding));
-
-    ubo.model = mvp.model;
-    ubo.view  = mvp.view;
-    ubo.proj  = mvp.proj;
-    ubo.viewPos = mvp.viewPos;
-    ubo.drawLines = mvp.drawLines;
-    
-}
-
-void  OpenglShader::createGlobalUbo()
-{
-    auto ubo = std::make_unique<OpenglUbo>(); 
-    shaderBindings.ubo.emplace(globalUboBinding, std::move(ubo) );
-}
-
-void  OpenglShader::addConstant(uint32_t binding)
-{
-
-}
 
 

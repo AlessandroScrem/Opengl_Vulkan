@@ -8,20 +8,27 @@
 // common
 #include <vertex.h>
 
-class OpenglUbo : public UniformBufferObject{
+class OpenglUbo {
 public:
-    OpenglUbo(){
+    OpenglUbo(GLsizeiptr size, GLuint binding, const void *data) : bufferSize{size}, binding_point{binding}, mapped{data}
+    {
         glCreateBuffers(1, &ubo);
-        glNamedBufferStorage(ubo, sizeof(UniformBufferObject), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glNamedBufferStorage(ubo, bufferSize, nullptr, GL_DYNAMIC_STORAGE_BIT);
     }
 
    void bind() {
-        glBindBufferRange(GL_UNIFORM_BUFFER, binding_point, ubo, offset, sizeof(UniformBufferObject));
-        glNamedBufferSubData(ubo, offset, sizeof(UniformBufferObject), static_cast<UniformBufferObject*>(this));
+        bind(mapped, bufferSize);
+    }
+
+   void bind(const void *data, GLsizeiptr size) {
+        glBindBufferRange(GL_UNIFORM_BUFFER, binding_point, ubo, offset, size);
+        glNamedBufferSubData(ubo, offset, size, data);
     }
 
 private:
-    const int offset = 0;
-    const int binding_point{0};
-    unsigned int ubo{0};
+    GLintptr   offset{0};
+    GLuint     binding_point{0};
+    GLsizeiptr bufferSize{0};
+    const void *mapped = nullptr;
+    GLuint     ubo;
 };

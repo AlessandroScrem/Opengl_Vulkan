@@ -34,8 +34,6 @@ class OpenglShader : public Shader
 {
 struct ShaderBindigs{
     std::map<uint32_t, std::unique_ptr<OpenglImage> > image;
-    std::map<uint32_t, std::unique_ptr<OpenglUbo> >   ubo;
-
 }shaderBindings;
 
 public:
@@ -46,14 +44,11 @@ public:
 
     void buid();  
     void bind(GLenum mode);
-    void updateUbo(UniformBufferObject & mvp);
-    void addConstant(uint32_t binding);
 
     GLenum getTopology(){return topology;}
     
 
 private:
-    void createGlobalUbo();
     void buildShaders();
     void compile(GLuint shader, std::vector<char> &glsl, GLenum  kind);
     void link();

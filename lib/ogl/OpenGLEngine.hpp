@@ -26,6 +26,8 @@ protected:
 private:
 
     void initOpenglGlobalStates();
+    void prepareUniformBuffers();
+    void updateUbo();
     void init();
     void begin_frame();
     void draw_fixed();
@@ -33,9 +35,13 @@ private:
     void end_frame();
     void cleanup();
 
-
-
     OpenglUIOverlay UIoverlay{};
+
+    struct {
+        std::unique_ptr<OpenglUbo> view;
+        std::unique_ptr<OpenglUbo> dynamic;
+        size_t dynamicAlignment;
+    }openglUbo_;
 
 };
 }//namespace ogl
