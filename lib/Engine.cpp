@@ -177,13 +177,13 @@ void Engine::init_renderables()
 
    {
         Model model("data/models/sphere/sphere_scaled.obj", Model::UP::ZUP);
-        Transformations tra{};
-        tra.S ={1.0f, 1.0f, 1.0f};
-        //rotate toward camera
-        tra.R ={0.0f, 270.0f, 0.0f};
-        // move right
-        tra.T = {1.0f, 0.0f, 0.0f};
-        model.node.set(tra);
+        // Transformations tra{};
+        // tra.S ={1.0f, 1.0f, 1.0f};
+        // //rotate toward camera
+        // tra.R ={0.0f, 270.0f, 0.0f};
+        // // move right
+        // tra.T = {1.0f, 0.0f, 0.0f};
+        // model.node.set(tra);
 
         auto object = RenderObject::make().build(model, "phong");
         object->objName = "sphere";
@@ -299,7 +299,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("orbit left/right", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * ngn::Time::getFrameTime();
@@ -317,7 +317,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("orbit up/down", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * ngn::Time::getFrameTime();
@@ -334,7 +334,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("cam fov", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * 10 * Time::getFrameTime();
@@ -351,7 +351,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("dolly in/out", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
 
             if (value){               
                 float step = MULT * Time::getFrameTime();
@@ -368,7 +368,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("leftclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -385,7 +385,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("middleclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -402,7 +402,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("rightclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -419,7 +419,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("toggle shader", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [this](InputSource source, int sourceIndex, float value) {
+        .Func = [&](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 model_index_ += 1;

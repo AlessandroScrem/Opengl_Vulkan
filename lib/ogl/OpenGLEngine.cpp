@@ -117,8 +117,6 @@ void OpenGLEngine::updateUbo()
 {
     UniformBufferObject mvp = Engine::getMVP();
 
-
-    uniformBuffer_.model = mvp.model;
     uniformBuffer_.view  = mvp.view;
     uniformBuffer_.proj  = mvp.proj;
     uniformBuffer_.viewPos = mvp.viewPos;

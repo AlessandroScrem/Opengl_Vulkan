@@ -381,8 +381,8 @@ void VulkanEngine::createDescriptorSetLayout()
 void VulkanEngine::createDescriptorPool() 
 {
     SPDLOG_TRACE("createDescriptorPool");
-
-    uint32_t size =  static_cast<uint32_t>(swapchain_->getSwapchianImageSize());
+    // FIXME how many descriptor per 
+    // uint32_t size =  static_cast<uint32_t>(swapchain_->getSwapchianImageSize());
     std::vector<VkDescriptorPoolSize> poolSize =
     {
         vkinit::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
@@ -433,8 +433,6 @@ void VulkanEngine::updateUbo()
     // update 
     UniformBufferObject mvp = Engine::getMVP(); 
 
-    vulkanUbo_.dynamic->map(uboDataDynamic_.model);
-    uniformBuffer_.model = mvp.model;
     uniformBuffer_.view  = mvp.view;
     uniformBuffer_.proj  = mvp.proj;
     uniformBuffer_.viewPos = mvp.viewPos;
