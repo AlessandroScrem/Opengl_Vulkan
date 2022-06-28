@@ -2,7 +2,32 @@
 #include "OpenglImage.hpp"
 #include "OpenglUbo.hpp"
 
+std::string getShaderInfoLog(GLuint shader) {
+    GLint logLen;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLen);
 
+    std::string log;
+    if (logLen > 0) {
+        log.resize(logLen, ' ');
+        GLsizei written;
+        glGetShaderInfoLog(shader, logLen, &written, &log[0]);
+    }
+
+    return log;
+}
+
+std::string getProgramInfoLog(GLuint program) {
+    GLint logLen;
+    glGetProgramiv( program, GL_INFO_LOG_LENGTH, &logLen );
+
+    std::string log;
+    if (logLen > 0) {
+        log.resize(logLen, ' ');
+        GLsizei written;
+        glGetProgramInfoLog(program, logLen, &written, &log[0]);
+    }
+    return log;
+}
 
 ShaderBuilder& OpenglShaderBuilder::Reset(){
     this->shader = std::make_unique<OpenglShader>();
@@ -88,37 +113,59 @@ void OpenglShader::buildShaders()
     GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    auto glsl_vert = GLSL::readFile(GLSL::getPath(shaderType) + ".vert");
-    auto glsl_frag = GLSL::readFile(GLSL::getPath(shaderType) + ".frag");
+    GLint status;
 
-    compile(vert_shader, glsl_vert, GL_VERTEX_SHADER);
-    compile(frag_shader, glsl_frag, GL_FRAGMENT_SHADER);
+    auto glsl_vert = GLSL::readFile(GLSL::getPath(shaderType) + ".vert.spv");
+    auto glsl_frag = GLSL::readFile(GLSL::getPath(shaderType) + ".frag.spv");
 
+    // if (glsl)
+    // compile(vert_shader, glsl_vert, GL_VERTEX_SHADER);
+    // compile(frag_shader, glsl_frag, GL_FRAGMENT_SHADER);
+
+    glShaderBinary(1, &vert_shader, GL_SHADER_BINARY_FORMAT_SPIR_V, glsl_vert.data(), static_cast<GLsizei>(glsl_vert.size()));
+    glShaderBinary(1, &frag_shader, GL_SHADER_BINARY_FORMAT_SPIR_V, glsl_frag.data(), static_cast<GLsizei>(glsl_frag.size()));
+
+    glSpecializeShader( vert_shader, "main", 0, nullptr, nullptr);
+    glSpecializeShader( frag_shader, "main", 0, nullptr, nullptr);
+
+    glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &status);
+    if( GL_FALSE == status ) {
+        spdlog::error("Failed to load vertex shader (SPIR-V) {}", getShaderInfoLog(vert_shader) );
+    }
+
+    glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &status);
+    if( GL_FALSE == status ) {
+        spdlog::error("Failed to load fragment shader (SPIR-V) {}", getShaderInfoLog(frag_shader) );
+    }
+
+    // Create the program object
     shaderProgram = glCreateProgram();
+    if (0 == shaderProgram) {
+        spdlog::error("Error creating program object.");
+    }
 
-    glAttachShader(shaderProgram, vert_shader );
-    glAttachShader(shaderProgram, frag_shader );
- 
+    glAttachShader(shaderProgram, vert_shader);
+    glAttachShader(shaderProgram, frag_shader);
+    
     link();
 
     glDeleteShader(vert_shader);
     glDeleteShader(frag_shader);
+
+    // glUseProgram(shaderProgram);
 }
 
-void OpenglShader::link(){
-    
-    // link shaders
+void OpenglShader::link()
+{
+    GLint status;
+
     glLinkProgram(shaderProgram);
-    
-    // check for linking errors
-    int success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        spdlog::error("ERROR::SHADER::PROGRAM::LINKING_FAILED\n{}", infoLog);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
+    if (GL_FALSE == status) {
+        spdlog::error("Failed to link SPIR-V program {}", getProgramInfoLog(shaderProgram));
     }
 }
+
 
 void OpenglShader::compile(GLuint shader, std::vector<char> &glsl, GLenum  kind)
 { 
