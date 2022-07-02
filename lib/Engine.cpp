@@ -151,14 +151,17 @@ void Engine::init_shaders()
 
         shaders_.emplace("phong", std::move(shader));
     }
-    {
+}
+
+void Engine::init_fixed_shaders()
+{
+   {
         auto shader = Shader::make().type(GLSL::AXIS)
                                     .setPolygonMode(GLSL::LINES)
                                     .build();
 
-        shaders_.emplace("axis", std::move(shader));
+        fixed_shaders_.emplace("axis", std::move(shader));
     }
-
 }
 
 void Engine::init_fixed()
@@ -299,7 +302,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("orbit left/right", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * ngn::Time::getFrameTime();
@@ -317,7 +320,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("orbit up/down", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * ngn::Time::getFrameTime();
@@ -334,7 +337,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("cam fov", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 float step = MULT * 10 * Time::getFrameTime();
@@ -351,7 +354,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("dolly in/out", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){               
                 float step = MULT * Time::getFrameTime();
@@ -368,7 +371,7 @@ void Engine::MapActions()
 
     inputManager_->RegisterActionCallback("leftclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -385,7 +388,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("middleclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -402,7 +405,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("rightclick", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
             if(value) // btn down
             {
                 Mouse::Start();
@@ -419,7 +422,7 @@ void Engine::MapActions()
     });
     inputManager_->RegisterActionCallback("toggle shader", InputManager::ActionCallback {
         .Ref = "YoutubeGame",
-        .Func = [&](InputSource source, int sourceIndex, float value) {
+        .Func = [this](InputSource source, int sourceIndex, float value) {
 
             if (value){
                 model_index_ += 1;

@@ -43,6 +43,8 @@ private:
         size_t dynamicAlignment;
     }openglUbo_;
 
+    std::unique_ptr<OpenglUbo> canvasUbo;
+
 };
 }//namespace ogl
 

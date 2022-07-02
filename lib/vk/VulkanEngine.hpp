@@ -61,13 +61,21 @@ private:
     void createDescriptorPool();
     void createDescriptorSets();
 
+    void createCanvasDescriptorSetLayout();
+    void createCanvasDescriptorPool();
+    void createCanvasDescriptorSets();
+
     void prepareUniformBuffers();
 
-    void updateUbo();
+    void updateUbo(VulkanUbo *ubo);
 
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetLayout canvasDescriptorSetLayout;
+    VkDescriptorPool canvasDescriptorPool;
+    VkDescriptorSet canvasDescriptorSet;
 
     // -----------------------
     std::unique_ptr<VulkanDevice> device_;
@@ -80,6 +88,9 @@ private:
         std::unique_ptr<VulkanUbo> dynamic;
         size_t dynamicAlignment;
     }vulkanUbo_;
+
+
+    std::unique_ptr<VulkanUbo> canvasUbo;
 
 
     //------------------------------------

@@ -26,6 +26,7 @@ public:
 protected:
 
     void init_shaders();
+    void init_fixed_shaders();
     void init_fixed();
     void init_renderables();
     void draw_UiOverlay();
@@ -36,11 +37,11 @@ protected:
      * @param name shader name
      * @return VulkanShader& 
      */
-    Shader & getShader(std::string name) 
+    Shader & getShader(std::unordered_map< std::string, std::unique_ptr<Shader> > & shaders, std::string name) 
     {
-        auto got = shaders_.find (name);
-        if ( got == shaders_.end() ){
-            throw std::runtime_error("failed to find shader!");
+        auto got = shaders.find (name);
+        if ( got == shaders.end() ){
+            spdlog::critical("failed to find shader!");
         }
         return (*got->second);
     }  
@@ -51,6 +52,7 @@ protected:
     EngineType engine_type_{};
 
     std::unordered_map< std::string, std::unique_ptr<Shader> > shaders_;
+    std::unordered_map< std::string, std::unique_ptr<Shader> > fixed_shaders_;
     std::unordered_map< std::string, std::unique_ptr<RenderObject> > fixed_objects_;
     std::vector< std::unique_ptr<RenderObject> > renderables_;
     
